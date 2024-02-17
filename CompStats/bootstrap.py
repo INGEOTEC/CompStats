@@ -16,7 +16,7 @@ from joblib import delayed, Parallel
 import numpy as np
 
 
-class StatisticSamples(object):
+class StatisticSamples:
     """Apply the statistic to `num_samples` samples taken with replacement from the population (arguments).
 
     :param statistic: Statistic.

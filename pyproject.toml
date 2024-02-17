@@ -1,0 +1,11 @@
+[project]
+name = 'CompStats'
+dependencies = [
+    'numpy',
+    'scikit-learn>=1.3.0',
+    'pandas'
+]
+dynamic = ['version']
+
+[tool.setuptools.dynamic]
+version = {attr = 'CompStats.__version__'}

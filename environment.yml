@@ -1,0 +1,9 @@
+name: CompStats
+channels:
+  - conda-forge
+dependencies:
+  - python
+  - pip
+  - scikit-learn
+  - pandas
+

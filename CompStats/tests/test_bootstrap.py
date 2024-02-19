@@ -38,6 +38,9 @@ def test_StatisticSample():
     samples = statistic(np.r_[3, 4, 5, 2, 4])
     assert samples.shape[0] == 26
     assert np.fabs(indexes - statistic.samples(5)).sum() == 0
+    assert statistic.statistic == np.mean
+    indexes = statistic.samples(6)
+    assert indexes.shape[1] == 6
 
 
 def test_StatisticSample_name():

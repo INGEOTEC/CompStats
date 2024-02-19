@@ -17,7 +17,8 @@ import numpy as np
 
 
 class StatisticSamples:
-    """Apply the statistic to `num_samples` samples taken with replacement from the population (arguments).
+    """Apply the statistic to `num_samples` samples taken with replacement 
+    from the population (arguments).
 
     :param statistic: Statistic.
     :type statistic: Callable
@@ -27,7 +28,7 @@ class StatisticSamples:
     :type n_jobs: int
 
 
-    >>> from IngeoML import StatisticSamples
+    >>> from CompStats import StatisticSamples
     >>> from sklearn.metrics import accuracy_score
     >>> import numpy as np
     >>> statistic = StatisticSamples(num_samples=10, statistic=np.mean)
@@ -78,7 +79,7 @@ class StatisticSamples:
     def num_samples(self):
         """Number of bootstrap samples."""
         return self._num_samples
-    
+
     @num_samples.setter
     def num_samples(self, value):
         self._num_samples = value
@@ -88,7 +89,7 @@ class StatisticSamples:
         """It contains the statistic samples of the latest call."""
         assert hasattr(self, '_statistic_samples')
         return self._statistic_samples
-    
+
     @statistic_samples.setter
     def statistic_samples(self, value):
         self._statistic_samples = value
@@ -131,7 +132,7 @@ class StatisticSamples:
         if name is not None:
             self.calls[name] = self.statistic_samples
         return self.statistic_samples
-   
+
 
 # class CI(StatisticSamples):
 #     """Compute the Confidence Interval of a statistic using bootstrap.

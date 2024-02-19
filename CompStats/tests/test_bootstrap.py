@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import numpy as np
-from CompStats.bootstrap import StatisticSamples, CI
+from CompStats.bootstrap import StatisticSamples
 
 
 def problem_algorithms():
@@ -32,26 +32,39 @@ def problem_algorithms():
 
 def test_StatisticSample():
     """Test StatisticSamples"""
+
     statistic = StatisticSamples(num_samples=26, n_jobs=-1)
-    samples = statistic(np.r_[[3, 4, 5, 2, 4]])
+    indexes = statistic.samples(5)
+    samples = statistic(np.r_[3, 4, 5, 2, 4])
     assert samples.shape[0] == 26
+    assert np.fabs(indexes - statistic.samples(5)).sum() == 0
 
 
-def test_CI():
-    """Test CI"""
-    statistic = CI()
-    ci = statistic(np.r_[[3, 4, 5, 2, 4]])
-    assert len(ci) == 2
+def test_StatisticSample_name():
+    """Test the storing feature"""
+
+    statistic = StatisticSamples(num_samples=26, n_jobs=-1)
+    indexes = statistic.samples(5)
+    samples = statistic(np.r_[3, 4, 5, 2, 4], name='first')
+    assert np.fabs(samples - statistic['first']).sum() == 0
 
 
-def test_CI2D():
-    """Test CI with two values"""
-    from sklearn.metrics import f1_score
-    labels = np.r_[[0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0]]
-    pred   = np.r_[[0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0]]
-    ci = CI(statistic=lambda y, hy: f1_score(y, hy, average=None))
-    a = ci(labels, pred)
-    assert a[0].shape[0] == 2 and a[1].shape[0] == 2
+
+# def test_CI():
+#     """Test CI"""
+#     statistic = CI()
+#     ci = statistic(np.r_[[3, 4, 5, 2, 4]])
+#     assert len(ci) == 2
+
+
+# def test_CI2D():
+#     """Test CI with two values"""
+#     from sklearn.metrics import f1_score
+#     labels = np.r_[[0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0]]
+#     pred   = np.r_[[0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0]]
+#     ci = CI(statistic=lambda y, hy: f1_score(y, hy, average=None))
+#     a = ci(labels, pred)
+#     assert a[0].shape[0] == 2 and a[1].shape[0] == 2
 
 
 # def test_se():

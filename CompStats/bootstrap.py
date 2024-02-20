@@ -13,6 +13,7 @@
 # limitations under the License.
 from typing import Callable
 from joblib import delayed, Parallel
+from copy import copy
 import numpy as np
 
 
@@ -51,11 +52,38 @@ class StatisticSamples:
         self.n_jobs = n_jobs
         self._samples = None
         self._calls = {}
+        self._info = {}
+
+    @property
+    def info(self):
+        """Information about the samples"""
+        return self._info
+    
+    @info.setter
+    def info(self, value):
+        self._info = value
+
+    def get_params(self):
+        """Parameters"""
+        return dict(statistic=self.statistic,
+                    num_samples=self.num_samples,
+                    n_jobs=self.n_jobs)
+
+    def __sklearn_clone__(self):
+        klass = self.__class__
+        params = self.get_params()
+        ins = klass(**params)
+        ins.info = copy(self.info)
+        return ins
 
     @property
     def calls(self):
         """Dictionary containing the output of the calls when a name is given"""
         return self._calls
+    
+    @calls.setter
+    def calls(self, value):
+        self._calls = value
 
     @property
     def n_jobs(self):

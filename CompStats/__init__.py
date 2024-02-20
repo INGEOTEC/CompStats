@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 from CompStats.bootstrap import StatisticSamples
 from CompStats.measurements import CI
+from CompStats.performance import performance, difference, plot_performance, plot_difference

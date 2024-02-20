@@ -32,7 +32,7 @@ jobs:
       run: |
         conda install --yes pip
         pip install twine build
-        conda install --yes numpy scipy scikit-learn nose pandas
+        conda install --yes numpy scipy scikit-learn nose pandas seaborn
         python -m build
     - name: Pip
       if: ${{ runner.os == 'Linux' }}

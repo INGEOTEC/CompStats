@@ -15,7 +15,8 @@ import numpy as np
 import pandas as pd
 import os
 from sklearn.metrics import f1_score
-from CompStats.performance import performance
+import seaborn as sns
+from CompStats.performance import performance, plot_performance
 
 
 DATA = os.path.join(os.path.dirname(__file__), 'data.csv')
@@ -24,4 +25,12 @@ DATA = os.path.join(os.path.dirname(__file__), 'data.csv')
 def test_performance():
     df = pd.read_csv(DATA)
     perf = performance(df, score=lambda y, hy: f1_score(y, hy, average='weighted'))
+    assert 'BoW' in perf.calls
+    assert 'y' not in perf.calls
     
+
+def test_plot_performance():
+    df = pd.read_csv(DATA)
+    perf = performance(df, score=lambda y, hy: f1_score(y, hy, average='weighted'))
+    ins = plot_performance(perf)
+    assert isinstance(ins, sns.FacetGrid)

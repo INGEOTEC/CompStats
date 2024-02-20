@@ -12,8 +12,8 @@ CompStats
 .. image:: https://badge.fury.io/py/CompStats.svg
 		:target: https://badge.fury.io/py/CompStats
 
-.. image:: https://readthedocs.org/projects/compstats/badge/?version=docs
-		:target: https://compstats.readthedocs.io/en/docs/?badge=docs
+.. image:: https://readthedocs.org/projects/compstats/badge/?version=latest
+		:target: https://compstats.readthedocs.io/en/latest/?badge=latest
 
 
 CompStats

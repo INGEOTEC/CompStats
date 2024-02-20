@@ -16,7 +16,7 @@ import pandas as pd
 import os
 from sklearn.metrics import f1_score
 import seaborn as sns
-from CompStats.performance import performance, plot_performance
+from CompStats.performance import performance, plot_performance, difference, plot_difference
 
 
 DATA = os.path.join(os.path.dirname(__file__), 'data.csv')
@@ -33,4 +33,15 @@ def test_plot_performance():
     df = pd.read_csv(DATA)
     perf = performance(df, score=lambda y, hy: f1_score(y, hy, average='weighted'))
     ins = plot_performance(perf)
+    assert isinstance(ins, sns.FacetGrid)
+
+
+def test_difference():
+    """Test difference"""
+    df = pd.read_csv(DATA)
+    perf = performance(df, score=lambda y, hy: f1_score(y, hy, average='weighted'))
+    res = difference(perf)
+    assert 'INGEOTEC' not in res.calls
+    assert res.info['best'] == 'INGEOTEC'
+    ins = plot_difference(res)
     assert isinstance(ins, sns.FacetGrid)

@@ -6,4 +6,5 @@ dependencies:
   - pip
   - scikit-learn
   - pandas
+  - seaborn
 

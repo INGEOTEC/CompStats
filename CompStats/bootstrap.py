@@ -17,7 +17,8 @@ import numpy as np
 
 
 class StatisticSamples:
-    """Apply the statistic to `num_samples` samples taken with replacement from the population (arguments).
+    """Apply the statistic to `num_samples` samples taken with replacement 
+    from the population (arguments).
 
     :param statistic: Statistic.
     :type statistic: Callable
@@ -27,7 +28,7 @@ class StatisticSamples:
     :type n_jobs: int
 
 
-    >>> from IngeoML import StatisticSamples
+    >>> from CompStats import StatisticSamples
     >>> from sklearn.metrics import accuracy_score
     >>> import numpy as np
     >>> statistic = StatisticSamples(num_samples=10, statistic=np.mean)
@@ -49,6 +50,12 @@ class StatisticSamples:
         self.num_samples = num_samples
         self.n_jobs = n_jobs
         self._samples = None
+        self._calls = {}
+
+    @property
+    def calls(self):
+        """Dictionary containing the output of the calls when a name is given"""
+        return self._calls
 
     @property
     def n_jobs(self):
@@ -63,7 +70,7 @@ class StatisticSamples:
     def statistic(self):
         """Statistic function."""
         return self._statistic
-    
+
     @statistic.setter
     def statistic(self, value):
         self._statistic = value
@@ -72,7 +79,7 @@ class StatisticSamples:
     def num_samples(self):
         """Number of bootstrap samples."""
         return self._num_samples
-    
+
     @num_samples.setter
     def num_samples(self, value):
         self._num_samples = value
@@ -82,7 +89,7 @@ class StatisticSamples:
         """It contains the statistic samples of the latest call."""
         assert hasattr(self, '_statistic_samples')
         return self._statistic_samples
-    
+
     @statistic_samples.setter
     def statistic_samples(self, value):
         self._statistic_samples = value
@@ -104,8 +111,11 @@ class StatisticSamples:
                 return inner(N)
         except AttributeError:
             return inner(N)
-  
-    def __call__(self, *args: np.ndarray) -> np.ndarray:
+
+    def __getitem__(self, key):
+        return self.calls[key]
+
+    def __call__(self, *args: np.ndarray, name=None) -> np.ndarray:
         """Population where the bootstrap process will be performed. 
 
         :param *args: Population
@@ -115,52 +125,50 @@ class StatisticSamples:
             _ = [arg[s] for arg in args]
             return self.statistic(*_)
 
-        B = []
-        # statistic = self.statistic
+        N = args[0].shape[0]
         B = Parallel(n_jobs=self.n_jobs)(delayed(inner)(s)
-                                         for s in self.samples(args[0].shape[0]))
-        # for s in self.samples(args[0].shape[0]):
-        #     _ = [arg[s] for arg in args]
-        #     B.append(statistic(*_))
+                                         for s in self.samples(N))
         self.statistic_samples = np.array(B)
+        if name is not None:
+            self.calls[name] = self.statistic_samples
         return self.statistic_samples
-   
 
-class CI(StatisticSamples):
-    """Compute the Confidence Interval of a statistic using bootstrap.
+
+# class CI(StatisticSamples):
+#     """Compute the Confidence Interval of a statistic using bootstrap.
     
-    :param alpha: :math:`[\\frac{\\alpha}{2}, 1 - \\frac{\\alpha}{2}]`. 
-    :type alpha: float
+#     :param alpha: :math:`[\\frac{\\alpha}{2}, 1 - \\frac{\\alpha}{2}]`. 
+#     :type alpha: float
 
-    >>> from IngeoML import CI
-    >>> from sklearn.metrics import accuracy_score
-    >>> import numpy as np    
-    >>> labels = np.r_[[0, 0, 0, 0, 0, 1, 1, 1, 1, 1]]
-    >>> pred   = np.r_[[0, 0, 1, 0, 0, 1, 1, 1, 0, 1]]
-    >>> acc = CI(statistic=accuracy_score)
-    >>> acc(labels, pred)
-    (0.7, 1.0)
-    """
-    def __init__(self, alpha: float=0.05,
-                 **kwargs):
-        super().__init__(**kwargs)
-        self.alpha = alpha
+#     >>> from IngeoML import CI
+#     >>> from sklearn.metrics import accuracy_score
+#     >>> import numpy as np    
+#     >>> labels = np.r_[[0, 0, 0, 0, 0, 1, 1, 1, 1, 1]]
+#     >>> pred   = np.r_[[0, 0, 1, 0, 0, 1, 1, 1, 0, 1]]
+#     >>> acc = CI(statistic=accuracy_score)
+#     >>> acc(labels, pred)
+#     (0.7, 1.0)
+#     """
+#     def __init__(self, alpha: float=0.05,
+#                  **kwargs):
+#         super().__init__(**kwargs)
+#         self.alpha = alpha
 
-    @property
-    def alpha(self):
-        """The interval is computed for :math:`[\\frac{\\alpha}{2}, 1 - \\frac{\\alpha}{2}]`.
-        """
-        return self._alpha
+#     @property
+#     def alpha(self):
+#         """The interval is computed for :math:`[\\frac{\\alpha}{2}, 1 - \\frac{\\alpha}{2}]`.
+#         """
+#         return self._alpha
     
-    @alpha.setter
-    def alpha(self, value):
-        self._alpha = value / 2
+#     @alpha.setter
+#     def alpha(self, value):
+#         self._alpha = value / 2
 
-    def __call__(self, *args: np.ndarray) -> np.ndarray:
-        B =  super().__call__(*args)
-        alpha  = self.alpha  
-        return (np.percentile(B, alpha * 100, axis=0), 
-                np.percentile(B, (1 - alpha) * 100, axis=0))
+#     def __call__(self, *args: np.ndarray) -> np.ndarray:
+#         B =  super().__call__(*args)
+#         alpha  = self.alpha  
+#         return (np.percentile(B, alpha * 100, axis=0), 
+#                 np.percentile(B, (1 - alpha) * 100, axis=0))
     
 
 # class SE(StatisticSamples):

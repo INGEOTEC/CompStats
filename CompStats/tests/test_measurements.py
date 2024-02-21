@@ -14,9 +14,9 @@
 import numpy as np
 import pandas as pd
 import os
-from CompStats.measurements import CI
+from CompStats.measurements import CI, all_differences
 from CompStats.bootstrap import StatisticSamples
-from CompStats.performance import performance, plot_performance, difference, plot_difference, all_differences
+from CompStats.performance import performance, plot_performance, difference, plot_difference
 from sklearn.metrics import f1_score
 
 DATA = os.path.join(os.path.dirname(__file__), 'data.csv')
@@ -37,4 +37,4 @@ def test_all_differences():
     df = pd.read_csv(DATA)
     perf = performance(df, score=lambda y, hy: f1_score(y, hy, average='weighted'))
     res = all_differences(perf)
-    assert 0 < res.calls['INFOTEC - BoW'] < 1
+    assert 0 < res[0][1] < 1

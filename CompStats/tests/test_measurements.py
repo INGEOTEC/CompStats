@@ -12,9 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import numpy as np
+import pandas as pd
+import os
 from CompStats.measurements import CI
 from CompStats.bootstrap import StatisticSamples
+from CompStats.performance import performance, plot_performance, difference, plot_difference, all_differences
+from sklearn.metrics import f1_score
 
+DATA = os.path.join(os.path.dirname(__file__), 'data.csv')
 
 def test_CI():
     """Test confidence interval"""
@@ -25,3 +30,11 @@ def test_CI():
     low, high = CI(samples)
     mean = pop.mean()
     assert low < mean < high
+
+
+def test_all_differences():
+    """Test all_differences"""
+    df = pd.read_csv(DATA)
+    perf = performance(df, score=lambda y, hy: f1_score(y, hy, average='weighted'))
+    res = all_differences(perf)
+    assert 0 < res.calls['INFOTEC - BoW'] < 1

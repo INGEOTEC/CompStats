@@ -14,10 +14,10 @@
 import numpy as np
 import pandas as pd
 import os
-from CompStats.measurements import CI, all_differences
-from CompStats.bootstrap import StatisticSamples
-from CompStats.performance import performance, plot_performance, difference, plot_difference
 from sklearn.metrics import f1_score
+from CompStats.measurements import CI, difference_p_value
+from CompStats.bootstrap import StatisticSamples
+from CompStats.performance import performance, difference
 
 DATA = os.path.join(os.path.dirname(__file__), 'data.csv')
 
@@ -32,9 +32,10 @@ def test_CI():
     assert low < mean < high
 
 
-def test_all_differences():
-    """Test all_differences"""
+def test_difference_p_value():
+    """Test difference p-values"""
     df = pd.read_csv(DATA)
     perf = performance(df, score=lambda y, hy: f1_score(y, hy, average='weighted'))
-    res = all_differences(perf)
-    assert 0 < res[0][1] < 1
+    res = difference(perf)
+    p_value = difference_p_value(res)
+    assert p_value['BoW'] > 0.2

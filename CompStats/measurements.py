@@ -37,28 +37,7 @@ def CI(samples: np.ndarray, alpha=0.05):
             np.percentile(samples, (1 - alpha) * 100, axis=0))
 
     
-def all_differences(statistic_samples: StatisticSamples):
-    """Calculates all possible differences in performance among algorithms and sorts by average performance"""
-    
-    items = list(statistic_samples.calls.items())
-    # Calculamos el rendimiento medio y ordenamos los algoritmos basándonos en este
-    perf = [(k, v, np.mean(v)) for k, v in items]
-    perf.sort(key=lambda x: x[2], reverse=True)  # Orden descendente por rendimiento medio
-    
-    diffs = {}  # Diccionario para guardar las diferencias
-    
-    # Iteramos sobre todos los pares posibles de algoritmos ordenados
-    for i in range(len(perf)):
-        for j in range(i + 1, len(perf)):
-            name_i, perf_i, _ = perf[i]
-            name_j, perf_j, _ = perf[j]
-            
-            # Diferencia de i a j
-            diff_key_i_to_j = f"{name_i} - {name_j}"
-            diffs[diff_key_i_to_j] = np.array(perf_i) - np.array(perf_j)
-
-    
-    # Creamos un nuevo objeto StatisticSamples con los resultados
-    salida = [(k, np.count_nonzero(v>(2*np.mean(v)))/len(v)) for k, v in diffs.items()]
-    #pd.DataFrame.from_dict(salida, orient='index')
-    return salida
+def difference_p_value(statistic_samples: StatisticSamples):
+    """Compute the difference p-value"""
+    return {k: (v > 2 * np.mean(v)).mean()
+            for k, v in statistic_samples.calls.items()}

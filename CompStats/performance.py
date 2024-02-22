@@ -37,7 +37,7 @@ def performance(data: pd.DataFrame,
     return statistic_samples
 
 
-def difference(statistic_samples: StatisticSamples, best_index=-1):
+def difference(statistic_samples: StatisticSamples, best_index: int=-1):
     """Bootstrap samples of a difference in performnace"""
 
     items = list(statistic_samples.calls.items())
@@ -52,6 +52,30 @@ def difference(statistic_samples: StatisticSamples, best_index=-1):
     output = clone(statistic_samples)
     output.calls = diff
     output.info['best'] = best_name
+    return output
+
+
+def all_differences(statistic_samples: StatisticSamples, reverse: bool=True):
+    """Calculates all possible differences in performance among algorithms and sorts by average performance"""
+    
+    items = list(statistic_samples.calls.items())
+    # Calculamos el rendimiento medio y ordenamos los algoritmos basándonos en este
+    perf = [(k, v, np.mean(v)) for k, v in items]
+    perf.sort(key=lambda x: x[2], reverse=reverse)  # Orden descendente por rendimiento medio
+    
+    diffs = {}  # Diccionario para guardar las diferencias
+    
+    # Iteramos sobre todos los pares posibles de algoritmos ordenados
+    for i in range(len(perf)):
+        for j in range(i + 1, len(perf)):
+            name_i, perf_i, _ = perf[i]
+            name_j, perf_j, _ = perf[j]
+            
+            # Diferencia de i a j
+            diff_key_i_to_j = f"{name_i} - {name_j}"
+            diffs[diff_key_i_to_j] = np.array(perf_i) - np.array(perf_j)
+    output = clone(statistic_samples)
+    output.calls = diffs
     return output
     
 

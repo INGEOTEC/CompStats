@@ -70,9 +70,22 @@ Performance Comparison
     >>> score = lambda y, hy: f1_score(y, hy, average='weighted')
     >>> perf = performance(df, score=score)
     >>> diff = difference(perf)
-    >>> ins = plot_difference(diff)    
+    >>> ins = plot_difference(diff)
 
 .. image:: difference.png
+
+
+The difference p-value can be estimated with the following instruction.
+
+
+.. code-block:: python
+
+    >>> from CompStats.measurements import difference_p_value
+    >>> p_values = difference_p_value(diff)
+    >>> p_values['BoW']
+    0.22
+    >>> p_values['StackBoW']
+    0.104
 
 
 Citing

@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import numpy as np
-
+import pandas as pd
+from CompStats.bootstrap import StatisticSamples
 
 def CI(samples: np.ndarray, alpha=0.05):
     """Compute the Confidence Interval of a statistic using bootstrap.
@@ -34,3 +35,9 @@ def CI(samples: np.ndarray, alpha=0.05):
     alpha = alpha / 2
     return (np.percentile(samples, alpha * 100, axis=0),
             np.percentile(samples, (1 - alpha) * 100, axis=0))
+
+    
+def difference_p_value(statistic_samples: StatisticSamples):
+    """Compute the difference p-value"""
+    return {k: (v > 2 * np.mean(v)).mean()
+            for k, v in statistic_samples.calls.items()}

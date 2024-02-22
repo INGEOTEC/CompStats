@@ -12,9 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import numpy as np
-from CompStats.measurements import CI
+import pandas as pd
+import os
+from sklearn.metrics import f1_score
+from CompStats.measurements import CI, difference_p_value
 from CompStats.bootstrap import StatisticSamples
+from CompStats.performance import performance, difference
 
+DATA = os.path.join(os.path.dirname(__file__), 'data.csv')
 
 def test_CI():
     """Test confidence interval"""
@@ -25,3 +30,12 @@ def test_CI():
     low, high = CI(samples)
     mean = pop.mean()
     assert low < mean < high
+
+
+def test_difference_p_value():
+    """Test difference p-values"""
+    df = pd.read_csv(DATA)
+    perf = performance(df, score=lambda y, hy: f1_score(y, hy, average='weighted'))
+    res = difference(perf)
+    p_value = difference_p_value(res)
+    assert p_value['BoW'] > 0.2

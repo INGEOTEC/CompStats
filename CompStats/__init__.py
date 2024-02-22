@@ -13,5 +13,5 @@
 # limitations under the License.
 __version__ = '0.0.4'
 from CompStats.bootstrap import StatisticSamples
-from CompStats.measurements import CI
-from CompStats.performance import performance, difference, plot_performance, plot_difference
+from CompStats.measurements import CI, difference_p_value
+from CompStats.performance import performance, difference, all_differences, plot_performance, plot_difference

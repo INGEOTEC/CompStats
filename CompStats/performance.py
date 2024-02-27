@@ -18,6 +18,7 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 from CompStats.bootstrap import StatisticSamples
+from CompStats.utils import progress_bar
 from CompStats import measurements
 
 
@@ -33,7 +34,7 @@ def performance(data: pd.DataFrame,
                                              n_jobs=n_jobs)
     columns = data.columns
     y = data[gold]
-    for column in columns:
+    for column in progress_bar(columns):
         if column == gold:
             continue
         statistic_samples(y, data[column], name=column)

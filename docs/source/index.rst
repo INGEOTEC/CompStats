@@ -38,39 +38,101 @@ A more general approach to installing CompStats is through the use of the comman
 
 	  pip install CompStats
 
-
-Performance
+Libraries
 ^^^^^^^^^^^^^^^^^^^^^
+
+After installing :py:class:`CompStats`, we must import the necessary libraries for our analysis. :py:class:`CompStats` relies on several Python libraries for data analysis and scientific computing.
+
+The first line of the following code loads two functions from the :py:class:`CompStats` library. The :py:func:`~CompStats.performance.performance` function is used to calculate and analyze the performance of machine learning models. On the other hand, the :py:func:`~CompStats.performance.plot_performance` function visualizes the performance metrics calculated by :py:func:`~CompStats.performance.performance`, such as accuracy or F1 score, along with confidence intervals to help understand the variability and reliability of the performance metrics.
+
+The second line imports two functions: :py:func:`~CompStats.performance.difference` and :py:func:`~CompStats.performance.plot_difference`; :py:func:`~CompStats.performance.difference` assesses the differences in performance between models in comparison to the best system, and :py:func:`~CompStats.performance.plot_difference` visually represents these differences relative to the best system.
+
+The third line imports two functions: :py:func:`~CompStats.performance.all_differences` and :py:func:`~CompStats.measurements.difference_p_value`. :py:func:`~CompStats.performance.all_differences` evaluates the differences in performance between all models, and :py:func:`~CompStats.measurements.difference_p_value` estimates the p-value of the hypothesis that the difference is significantly greater than zero.
+
+The fourth line imports the function :py:func:`multipletests` that is used for adjusting p-values when multiple hypothesis tests are performed, to control for the false discovery rate or family-wise error rate.
+
+The rest of the lines load commonly used Python libraries.
 
 .. code-block:: python
 
     >>> from CompStats import performance, plot_performance
-    >>> from CompStats.tests.test_performance import DATA
+    >>> from CompStats import difference, plot_difference
+    >>> from CompStats import all_differences, difference_p_value
+    >>> from statsmodels.stats.multitest import multipletests
     >>> from sklearn.metrics import f1_score
     >>> import pandas as pd
-    >>> df = pd.read_csv(DATA)
-    >>> score = lambda y, hy: f1_score(y, hy, average='weighted')
-    >>> perf = performance(df, score=score)
-    >>> ins = plot_performance(perf)
 
+Dataset
+^^^^^^^^^^^^^^^^^^^^^
+
+Once we have set up our environment, we can explore what CompStats offers. Let's begin with a basic example of how to use CompStats for a simple statistical analysis.
+
+To illustrate the use of CompStats, we will use a dataset included in the CompStats package. The path of the dataset is found with the following instructions. The variable :py:attr:`DATA` contains the path as shown below.  
+
+.. code-block:: python
+
+    >>> from CompStats.tests.test_performance import DATA
+    >>> DATA
+    '/usr/local/lib/python3.10/dist-packages/CompStats/tests/data.csv'
+
+
+:py:attr:`DATA` contains the information to compare six systems for a multiclass classification task. The next instruction loads the data into a dataframe.
+
+.. code-block:: python
+
+    >>> df = pd.read_csv(DATA)
+
+The first row of :py:attr:`df` is shown below. It can be observed that the first column contains the gold standard, identified with `y`, and the rest of the columns are the predictions performed by different systems.
+
+
+Performance Analysis
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Let us start with the performance analysis of the different systems. The performance metric used is the weighted average F1 score. This performance is coded in the variable :py:attr:`score` as observed in the next instruction.
+
+.. code-block:: python
+
+    >>> score = lambda y, hy: f1_score(y, hy, average='weighted')
+
+The next step is to compute the performance on the bootstrap samples; this is done with the function :py:func:`~CompStats.performance.performance`. The function has a few parameters; one is the :py:attr:`score`, which receives the metric used to measure the performance.
+
+.. code-block:: python
+
+    >>> perf = performance(df, score=score, num_samples=1000)
+
+:py:attr:`perf` is an instance of :py:class:`~CompStats.bootstrap.StatisticSamples`, the bootstrap samples can be seen on the property :py:attr:`calls`. The first five bootstrap samples of the performance of INGEOTEC are shown below. 
+
+.. code-block:: python
+
+    >>> perf.calls['INGEOTEC'][:5]
+    [0.37056471 0.38665852 0.36580968 0.39611708 0.39422416]
+
+The performance of the systems, along with their confidence intervals, can be seen using the next instruction.
+
+.. code-block:: python
+
+    >>> face_grid = plot_performance(perf)
 
 .. image:: performance.png
 
 
-Performance Comparison
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+It can be observed that the best system is INGEOTEC. Although the confidence intervals provide information that helps to assess the difference in the performance of the systems, in this case, the intervals intersect. Therefore, one needs another statistical tool to determine if the difference in performance is significant.
+
+Performance Comparison against the Winner
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: python
+    
+    >>> diff = difference(perf)
 
 .. code-block:: python
 
-    >>> from CompStats import performance, difference, plot_difference
-    >>> from CompStats.tests.test_performance import DATA
-    >>> from sklearn.metrics import f1_score
-    >>> import pandas as pd
-    >>> df = pd.read_csv(DATA)
-    >>> score = lambda y, hy: f1_score(y, hy, average='weighted')
-    >>> perf = performance(df, score=score)
-    >>> diff = difference(perf)
-    >>> ins = plot_difference(diff)
+    >>> diff.info
+    {'best': 'INGEOTEC'}
+
+.. code-block:: python
+
+    >>> face_grid_diff = plot_difference(diff)
 
 .. image:: difference.png
 
@@ -110,3 +172,13 @@ If you find CompStats useful for any academic/scientific purpose, we would appre
     keywords = {Bootstrap, Challenges, Performance}
     }
 
+
+API
+====================================
+
+.. toctree::
+   :maxdepth: 1
+
+   performance_api
+   measurements_api
+   bootstrap_api

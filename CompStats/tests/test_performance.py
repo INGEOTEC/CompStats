@@ -27,6 +27,7 @@ def test_performance():
     perf = performance(df, score=lambda y, hy: f1_score(y, hy, average='weighted'))
     assert 'BoW' in perf.calls
     assert 'y' not in perf.calls
+    assert perf.n_jobs == -1
     
 
 def test_plot_performance():

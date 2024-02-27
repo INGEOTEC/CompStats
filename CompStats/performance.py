@@ -24,10 +24,13 @@ from CompStats.measurements import CI
 def performance(data: pd.DataFrame,
                 gold: str='y',
                 score: Callable[[np.ndarray, np.ndarray], float]=accuracy_score,
+                num_samples: int=500,
+                n_jobs: int=-1,
                 statistic_samples: StatisticSamples=None) -> StatisticSamples:
     """Bootstrap samples of a performance score"""
     if statistic_samples is None:
-        statistic_samples = StatisticSamples(statistic=score)
+        statistic_samples = StatisticSamples(statistic=score, num_samples=num_samples,
+                                             n_jobs=n_jobs)
     columns = data.columns
     y = data[gold]
     for column in columns:

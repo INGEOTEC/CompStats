@@ -16,7 +16,7 @@ CompStats
 		:target: https://compstats.readthedocs.io/en/latest/?badge=latest
 
 
-CompStats
+Collaborative competitions have gained popularity in the scientific and technological fields. These competitions involve defining tasks, selecting evaluation scores, and devising result verification methods. In the standard scenario, participants receive a training set and are expected to provide a solution for a held-out dataset kept by organizers. An essential challenge for organizers arises when comparing algorithms' performance, assessing multiple participants, and ranking them. Statistical tools are often used for this purpose; however, traditional statistical methods often fail to capture decisive differences between systems' performance. :py:class:`CompStats` implements an evaluation methodology for statistically analyzing competition results and competition. :py:class:`CompStats` offers several advantages, including off-the-shell comparisons with correction mechanisms and the inclusion of confidence intervals. 
 
 Quickstart Guide
 ====================================
@@ -38,7 +38,7 @@ A more general approach to installing CompStats is through the use of the comman
 
 	  pip install CompStats
 
-Libraries
+Libraries used
 ^^^^^^^^^^^^^^^^^^^^^
 
 After installing :py:class:`CompStats`, we must import the necessary libraries for our analysis. :py:class:`CompStats` relies on several Python libraries for data analysis and scientific computing.
@@ -82,8 +82,14 @@ To illustrate the use of CompStats, we will use a dataset included in the CompSt
 
     >>> df = pd.read_csv(DATA)
 
-The first row of :py:attr:`df` is shown below. It can be observed that the first column contains the gold standard, identified with `y`, and the rest of the columns are the predictions performed by different systems.
+It can be observed that the first column contains the gold standard, identified with :py:attr:`y`, and the rest of the columns are the predictions performed by different systems.
 
+.. code-block:: python
+
+    >>> df.columns
+    Index(['y', 'BoW (Corpus)', 'BoW', 'INGEOTEC',
+           'BoW (Class Weight)', 'Dense', 'StackBoW'],
+          dtype='object')
 
 Performance Analysis
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -121,14 +127,20 @@ It can be observed that the best system is INGEOTEC. Although the confidence int
 Performance Comparison against the Winner
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+The difference in their performance compared to the best-performing system can be used to compare the algorithms analyzed. The function :py:func:`~CompStats.performance.difference` computes the difference as shown below.
+
 .. code-block:: python
     
     >>> diff = difference(perf)
+
+:py:attr:`diff` is an instance of :py:class:`~CompStats.bootstrap.StatisticSamples`; one can find the best system on the property :py:attr:`info`, as the following instruction shows.
 
 .. code-block:: python
 
     >>> diff.info
     {'best': 'INGEOTEC'}
+
+The difference in performance can be visualized with the following instruction.
 
 .. code-block:: python
 
@@ -136,19 +148,98 @@ Performance Comparison against the Winner
 
 .. image:: difference.png
 
+From the performance graphs, for this example, we can observe that the ranking is *INGEOTEC*, *BoW*, *StackBoW*, *BoW (Corpus)*, *Dense*, *Bow (Class Weight)*. Hence, in the last graph, we analyze the performance difference against the winner (INGEOTEC). From this graph, we can conclude that *BoW* and *StackBoW*, might perform similarly to INGEOTEC. As can be seen, *Dense* is practically on the border between being significant and not significant.
 
-The difference p-value can be estimated with the following instruction.
+Should we test the hypothesis of equality versus difference, considering that one system outperforms the other in the test? To address this question, we compare the performance of two systems, :math:`A` and :math:`B`, to determine whether :math:`A` is superior to :math:`B` in a larger data population, represented as :math:`\theta_A > \theta_B`. We can estimate the p-value associated with the hypothesis test :math:`H_0: \theta_A \le \theta_B` vs :math:`H_1: \theta_A > \theta_B` given the data, equivalently :math:`H_0: \theta_A< - \theta_B\le 0` vs :math:`H_1: \theta_A - \theta_B > 0`. The p-values for these differences can be estimated using the following instruction, comparing them against the winner (INGEOTEC) to determine the probability that :math:`a` (INGEOTEC) is better than :math:`b`.
 
+The :py:func:`~CompStats.measurements.difference_p_value` function estimates the p-value for each difference in comparison to the best system, as illustrated below.
 
 .. code-block:: python
 
-    >>> from CompStats.measurements import difference_p_value
     >>> p_values = difference_p_value(diff)
-    >>> p_values['BoW']
-    0.22
-    >>> p_values['StackBoW']
-    0.104
 
+For a given :math:`\alpha` level, p-values smaller than :math:`\alpha`  are significant, meaning the observed difference is unlikely to be due to chance. An :math:`\alpha` level of 0.05 is commonly used.
+
+.. code-block:: python
+
+    >>> p_values
+    {'BoW (Class Weight)': 0.001,
+     'Dense': 0.032,
+     'BoW (Corpus)': 0.006,
+     'StackBoW': 0.091,
+     'BoW': 0.265}
+
+Performance comparison between all models
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Similarly, the differences for each pair of variables between all models can be estimated using the function :py:func:`~CompStats.performance.all_differences`, as illustrated in the following instructions. This approach allows for a comprehensive analysis of how each model compares to the others, providing a statistical basis to understand the significance of performance variations among them. This method extends the comparative analysis, offering a detailed view of the competitive landscape of model performance.
+
+.. code-block:: python
+
+    >>> all_diff = all_differences(perf)
+
+Once again, we use the function :py:func:`~CompStats.measurements.difference_p_value` to estimate the p-value.
+
+.. code-block::  python
+
+    >>> p_values = difference_p_value(all_diff)
+
+And we can analyze from all pairs of systems individually which ones have significantly different performances by comparing their p-value with :math:`\alpha`. 
+
+.. code-block:: python
+
+    >>> p_values
+    {'INGEOTEC - BoW': 0.265,
+     'INGEOTEC - StackBoW': 0.091,
+     'INGEOTEC - BoW (Corpus)': 0.006,
+     'INGEOTEC - Dense': 0.032,
+     'INGEOTEC - BoW (Class Weight)': 0.001,
+     'BoW - StackBoW': 0.374,
+     'BoW - BoW (Corpus)': 0.099,
+     'BoW - Dense': 0.14,
+     'BoW - BoW (Class Weight)': 0.04,
+     'StackBoW - BoW (Corpus)': 0.11,
+     'StackBoW - Dense': 0.148,
+     'StackBoW - BoW (Class Weight)': 0.024,
+     'BoW (Corpus) - Dense': 0.451,
+     'BoW (Corpus) - BoW (Class Weight)': 0.204,
+     'Dense - BoW (Class Weight)': 0.38}
+
+When conducting numerous comparisons or hypothesis tests on a dataset, the risk of incurring Type I errors (incorrectly dismissing a valid null hypothesis) increases. This happens because more tests performed increase the probability of randomly identifying statistically significant outcomes. Implementing adjustments for multiple comparisons is critical for several reasons: (1) To manage the risk of Type I Error, (2) To prevent erroneous conclusions, and (3) To uphold the integrity of the research.
+
+The following code illustrates the effect of these methods for multiple comparison corrections. The function :py:func:`multipletests` makes the p-value correction by selecting the parameter :py:attr:`method`. In this example, the Bonferroni correction method is used.
+
+.. code-block:: python
+
+    >>> result = multipletests(list(p_values.values()), method='bonferroni')
+
+:py:attr:`result` is an array; next, we convert it back into a dictionary.
+
+.. code-block:: python
+
+    >>> p_valuesC = dict(zip(p_values.keys(),result[1]))
+
+And we can analyze from all pairs of systems simunstally which ones have significantly different performances by comparing their p-value with :math:`\alpha`.
+
+.. code-block:: python
+
+    >>> p_valuesC
+    {'INGEOTEC - BoW': 1.0,
+     'INGEOTEC - StackBoW': 1.0,
+     'INGEOTEC - BoW (Corpus)': 0.09,
+     'INGEOTEC - Dense': 0.48,
+     'INGEOTEC - BoW (Class Weight)': 0.015,
+     'BoW - StackBoW': 1.0,
+     'BoW - BoW (Corpus)': 1.0,
+     'BoW - Dense': 1.0,
+     'BoW - BoW (Class Weight)': 0.6,
+     'StackBoW - BoW (Corpus)': 1.0,
+     'StackBoW - Dense': 1.0,
+     'StackBoW - BoW (Class Weight)': 0.36,
+     'BoW (Corpus) - Dense': 1.0,
+     'BoW (Corpus) - BoW (Class Weight)': 1.0,
+     'Dense - BoW (Class Weight)': 1.0}
+  
 
 Citing
 ==========

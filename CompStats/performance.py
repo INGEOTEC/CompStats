@@ -18,7 +18,8 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 from CompStats.bootstrap import StatisticSamples
-from CompStats.measurements import CI
+from CompStats.utils import progress_bar
+from CompStats import measurements
 
 
 def performance(data: pd.DataFrame,
@@ -33,7 +34,7 @@ def performance(data: pd.DataFrame,
                                              n_jobs=n_jobs)
     columns = data.columns
     y = data[gold]
-    for column in columns:
+    for column in progress_bar(columns):
         if column == gold:
             continue
         statistic_samples(y, data[column], name=column)
@@ -82,10 +83,10 @@ def all_differences(statistic_samples: StatisticSamples, reverse: bool=True):
     return output
     
 
-def plot_performance(statistic_samples: StatisticSamples,
+def plot_performance(statistic_samples: StatisticSamples, CI: float=0.05,
                      var_name='Algorithm', value_name='Score',
                      capsize=0.2, linestyle='none', kind='point',
-                     sharex=False, CI=CI, **kwargs):
+                     sharex=False, **kwargs):
     """Plot the performance with the confidence intervals
     
     >>> from CompStats import performance, plot_performance
@@ -98,17 +99,23 @@ def plot_performance(statistic_samples: StatisticSamples,
     >>> ins = plot_performance(perf)
     """
 
-    df2 = pd.DataFrame(statistic_samples.calls).melt(var_name=var_name,
-                                                     value_name=value_name)
+    if isinstance(statistic_samples, StatisticSamples):
+        df2 = pd.DataFrame(statistic_samples.calls).melt(var_name=var_name,
+                                                         value_name=value_name)
+    else:
+        df2 = statistic_samples
+    if isinstance(CI, float):
+        ci = lambda x: measurements.CI(x, alpha=CI)
     f_grid = sns.catplot(df2, x=value_name, y=var_name,
                          capsize=capsize, linestyle=linestyle,
-                         kind=kind, errorbar=CI, sharex=sharex, **kwargs)
+                         kind=kind, errorbar=ci, sharex=sharex, **kwargs)
     return f_grid
 
 
-def plot_difference(statistic_samples: StatisticSamples,
+def plot_difference(statistic_samples: StatisticSamples, CI: float=0.05,
                     var_name='Comparison', value_name='Difference',
                     set_refline=True, set_title=True,
+                    hue='Significant', palette=None,
                     **kwargs):
     """Plot the difference in performance with its confidence intervals
     
@@ -122,8 +129,23 @@ def plot_difference(statistic_samples: StatisticSamples,
     >>> diff = difference(perf)
     >>> ins = plot_difference(diff)
     """
-    f_grid = plot_performance(statistic_samples, var_name=var_name,
-                              value_name=value_name, **kwargs)
+
+    df2 = pd.DataFrame(statistic_samples.calls).melt(var_name=var_name,
+                                                     value_name=value_name)
+    if hue is not None:
+        df2[hue] = True
+    at_least_one = False
+    for key, (left, _) in measurements.CI(statistic_samples, alpha=CI).items():
+        if left < 0:
+            rows = df2[var_name] == key
+            df2.loc[rows, hue] = False
+            at_least_one = True
+    if at_least_one and palette is None:
+        palette = ['r', 'b']
+    f_grid = plot_performance(df2, var_name=var_name,
+                              value_name=value_name, hue=hue,
+                              palette=palette,
+                              **kwargs)
     if set_refline:
         f_grid.refline(x=0)
     if set_title:

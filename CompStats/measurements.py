@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 from CompStats.bootstrap import StatisticSamples
 
+
 def CI(samples: np.ndarray, alpha=0.05):
     """Compute the Confidence Interval of a statistic using bootstrap.
     :param samples: Bootstrap samples
@@ -32,6 +33,8 @@ def CI(samples: np.ndarray, alpha=0.05):
     >>> CI(samples)
     (0.6, 1.0)
     """
+    if isinstance(samples, StatisticSamples):
+        return {k: CI(v) for k, v in samples.calls.items()}
     alpha = alpha / 2
     return (np.percentile(samples, alpha * 100, axis=0),
             np.percentile(samples, (1 - alpha) * 100, axis=0))

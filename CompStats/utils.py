@@ -11,7 +11,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-__version__ = '0.0.6'
-from CompStats.bootstrap import StatisticSamples
-from CompStats.measurements import CI, difference_p_value
-from CompStats.performance import performance, difference, all_differences, plot_performance, plot_difference
+try:
+    USE_TQDM = True
+    from tqdm import tqdm
+except ImportError:
+    USE_TQDM = False
+
+
+def progress_bar(arg, **kwargs):
+    """Progress bar using tqdm"""
+    if USE_TQDM:
+        return tqdm(arg, **kwargs)
+    return arg

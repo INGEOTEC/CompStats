@@ -23,6 +23,7 @@ DATA = os.path.join(os.path.dirname(__file__), 'data.csv')
 
 
 def test_performance():
+    """Test performance"""
     df = pd.read_csv(DATA)
     perf = performance(df, score=lambda y, hy: f1_score(y, hy, average='weighted'))
     assert 'BoW' in perf.calls
@@ -31,8 +32,10 @@ def test_performance():
     
 
 def test_plot_performance():
+    """Test plot_performance"""
     df = pd.read_csv(DATA)
-    perf = performance(df, score=lambda y, hy: f1_score(y, hy, average='weighted'))
+    perf = performance(df, n_jobs=1,
+                       score=lambda y, hy: f1_score(y, hy, average='weighted'))
     ins = plot_performance(perf)
     assert isinstance(ins, sns.FacetGrid)
 

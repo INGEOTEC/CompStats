@@ -12,6 +12,15 @@ CompStats
 .. image:: https://badge.fury.io/py/CompStats.svg
 		:target: https://badge.fury.io/py/CompStats
 
+.. image:: https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/compstats-feedstock?branchName=main
+	    :target: https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=20297&branchName=main
+
+.. image:: https://img.shields.io/conda/vn/conda-forge/compstats.svg
+		:target: https://anaconda.org/conda-forge/compstats
+
+.. image:: https://img.shields.io/conda/pn/conda-forge/compstats.svg
+		:target: https://anaconda.org/conda-forge/compstats
+
 .. image:: https://readthedocs.org/projects/compstats/badge/?version=latest
 		:target: https://compstats.readthedocs.io/en/latest/?badge=latest
 

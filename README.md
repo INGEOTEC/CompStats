@@ -1,2 +1,0 @@
-# CompStats
-Competition Statistics

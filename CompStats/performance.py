@@ -100,7 +100,7 @@ def plot_performance(statistic_samples: StatisticSamples, CI: float=0.05,
     """
 
     if isinstance(statistic_samples, StatisticSamples):
-        lista_ordenada = sorted(perf.calls.items(), key=lambda x: np.mean(x[1]), reverse=True)
+        lista_ordenada = sorted(statistic_samples.calls.items(), key=lambda x: np.mean(x[1]), reverse=True)
         diccionario_ordenado = {nombre: muestras for nombre, muestras in lista_ordenada}
         df2 = pd.DataFrame(diccionario_ordenado).melt(var_name=var_name,
                                                          value_name=value_name)

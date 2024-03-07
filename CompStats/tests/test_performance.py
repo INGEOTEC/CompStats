@@ -16,7 +16,7 @@ import pandas as pd
 import os
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import seaborn as sns
-from CompStats.performance import performance, plot_performance, difference, plot_difference, all_differences
+from CompStats.performance import performance, plot_performance, difference, plot_difference, all_differences, performance_multiple_metrics
 
 
 DATA = os.path.join(os.path.dirname(__file__), 'data.csv')
@@ -67,7 +67,7 @@ def test_performance_multiple_metrics():
         {"func": f1_score, "args": {"average": "macro"}},
         {"func": precision_score, "args": {"average": "macro"}},
         {"func": recall_score, "args": {"average": "macro"}}
-    ]
+        ]
     perf = performance_multiple_metrics(df, "y", metrics)
     assert 'accuracy_score_' in perf
     assert 'y' not in perf['accuracy_score_']

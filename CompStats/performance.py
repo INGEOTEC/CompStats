@@ -100,7 +100,9 @@ def plot_performance(statistic_samples: StatisticSamples, CI: float=0.05,
     """
 
     if isinstance(statistic_samples, StatisticSamples):
-        df2 = pd.DataFrame(statistic_samples.calls).melt(var_name=var_name,
+        lista_ordenada = sorted(perf.calls.items(), key=lambda x: np.mean(x[1]), reverse=True)
+        diccionario_ordenado = {nombre: muestras for nombre, muestras in lista_ordenada}
+        df2 = pd.DataFrame(diccionario_ordenado).melt(var_name=var_name,
                                                          value_name=value_name)
     else:
         df2 = statistic_samples
@@ -152,3 +154,27 @@ def plot_difference(statistic_samples: StatisticSamples, CI: float=0.05,
         best = statistic_samples.info['best']
         f_grid.facet_axis(0, 0).set_title(f'Best: {best}')
     return f_grid
+
+from typing import List, Callable
+import pandas as pd
+from sklearn.metrics import accuracy_score, precision_score, recall_score
+# Asumiendo que StatisticSamples es importado correctamente desde bootstrap.py
+
+def performance_multiple_metrics(data: pd.DataFrame, gold: str, scores: List[Callable],
+                                 num_samples: int = 500, n_jobs: int = -1):
+    # Diccionario para almacenar los resultados de cada métrica
+    results = {}
+    for score in scores:
+        # Calcula el rendimiento utilizando la métrica actual
+        statistic_samples = StatisticSamples(statistic=score, num_samples=num_samples, n_jobs=n_jobs)
+        results[score.__name__] = {}
+        for column in data.columns:
+            if column == gold:
+                continue
+            results[score.__name__][column] = statistic_samples(data[gold], data[column])
+    return results
+
+# Ejemplo de cómo llamar a esta función
+# df = pd.read_csv("../../../python_autoestudio/test_CompStats/PARMEX_2022.csv")
+# metrics = [accuracy_score, precision_score, recall_score]  # Define las métricas que te interesan
+# results = performance_multiple_metrics(df, "y", metrics)

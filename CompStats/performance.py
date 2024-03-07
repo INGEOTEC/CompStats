@@ -13,7 +13,7 @@
 # limitations under the License.
 from sklearn.metrics import accuracy_score
 from sklearn.base import clone
-from typing import Callable
+from typing import List, Callable
 import pandas as pd
 import numpy as np
 import seaborn as sns
@@ -155,26 +155,20 @@ def plot_difference(statistic_samples: StatisticSamples, CI: float=0.05,
         f_grid.facet_axis(0, 0).set_title(f'Best: {best}')
     return f_grid
 
-from typing import List, Callable
-import pandas as pd
-from sklearn.metrics import accuracy_score, precision_score, recall_score
-# Asumiendo que StatisticSamples es importado correctamente desde bootstrap.py
-
-def performance_multiple_metrics(data: pd.DataFrame, gold: str, scores: List[Callable],
+def performance_multiple_metrics(data: pd.DataFrame, gold: str, 
+                                 scores: List[dict],
                                  num_samples: int = 500, n_jobs: int = -1):
-    # Diccionario para almacenar los resultados de cada métrica
     results = {}
-    for score in scores:
-        # Calcula el rendimiento utilizando la métrica actual
-        statistic_samples = StatisticSamples(statistic=score, num_samples=num_samples, n_jobs=n_jobs)
-        results[score.__name__] = {}
+    for score_info in scores:
+        score_func = score_info["func"]
+        score_args = score_info.get("args", {})
+        # Prepara el StatisticSamples con los argumentos específicos para esta métrica
+        statistic_samples = StatisticSamples(statistic=lambda y_true, y_pred: score_func(y_true, y_pred, **score_args), 
+                                             num_samples=num_samples, n_jobs=n_jobs)
+        metric_name = score_func.__name__ + "_" + "_".join([f"{key}={value}" for key, value in score_args.items()])
+        results[metric_name] = {}
         for column in data.columns:
             if column == gold:
                 continue
-            results[score.__name__][column] = statistic_samples(data[gold], data[column])
+            results[metric_name][column] = statistic_samples(data[gold], data[column])
     return results
-
-# Ejemplo de cómo llamar a esta función
-# df = pd.read_csv("../../../python_autoestudio/test_CompStats/PARMEX_2022.csv")
-# metrics = [accuracy_score, precision_score, recall_score]  # Define las métricas que te interesan
-# results = performance_multiple_metrics(df, "y", metrics)

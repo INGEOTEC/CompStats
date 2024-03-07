@@ -172,3 +172,33 @@ def performance_multiple_metrics(data: pd.DataFrame, gold: str,
                 continue
             results[metric_name][column] = statistic_samples(data[gold], data[column])
     return results
+
+def plot_performance2(results, CI: float=0.05,
+                     var_name='Algorithm', value_name='Score',
+                     capsize=0.2, linestyle='none', kind='point',
+                     sharex=False, **kwargs):
+    """Plot the performance with the confidence intervals
+    
+    >>> from CompStats import performance, plot_performance
+    >>> from CompStats.tests.test_performance import DATA
+    >>> from sklearn.metrics import f1_score
+    >>> import pandas as pd
+    >>> df = pd.read_csv(DATA)
+    >>> score = lambda y, hy: f1_score(y, hy, average='weighted')
+    >>> perf = performance(df, score=score)
+    >>> ins = plot_performance(perf)
+    """
+
+    if isinstance(results, dict):
+        lista_ordenada = sorted(results.items(), key=lambda x: np.mean(x[1]), reverse=True)
+        diccionario_ordenado = {nombre: muestras for nombre, muestras in lista_ordenada}
+        df2 = pd.DataFrame(diccionario_ordenado).melt(var_name=var_name,
+                                                         value_name=value_name)
+    else:
+        df2 = statistic_samples
+    if isinstance(CI, float):
+        ci = lambda x: measurements.CI(x, alpha=CI)
+    f_grid = sns.catplot(df2, x=value_name, y=var_name,
+                         capsize=capsize, linestyle=linestyle,
+                         kind=kind, errorbar=ci, sharex=sharex, **kwargs)
+    return f_grid

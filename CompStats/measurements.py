@@ -34,10 +34,27 @@ def CI(samples: np.ndarray, alpha=0.05):
     (0.6, 1.0)
     """
     if isinstance(samples, StatisticSamples):
-        return {k: CI(v) for k, v in samples.calls.items()}
+        return {k: CI(v, alpha=alpha) for k, v in samples.calls.items()}
     alpha = alpha / 2
     return (np.percentile(samples, alpha * 100, axis=0),
             np.percentile(samples, (1 - alpha) * 100, axis=0))
+
+
+def SE(samples: np.ndarray):
+    """Compute the Standard Error of a statistic using bootstrap.
+    
+    >>> from CompStats import StatisticSamples, SE
+    >>> from sklearn.metrics import accuracy_score
+    >>> import numpy as np    
+    >>> labels = np.r_[[0, 0, 0, 0, 0, 1, 1, 1, 1, 1]]
+    >>> pred   = np.r_[[0, 0, 1, 0, 0, 1, 1, 1, 0, 1]]
+    >>> bootstrap = StatisticSamples(statistic=accuracy_score)
+    >>> samples = bootstrap(labels, pred)
+    >>> SE(samples)
+    """
+    if isinstance(samples, StatisticSamples):
+        return {k: SE(v) for k, v in samples.calls.items()}
+    return np.std(samples, axis=0)
 
     
 def difference_p_value(statistic_samples: StatisticSamples):

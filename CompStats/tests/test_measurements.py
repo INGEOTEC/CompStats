@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 import os
 from sklearn.metrics import f1_score
-from CompStats.measurements import CI, difference_p_value
+from CompStats.measurements import CI, SE, difference_p_value
 from CompStats.bootstrap import StatisticSamples
 from CompStats.performance import performance, difference
 
@@ -39,3 +39,14 @@ def test_difference_p_value():
     res = difference(perf)
     p_value = difference_p_value(res)
     assert p_value['BoW'] > 0.2
+
+
+def test_SE():
+    """Test confidence interval"""
+
+    statistic = StatisticSamples(num_samples=26, n_jobs=-1)
+    pop = np.r_[3, 4, 5, 2, 4]
+    samples = statistic(pop, name='test')
+    se = SE(samples)
+    se2 = SE(statistic)
+    assert se2['test'] == se

@@ -16,7 +16,7 @@ import pandas as pd
 import os
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import seaborn as sns
-from CompStats.performance import performance, plot_performance, difference, plot_difference, all_differences, performance_multiple_metrics
+from CompStats.performance import performance, plot_performance, difference, plot_difference, all_differences, performance_multiple_metrics, plot_performance2, plot_performance_multiple, difference_multiple
 
 
 DATA = os.path.join(os.path.dirname(__file__), 'data.csv')

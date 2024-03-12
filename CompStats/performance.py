@@ -13,13 +13,14 @@
 # limitations under the License.
 from sklearn.metrics import accuracy_score
 from sklearn.base import clone
-from typing import Callable
+from typing import List, Callable
 import pandas as pd
 import numpy as np
 import seaborn as sns
 from CompStats.bootstrap import StatisticSamples
 from CompStats.utils import progress_bar
 from CompStats import measurements
+import matplotlib.pyplot as plt
 
 
 def performance(data: pd.DataFrame,
@@ -100,7 +101,9 @@ def plot_performance(statistic_samples: StatisticSamples, CI: float=0.05,
     """
 
     if isinstance(statistic_samples, StatisticSamples):
-        df2 = pd.DataFrame(statistic_samples.calls).melt(var_name=var_name,
+        lista_ordenada = sorted(statistic_samples.calls.items(), key=lambda x: np.mean(x[1]), reverse=True)
+        diccionario_ordenado = {nombre: muestras for nombre, muestras in lista_ordenada}
+        df2 = pd.DataFrame(diccionario_ordenado).melt(var_name=var_name,
                                                          value_name=value_name)
     else:
         df2 = statistic_samples
@@ -152,3 +155,98 @@ def plot_difference(statistic_samples: StatisticSamples, CI: float=0.05,
         best = statistic_samples.info['best']
         f_grid.facet_axis(0, 0).set_title(f'Best: {best}')
     return f_grid
+
+def performance_multiple_metrics(data: pd.DataFrame, gold: str, 
+                                 scores: List[dict],
+                                 num_samples: int = 500, n_jobs: int = -1):
+    results = {}
+    statistic_samples = StatisticSamples(num_samples=num_samples, n_jobs=n_jobs)
+    for score_info in scores:
+        score_func = score_info["func"]
+        score_args = score_info.get("args", {})
+        # Prepara el StatisticSamples con los argumentos específicos para esta métrica
+        statistic_samples.statistic = statistic = lambda y_true, y_pred: score_func(y_true, y_pred, **score_args)
+        metric_name = score_func.__name__ + "_" + "_".join([f"{key}={value}" for key, value in score_args.items()])
+        results[metric_name] = {}
+        for column in data.columns:
+            if column == gold:
+                continue
+            results[metric_name][column] = statistic_samples(data[gold], data[column])
+    return results
+
+def plot_performance2(results: dict, CI: float=0.05,
+                     var_name='Algorithm', value_name='Score',
+                     capsize=0.2, linestyle='none', kind='point',
+                     sharex=False, **kwargs):
+    """Plot the performance with the confidence intervals
+    
+    >>> from CompStats import performance, plot_performance
+    >>> from CompStats.tests.test_performance import DATA
+    >>> from sklearn.metrics import f1_score
+    >>> import pandas as pd
+    >>> df = pd.read_csv(DATA)
+    >>> score = lambda y, hy: f1_score(y, hy, average='weighted')
+    >>> perf = performance(df, score=score)
+    >>> ins = plot_performance(perf)
+    """
+
+    if isinstance(results, dict):
+        lista_ordenada = sorted(results.items(), key=lambda x: np.mean(x[1]), reverse=True)
+        diccionario_ordenado = {nombre: muestras for nombre, muestras in lista_ordenada}
+        df2 = pd.DataFrame(diccionario_ordenado).melt(var_name=var_name,
+                                                         value_name=value_name)
+    else:
+        df2 = statistic_samples
+    if isinstance(CI, float):
+        ci = lambda x: measurements.CI(x, alpha=CI)
+    f_grid = sns.catplot(df2, x=value_name, y=var_name,
+                         capsize=capsize, linestyle=linestyle,
+                         kind=kind, errorbar=ci, sharex=sharex, **kwargs)
+    return f_grid
+
+def plot_performance_multiple(results_dict, CI=0.05, capsize=0.2, linestyle='none', kind='point', **kwargs):
+    """
+    Create multiple performance plots, one for each performance metric in the results dictionary.
+    
+    :param results_dict: A dictionary where keys are metric names and values are dictionaries with algorithm names as keys and lists of scores as values.
+    :param CI: Confidence interval level for error bars.
+    :param capsize: Cap size for error bars.
+    :param linestyle: Line style for the plot.
+    :param kind: Type of the plot, e.g., 'point', 'bar'.
+    :param kwargs: Additional keyword arguments for seaborn.catplot.
+    """   
+    for metric_name, metric_results in results_dict.items():
+        # Usa catplot para crear y mostrar el gráfico
+        g = plot_performance2(metric_results, CI=CI)
+        g.figure.suptitle(metric_name)  
+        plt.show()
+ 
+
+def difference_multiple(results_dict):
+    """
+    Calculate performance differences for multiple metrics, returning the vector of differences
+    to the best performing algorithm for each metric.
+    
+    :param results_dict: A dictionary where keys are metric names and values are dictionaries.
+                         Each sub-dictionary has algorithm names as keys and lists of performance scores as values.
+    :return: A dictionary with the same structure, but where the scores for each algorithm are replaced
+             by their differences to the scores of the best performing algorithm for that metric.
+    """
+    differences_dict = {}
+    for metric, results in results_dict.items():
+        # Convert scores to arrays for vectorized operations
+        scores_arrays = {alg: np.array(scores) for alg, scores in results.items()}
+        
+        # Identify the best performing algorithm (highest mean score)
+        best_alg = max(scores_arrays, key=lambda alg: np.mean(scores_arrays[alg]))
+        
+        # Calculate differences to the best performing algorithm
+        best_scores = scores_arrays[best_alg]
+        differences = {alg: best_scores - scores for alg, scores in scores_arrays.items()}
+        
+        # Store the differences under the current metric
+        differences_dict[metric] = differences
+
+    return differences_dict
+
+

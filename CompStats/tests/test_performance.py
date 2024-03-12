@@ -14,9 +14,9 @@
 import numpy as np
 import pandas as pd
 import os
-from sklearn.metrics import f1_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import seaborn as sns
-from CompStats.performance import performance, plot_performance, difference, plot_difference, all_differences
+from CompStats.performance import performance, plot_performance, difference, plot_difference, all_differences, performance_multiple_metrics, plot_performance2, plot_performance_multiple, difference_multiple
 
 
 DATA = os.path.join(os.path.dirname(__file__), 'data.csv')
@@ -57,3 +57,19 @@ def test_all_differences():
     perf = performance(df, score=lambda y, hy: f1_score(y, hy, average='weighted'))
     res = all_differences(perf)
     assert 'INGEOTEC - BoW' in res.calls
+
+
+def test_performance_multiple_metrics():
+    """Test performance_multiple_metrics"""
+    df = pd.read_csv(DATA)
+    metrics = [
+        {"func": accuracy_score},
+        {"func": f1_score, "args": {"average": "macro"}},
+        {"func": precision_score, "args": {"average": "macro"}},
+        {"func": recall_score, "args": {"average": "macro"}}
+        ]
+    perf = performance_multiple_metrics(df, "y", metrics)
+    assert 'accuracy_score_' in perf
+    assert 'y' not in perf['accuracy_score_']
+    assert 'INGEOTEC' in perf['accuracy_score_']
+

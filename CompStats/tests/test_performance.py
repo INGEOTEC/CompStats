@@ -16,7 +16,7 @@ import pandas as pd
 import os
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import seaborn as sns
-from CompStats.performance import performance, plot_performance, difference, plot_difference, all_differences, performance_multiple_metrics, plot_performance2, plot_performance_multiple, difference_multiple
+from CompStats.performance import performance, plot_performance, difference, plot_difference, all_differences, performance_multiple_metrics, plot_performance2, plot_performance_multiple, difference_multiple, plot_scatter_matrix
 
 
 DATA = os.path.join(os.path.dirname(__file__), 'data.csv')
@@ -73,3 +73,19 @@ def test_performance_multiple_metrics():
     assert 'y' not in perf['accuracy_score_']
     assert 'INGEOTEC' in perf['accuracy_score_']
 
+
+def test_difference_multiple():
+    """Test difference_multiple"""
+    df = pd.read_csv(DATA)
+    metrics = [
+        {"func": accuracy_score},
+        {"func": f1_score, "args": {"average": "macro"}},
+        {"func": precision_score, "args": {"average": "macro"}},
+        {"func": recall_score, "args": {"average": "macro"}}
+        ]
+    perf = performance_multiple_metrics(df, "y", metrics)
+    diff = difference_multiple(perf)
+    assert diff['accuracy_score_']['best'] == 'BoW'
+    assert 'BoW' not in diff['accuracy_score_']['diff'].keys()
+    # ins = plot_performance_multiple(diff)
+    # assert isinstance(ins, sns.FacetGrid)

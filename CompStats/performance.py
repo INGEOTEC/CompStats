@@ -195,8 +195,7 @@ def plot_performance2(results: dict, CI: float=0.05,
         diccionario_ordenado = {nombre: muestras for nombre, muestras in lista_ordenada}
         df2 = pd.DataFrame(diccionario_ordenado).melt(var_name=var_name,
                                                          value_name=value_name)
-    else:
-        df2 = statistic_samples
+
     if isinstance(CI, float):
         ci = lambda x: measurements.CI(x, alpha=CI)
     f_grid = sns.catplot(df2, x=value_name, y=var_name,
@@ -217,20 +216,22 @@ def plot_performance_multiple(results_dict, CI=0.05, capsize=0.2, linestyle='non
     """   
     for metric_name, metric_results in results_dict.items():
         # Usa catplot para crear y mostrar el gráfico
-        g = plot_performance2(metric_results, CI=CI)
+        g = plot_performance2(metric_results['diff'], CI=CI)
         g.figure.suptitle(metric_name)  
-        plt.show()
+        # plt.show()
  
 
-def difference_multiple(results_dict):
+def difference_multiple(results_dict, CI: float=0.05,):
     """
-    Calculate performance differences for multiple metrics, returning the vector of differences
-    to the best performing algorithm for each metric.
+    Calculate performance differences for multiple metrics, excluding the comparison of the best
+    with itself. Additionally, identify the best performing algorithm for each metric.
     
     :param results_dict: A dictionary where keys are metric names and values are dictionaries.
                          Each sub-dictionary has algorithm names as keys and lists of performance scores as values.
     :return: A dictionary with the same structure, but where the scores for each algorithm are replaced
-             by their differences to the scores of the best performing algorithm for that metric.
+             by their differences to the scores of the best performing algorithm for that metric,
+             excluding the best performing algorithm comparing with itself.
+             Also includes the best algorithm name for each metric.
     """
     differences_dict = {}
     for metric, results in results_dict.items():
@@ -239,14 +240,123 @@ def difference_multiple(results_dict):
         
         # Identify the best performing algorithm (highest mean score)
         best_alg = max(scores_arrays, key=lambda alg: np.mean(scores_arrays[alg]))
-        
-        # Calculate differences to the best performing algorithm
         best_scores = scores_arrays[best_alg]
-        differences = {alg: best_scores - scores for alg, scores in scores_arrays.items()}
         
-        # Store the differences under the current metric
-        differences_dict[metric] = differences
+        # Calculate differences to the best performing algorithm, excluding the best from comparing with itself
+        differences = {alg: best_scores - scores for alg, scores in scores_arrays.items() if alg != best_alg}
+
+        # Calculate Confidence interval for differences to the bet performing algorithm.
+        CI_differences = {alg: measurements.CI(np.array(scores), alpha=CI) for alg, scores in differences.items()}
+
+
+        # Store the differences and the best algorithm under the current metric
+        differences_dict[metric] = {'best': best_alg, 'diff': differences,'CI':CI_differences}
 
     return differences_dict
+
+
+def plot_difference2(diff_dictionary: dict, 
+                    var_name='Comparison', value_name='Difference',
+                    set_refline=True, set_title=True,
+                    hue='Significant', palette=None,
+                    **kwargs):
+    """Plot the difference in performance with its confidence intervals
+    
+    >>> from CompStats import performance, difference, plot_difference
+    >>> from CompStats.tests.test_performance import DATA
+    >>> from sklearn.metrics import f1_score
+    >>> import pandas as pd
+    >>> df = pd.read_csv(DATA)
+    >>> score = lambda y, hy: f1_score(y, hy, average='weighted')
+    >>> perf = performance(df, score=score)
+    >>> diff = difference(perf)
+    >>> ins = plot_difference(diff)
+    """
+
+    df2 = pd.DataFrame(diff_dictionary['diff']).melt(var_name=var_name,
+                                                     value_name=value_name)
+    if hue is not None:
+        df2[hue] = True
+    at_least_one = False
+    for key, (left, _) in diff_dictionary['CI'].items():
+        if left < 0:
+            rows = df2[var_name] == key
+            df2.loc[rows, hue] = False
+            at_least_one = True
+    if at_least_one and palette is None:
+        palette = ['r', 'b']
+    f_grid = plot_performance(df2, var_name=var_name,
+                              value_name=value_name, hue=hue,
+                              palette=palette,
+                              **kwargs)
+    if set_refline:
+        f_grid.refline(x=0)
+    if set_title:
+        best = diff_dictionary['best']
+        f_grid.facet_axis(0, 0).set_title(f'Best: {best}')
+    return f_grid
+
+
+
+def plot_difference_multiple(results_dict, CI=0.05, capsize=0.2, linestyle='none', kind='point', **kwargs):
+    """
+    Create multiple performance plots, one for each performance metric in the results dictionary.
+    
+    :param results_dict: A dictionary where keys are metric names and values are dictionaries with algorithm names as keys and lists of scores as values.
+    :param CI: Confidence interval level for error bars.
+    :param capsize: Cap size for error bars.
+    :param linestyle: Line style for the plot.
+    :param kind: Type of the plot, e.g., 'point', 'bar'.
+    :param kwargs: Additional keyword arguments for seaborn.catplot.
+    """   
+    for metric_name, metric_results in results_dict.items():
+        # Usa catplot para crear y mostrar el gráfico
+        g = plot_difference2(metric_results)
+        g.figure.suptitle(metric_name)  
+        # plt.show()
+ 
+
+
+def plot_difference_scatter_multiple(results_dict,algorithm: str):
+    dict = {}
+    for metric_name, metric_results in results_dict.items():
+        # Usa catplot para crear y mostrar el gráfico
+        g = plot_difference2(metric_results)
+        g.figure.suptitle(metric_name)  
+        # plt.show()
+
+
+
+def plot_scatter_matrix(perf,alg=None):
+    """
+    Generate a scatter plot matrix comparing the performance of the same algorithm
+    across different metrics contained in the 'perf' dictionary.
+    
+    :param perf: A dictionary where keys are metric names and values are dictionaries with algorithm names as keys
+                 and lists of performance scores as values.
+    """
+    # Convertir 'perf' en un DataFrame de pandas para facilitar la manipulación
+    df_long = pd.DataFrame([
+        {"Metric": metric, "Algorithm": alg, "Score": score, "Indice": i}
+        for metric, alg_scores in perf.items()
+        for alg, scores in alg_scores.items()
+        for i, (score)  in enumerate(scores)
+        ])
+    
+    if alg is not None:
+        df_long = df_long[df_long['Algorithm'] == alg]
+
+        # Crear un DataFrame 'wide' para facilitar la creación de gráficos de dispersión
+        df_wide = df_long.pivot(index='Indice',columns='Metric',values='Score')
+        
+        # Generar la matriz de gráficos de dispersión
+        sns.pairplot(df_wide, diag_kind='kde', corner=True)
+        plt.suptitle(alg, y=1.02)
+    else:
+        df_wide = df_long.pivot(index=['Algorithm','Indice'],columns='Metric',values='Score')
+        df_wide = df_wide.reset_index(level=[0])
+        sns.pairplot(df_wide, diag_kind='kde',hue="Algorithm", corner=True)
+        plt.suptitle('Scatter Plot Matrix of Algorithms Performance Across Different Metrics', y=1.02)
+    plt.show()
 
 

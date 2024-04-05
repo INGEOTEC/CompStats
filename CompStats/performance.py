@@ -21,6 +21,7 @@ from CompStats.bootstrap import StatisticSamples
 from CompStats.utils import progress_bar
 from CompStats import measurements
 import matplotlib.pyplot as plt
+from statsmodels.stats.multitest import multipletests
 
 
 def performance(data: pd.DataFrame,
@@ -234,10 +235,13 @@ def difference_multiple(results_dict, CI: float=0.05,):
              Also includes the best algorithm name for each metric.
     """
     differences_dict = {}
+    alpha = CI
+    paso = results_dict[list(results_dict)[0]]
+    m = len(paso)
+    n, = paso[list(paso)[0]].shape
     for metric, results in results_dict.items():
         # Convert scores to arrays for vectorized operations
         scores_arrays = {alg: np.array(scores) for alg, scores in results.items()}
-        
         # Identify the best performing algorithm (highest mean score)
         best_alg = max(scores_arrays, key=lambda alg: np.mean(scores_arrays[alg]))
         best_scores = scores_arrays[best_alg]
@@ -247,10 +251,16 @@ def difference_multiple(results_dict, CI: float=0.05,):
 
         # Calculate Confidence interval for differences to the bet performing algorithm.
         CI_differences = {alg: measurements.CI(np.array(scores), alpha=CI) for alg, scores in differences.items()}
+        p_value_differences = {alg: measurements.difference_p_value(np.array(scores)) for alg, scores in differences.items()}
 
 
         # Store the differences and the best algorithm under the current metric
-        differences_dict[metric] = {'best': best_alg, 'diff': differences,'CI':CI_differences}
+        differences_dict[metric] = {'best': best_alg, 'diff': differences,'CI':CI_differences,
+                                     'p_value': p_value_differences, 'm':m, 'n':n,
+                                    'none': sum(valor > alpha for valor in p_value_differences.values()),
+                                    'bonferroni': sum(multipletests(list(p_value_differences.values()), method='bonferroni')[1] > alpha), 
+                                    'holm': sum(multipletests(list(p_value_differences.values()), method='holm')[1] > alpha),
+                                    'HB': sum(multipletests(list(p_value_differences.values()), method='fdr_bh')[1] > alpha) }
 
     return differences_dict
 
@@ -327,7 +337,7 @@ def plot_difference_scatter_multiple(results_dict,algorithm: str):
 
 
 
-def plot_scatter_matrix(perf,alg=None):
+def plot_scatter_matrix(perf):
     """
     Generate a scatter plot matrix comparing the performance of the same algorithm
     across different metrics contained in the 'perf' dictionary.
@@ -342,21 +352,53 @@ def plot_scatter_matrix(perf,alg=None):
         for alg, scores in alg_scores.items()
         for i, (score)  in enumerate(scores)
         ])
-    
-    if alg is not None:
-        df_long = df_long[df_long['Algorithm'] == alg]
-
-        # Crear un DataFrame 'wide' para facilitar la creación de gráficos de dispersión
-        df_wide = df_long.pivot(index='Indice',columns='Metric',values='Score')
-        
-        # Generar la matriz de gráficos de dispersión
-        sns.pairplot(df_wide, diag_kind='kde', corner=True)
-        plt.suptitle(alg, y=1.02)
-    else:
-        df_wide = df_long.pivot(index=['Algorithm','Indice'],columns='Metric',values='Score')
-        df_wide = df_wide.reset_index(level=[0])
-        sns.pairplot(df_wide, diag_kind='kde',hue="Algorithm", corner=True)
-        plt.suptitle('Scatter Plot Matrix of Algorithms Performance Across Different Metrics', y=1.02)
+    df_wide = df_long.pivot(index=['Algorithm','Indice'],columns='Metric',values='Score')
+    df_wide = df_wide.reset_index(level=[0])
+    sns.pairplot(df_wide, diag_kind='kde',hue="Algorithm", corner=True)
+    plt.suptitle('Scatter Plot Matrix of Algorithms Performance Across Different Metrics', y=1.02)
     plt.show()
 
+
+
+def unique_pairs_differences(results_dict, alpha: float=0.05):
+    """
+    Calculate performance differences for unique pairs of algorithms for multiple metrics.
+    Also, calculates the confidence interval for the differences.
+    
+    :param results_dict: A dictionary where keys are metric names and values are dictionaries.
+                         Each sub-dictionary has algorithm names as keys and lists of performance scores as values.
+    :return: A dictionary where each metric name maps to another dictionary.
+             This dictionary contains keys for unique pairs of algorithms and their performance differences,
+             including the confidence interval for these differences.
+    """
+    differences_dict = {}
+    for metric, results in results_dict.items():
+        # Convert scores to arrays for vectorized operations
+        scores_arrays = {alg: np.array(scores) for alg, scores in results.items()}
+        
+        differences = {}
+        p_value_differences = {}
+        
+        algorithms = list(scores_arrays.keys())
+        # Calculate differences for unique pairs of algorithms
+        for i, alg_a in enumerate(algorithms):
+            for alg_b in algorithms[i+1:]:  # Start from the next algorithm to avoid duplicate comparisons
+                # Calculate the difference between alg_a and alg_b
+                diff = scores_arrays[alg_a] - scores_arrays[alg_b]
+                differences[f"{alg_a} vs {alg_b}"] = diff
+                
+                # Placeholder for confidence interval calculation
+                # Replace the string with an actual call to your CI calculation function
+                p_value_differences[f"{alg_a} vs {alg_b}"] = measurements.difference_p_value(diff)
+                # For example:
+                # CI_differences[f"{alg_a} vs {alg_b}"] = measurements.CI(diff, alpha=CI)
+                
+        # Store the differences under the current metric
+        differences_dict[metric] = {'diff': differences, 'p_value': p_value_differences, 'm':len(p_value_differences),
+                                    'none': sum(valor > alpha for valor in p_value_differences.values()),
+                                    'bonferroni': sum(multipletests(list(p_value_differences.values()), method='bonferroni')[1] > alpha), 
+                                    'holm': sum(multipletests(list(p_value_differences.values()), method='holm')[1] > alpha),
+                                    'HB': sum(multipletests(list(p_value_differences.values()), method='fdr_bh')[1] > alpha)  }
+
+    return differences_dict
 

@@ -161,7 +161,16 @@ def performance_multiple_metrics(data: pd.DataFrame, gold: str,
                                  scores: List[dict],
                                  num_samples: int = 500, n_jobs: int = -1):
     results = {}
+    performance_dict = {}
+    perfo = {}
+    dist = {}
+    ccv = {}
+    cppi = {}
+    n,m = data.shape
     statistic_samples = StatisticSamples(num_samples=num_samples, n_jobs=n_jobs)
+    cv = lambda x: np.std(x, ddof=1) / np.mean(x) * 100
+    dista = lambda x: np.abs(np.max(x) - np.median(x))
+    ppi = lambda x: (1 - np.max(x)) * 100
     for score_info in scores:
         score_func = score_info["func"]
         score_args = score_info.get("args", {})
@@ -169,11 +178,23 @@ def performance_multiple_metrics(data: pd.DataFrame, gold: str,
         statistic_samples.statistic = statistic = lambda y_true, y_pred: score_func(y_true, y_pred, **score_args)
         metric_name = score_func.__name__ + "_" + "_".join([f"{key}={value}" for key, value in score_args.items()])
         results[metric_name] = {}
+        perfo[metric_name] = {}
         for column in data.columns:
             if column == gold:
                 continue
             results[metric_name][column] = statistic_samples(data[gold], data[column])
-    return results
+            perfo[metric_name][column]  = statistic(data[gold], data[column])
+        ccv[metric_name] = cv(np.array(list(perfo[metric_name].values())))
+        dist[metric_name] = dista(np.array(list(perfo[metric_name].values())))
+        cppi[metric_name] = ppi(np.array(list(perfo[metric_name].values())))
+    performance_dict = {'samples' : results,
+                        'n' : n,
+                        'm' : m-1,
+                        'performance' : perfo,
+                        'cv' : ccv,
+                        'dist' : dist,
+                        'PPI' : cppi}
+    return performance_dict 
 
 def plot_performance2(results: dict, CI: float=0.05,
                      var_name='Algorithm', value_name='Score',

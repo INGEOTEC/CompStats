@@ -40,6 +40,7 @@ def performance(data: pd.DataFrame,
         if column == gold:
             continue
         statistic_samples(y, data[column], name=column)
+        
     return statistic_samples
 
 

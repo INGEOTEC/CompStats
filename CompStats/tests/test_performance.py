@@ -69,9 +69,9 @@ def test_performance_multiple_metrics():
         {"func": recall_score, "args": {"average": "macro"}}
         ]
     perf = performance_multiple_metrics(df, "y", metrics)
-    assert 'accuracy_score_' in perf
-    assert 'y' not in perf['accuracy_score_']
-    assert 'INGEOTEC' in perf['accuracy_score_']
+    assert 'accuracy_score_' in perf['samples']
+    assert 'y' not in perf['samples']['accuracy_score_']
+    assert 'INGEOTEC' in perf['samples']['accuracy_score_']
 
 
 def test_difference_multiple():
@@ -85,8 +85,8 @@ def test_difference_multiple():
         ]
     perf = performance_multiple_metrics(df, "y", metrics)
     diff = difference_multiple(perf)
-    assert diff['accuracy_score_']['best'] == 'BoW'
-    assert 'BoW' not in diff['accuracy_score_']['diff'].keys()
+    assert diff['winner']['accuracy_score_']['best'] == 'BoW'
+    assert 'BoW' not in diff['winner']['accuracy_score_']['diff'].keys()
     # ins = plot_performance_multiple(diff)
     # assert isinstance(ins, sns.FacetGrid)
 
@@ -103,8 +103,8 @@ def test_difference_summary():
     perf = performance_multiple_metrics(df, "y", metrics)
     diff = difference_multiple(perf)
     all_dif = unique_pairs_differences(perf)
-    assert diff['accuracy_score_']['best'] == 'BoW'
-    assert 'BoW' not in diff['accuracy_score_']['diff'].keys()
-    assert all_dif['accuracy_score_']['m'] == 15
+    assert diff['winner']['accuracy_score_']['best'] == 'BoW'
+    assert 'BoW' not in diff['winner']['accuracy_score_']['diff'].keys()
+    assert all_dif['all']['accuracy_score_']['none'] == 9
     # ins = plot_performance_multiple(diff)
     # assert isinstance(ins, sns.FacetGrid)

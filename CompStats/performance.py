@@ -171,6 +171,7 @@ def performance_multiple_metrics(data: pd.DataFrame, gold: str,
     ccv = {}
     cppi = {}
     n,m = data.shape
+    compg = {}
     statistic_samples = StatisticSamples(num_samples=num_samples, n_jobs=n_jobs)
     cv = lambda x: np.std(x, ddof=1) / np.mean(x) * 100
     dista = lambda x: np.abs(np.max(x) - np.median(x))
@@ -191,13 +192,14 @@ def performance_multiple_metrics(data: pd.DataFrame, gold: str,
         ccv[metric_name] = cv(np.array(list(perfo[metric_name].values())))
         dist[metric_name] = dista(np.array(list(perfo[metric_name].values())))
         cppi[metric_name] = ppi(np.array(list(perfo[metric_name].values())))
+    compg = {'n' : n,
+             'm' : m-1,
+             'cv' : ccv,
+             'dist' : dist,
+             'PPI' : cppi}
     performance_dict = {'samples' : results,
-                        'n' : n,
-                        'm' : m-1,
                         'performance' : perfo,
-                        'cv' : ccv,
-                        'dist' : dist,
-                        'PPI' : cppi}
+                        'compg' : compg}
     return performance_dict 
 
 def plot_performance2(results: dict, CI: float=0.05,
@@ -240,10 +242,10 @@ def plot_performance_multiple(results_dict, CI=0.05, capsize=0.2, linestyle='non
     :param kind: Type of the plot, e.g., 'point', 'bar'.
     :param kwargs: Additional keyword arguments for seaborn.catplot.
     """   
-    for metric_name, metric_results in results_dict.items():
+    for metric_name, metric_results in results_dict['winner'].items():
         # Usa catplot para crear y mostrar el gráfico
         g = plot_performance2(metric_results['diff'], CI=CI)
-        g.figure.suptitle(metric_name)  
+        g.figure.suptitle(metric_name+'('+metric_results['best']+')')  
         # plt.show()
  
 
@@ -259,12 +261,10 @@ def difference_multiple(results_dict, CI: float=0.05,):
              excluding the best performing algorithm comparing with itself.
              Also includes the best algorithm name for each metric.
     """
-    differences_dict = {}
+    differences_dict = results_dict.copy()
+    winner = {}
     alpha = CI
-    paso = results_dict[list(results_dict)[0]]
-    m = len(paso)
-    n, = paso[list(paso)[0]].shape
-    for metric, results in results_dict.items():
+    for metric, results in results_dict['samples'].items():
         # Convert scores to arrays for vectorized operations
         scores_arrays = {alg: np.array(scores) for alg, scores in results.items()}
         # Identify the best performing algorithm (highest mean score)
@@ -280,13 +280,13 @@ def difference_multiple(results_dict, CI: float=0.05,):
 
 
         # Store the differences and the best algorithm under the current metric
-        differences_dict[metric] = {'best': best_alg, 'diff': differences,'CI':CI_differences,
-                                     'p_value': p_value_differences, 'm':m, 'n':n,
+        winner[metric] = {'best': best_alg, 'diff': differences,'CI':CI_differences,
+                                    'p_value': p_value_differences,
                                     'none': sum(valor > alpha for valor in p_value_differences.values()),
                                     'bonferroni': sum(multipletests(list(p_value_differences.values()), method='bonferroni')[1] > alpha), 
                                     'holm': sum(multipletests(list(p_value_differences.values()), method='holm')[1] > alpha),
                                     'HB': sum(multipletests(list(p_value_differences.values()), method='fdr_bh')[1] > alpha) }
-
+    differences_dict['winner'] = winner
     return differences_dict
 
 
@@ -396,8 +396,9 @@ def unique_pairs_differences(results_dict, alpha: float=0.05):
              This dictionary contains keys for unique pairs of algorithms and their performance differences,
              including the confidence interval for these differences.
     """
-    differences_dict = {}
-    for metric, results in results_dict.items():
+    differences_dict = results_dict.copy()
+    all = {}
+    for metric, results in results_dict['samples'].items():
         # Convert scores to arrays for vectorized operations
         scores_arrays = {alg: np.array(scores) for alg, scores in results.items()}
         
@@ -419,11 +420,11 @@ def unique_pairs_differences(results_dict, alpha: float=0.05):
                 # CI_differences[f"{alg_a} vs {alg_b}"] = measurements.CI(diff, alpha=CI)
                 
         # Store the differences under the current metric
-        differences_dict[metric] = {'diff': differences, 'p_value': p_value_differences, 'm':len(p_value_differences),
+        all[metric] = {'diff': differences, 'p_value': p_value_differences, 
                                     'none': sum(valor > alpha for valor in p_value_differences.values()),
                                     'bonferroni': sum(multipletests(list(p_value_differences.values()), method='bonferroni')[1] > alpha), 
                                     'holm': sum(multipletests(list(p_value_differences.values()), method='holm')[1] > alpha),
                                     'HB': sum(multipletests(list(p_value_differences.values()), method='fdr_bh')[1] > alpha)  }
-
+    differences_dict['all'] = all
     return differences_dict
 

@@ -40,10 +40,6 @@ def performance(data: pd.DataFrame,
         if column == gold:
             continue
         statistic_samples(y, data[column], name=column)
-    mean_values = statistic_samples.mean(axis=0)  
-    sorted_columns = mean_values.sort_values(ascending=False).index  
-    statistic_samples = statistic_samples.loc[:, sorted_columns]  
-    
     return statistic_samples
 
 

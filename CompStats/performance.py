@@ -29,11 +29,12 @@ def performance(data: pd.DataFrame,
                 score: Callable[[np.ndarray, np.ndarray], float]=accuracy_score,
                 num_samples: int=500,
                 n_jobs: int=-1,
+                BiB: bool=True,
                 statistic_samples: StatisticSamples=None) -> StatisticSamples:
     """Bootstrap samples of a performance score"""
     if statistic_samples is None:
         statistic_samples = StatisticSamples(statistic=score, num_samples=num_samples,
-                                             n_jobs=n_jobs)
+                                             n_jobs=n_jobs, BiB=BiB)
     columns = data.columns
     y = data[gold]
     for column in progress_bar(columns):
@@ -44,9 +45,12 @@ def performance(data: pd.DataFrame,
     return statistic_samples
 
 
-def difference(statistic_samples: StatisticSamples, best_index: int=-1):
+def difference(statistic_samples: StatisticSamples): #, best_index: int=-1):
     """Bootstrap samples of a difference in performnace"""
-
+    if statistic_samples.BiB:
+        best_index = -1
+    else:
+        best_index = 0
     items = list(statistic_samples.calls.items())
     perf = [(k, v, np.mean(v)) for k, v in items]
     perf.sort(key=lambda x: x[-1])
@@ -68,7 +72,7 @@ def all_differences(statistic_samples: StatisticSamples, reverse: bool=True):
     items = list(statistic_samples.calls.items())
     # Calculamos el rendimiento medio y ordenamos los algoritmos basándonos en este
     perf = [(k, v, np.mean(v)) for k, v in items]
-    perf.sort(key=lambda x: x[2], reverse=reverse)  # Orden descendente por rendimiento medio
+    perf.sort(key=lambda x: x[2], reverse=statistic_samples.BiB)  # Orden descendente por rendimiento medio
     
     diffs = {}  # Diccionario para guardar las diferencias
     
@@ -103,7 +107,7 @@ def plot_performance(statistic_samples: StatisticSamples, CI: float=0.05,
     """
 
     if isinstance(statistic_samples, StatisticSamples):
-        lista_ordenada = sorted(statistic_samples.calls.items(), key=lambda x: np.mean(x[1]), reverse=True)
+        lista_ordenada = sorted(statistic_samples.calls.items(), key=lambda x: np.mean(x[1]), reverse=statistic_samples.BiB)
         diccionario_ordenado = {nombre: muestras for nombre, muestras in lista_ordenada}
         df2 = pd.DataFrame(diccionario_ordenado).melt(var_name=var_name,
                                                          value_name=value_name)
@@ -140,8 +144,8 @@ def plot_difference(statistic_samples: StatisticSamples, CI: float=0.05,
     if hue is not None:
         df2[hue] = True
     at_least_one = False
-    for key, (left, _) in measurements.CI(statistic_samples, alpha=CI).items():
-        if left < 0:
+    for key, (left, right) in measurements.CI(statistic_samples, alpha=CI).items():
+        if left < 0 < right:
             rows = df2[var_name] == key
             df2.loc[rows, hue] = False
             at_least_one = True

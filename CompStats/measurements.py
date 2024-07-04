@@ -57,9 +57,15 @@ def SE(samples: np.ndarray):
     return np.std(samples, axis=0)
 
     
-def difference_p_value(samples: np.ndarray):
+def difference_p_value(samples: np.ndarray, BiB: bool = True):
     """Compute the difference p-value"""
     if isinstance(samples, StatisticSamples):
-        return {k: (v > 2 * np.mean(v)).mean()
-                for k, v in samples.calls.items()}
-    return np.mean(samples > 2 * np.mean(samples, axis=0), axis=0)
+        if samples.BiB:
+            return {k: (v > 2 * np.mean(v)).mean() for k, v in samples.calls.items()}
+        else:
+            return {k: (v < 2 * np.mean(v)).mean() for k, v in samples.calls.items()}
+    else:
+        if BiB:
+            return np.mean(samples > 2 * np.mean(samples, axis=0), axis=0)
+        else:
+            return np.mean(samples < 2 * np.mean(samples, axis=0), axis=0)

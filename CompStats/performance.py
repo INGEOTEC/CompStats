@@ -72,7 +72,7 @@ def all_differences(statistic_samples: StatisticSamples, reverse: bool=True):
     items = list(statistic_samples.calls.items())
     # Calculamos el rendimiento medio y ordenamos los algoritmos basándonos en este
     perf = [(k, v, np.mean(v)) for k, v in items]
-    perf.sort(key=lambda x: x[2], reverse=statistic_samples.BiB)  # Orden descendente por rendimiento medio
+    perf.sort(key=lambda x: x[2], reverse=statistic_samples.BiB)  # Orden por rendimiento medio
     
     diffs = {}  # Diccionario para guardar las diferencias
     
@@ -165,24 +165,23 @@ def plot_difference(statistic_samples: StatisticSamples, CI: float=0.05,
 def performance_multiple_metrics(data: pd.DataFrame, gold: str, 
                                  scores: List[dict],
                                  num_samples: int = 500, n_jobs: int = -1):
-    results = {}
-    performance_dict = {}
-    perfo = {}
-    dist = {}
-    ccv = {}
-    cppi = {}
+    results, performance_dict, perfo, dist, ccv, cppi, compg, cBiB = {}, {}, {}, {}, {}, {}, {}, {}
     n,m = data.shape
-    compg = {}
-    statistic_samples = StatisticSamples(num_samples=num_samples, n_jobs=n_jobs)
+    # statistic_samples = StatisticSamples(num_samples=num_samples, n_jobs=n_jobs) # se quita al rato
+    # definimos las funciones para las metricas
     cv = lambda x: np.std(x, ddof=1) / np.mean(x) * 100
     dista = lambda x: np.abs(np.max(x) - np.median(x))
     ppi = lambda x: (1 - np.max(x)) * 100
     for score_info in scores:
         score_func = score_info["func"]
         score_args = score_info.get("args", {})
+        score_BiB = score_info["BiB"]
         # Prepara el StatisticSamples con los argumentos específicos para esta métrica
+        statistic_samples = StatisticSamples(num_samples=num_samples, n_jobs=n_jobs, BiB=score_BiB)
+        # Calcula la métrica para cada muestra
         statistic_samples.statistic = statistic = lambda y_true, y_pred: score_func(y_true, y_pred, **score_args)
-        metric_name = score_func.__name__ + "_" + "_".join([f"{key}={value}" for key, value in score_args.items()])
+        # metric_name = score_func.__name__ + "_" + "_".join([f"{key}={value}" for key, value in score_args.items()])
+        metric_name = score_func.__name__ + ("" if not score_args else "_" + "_".join([f"{key}={value}" for key, value in score_args.items()]))
         results[metric_name] = {}
         perfo[metric_name] = {}
         for column in data.columns:
@@ -193,6 +192,7 @@ def performance_multiple_metrics(data: pd.DataFrame, gold: str,
         ccv[metric_name] = cv(np.array(list(perfo[metric_name].values())))
         dist[metric_name] = dista(np.array(list(perfo[metric_name].values())))
         cppi[metric_name] = ppi(np.array(list(perfo[metric_name].values())))
+        cBiB[metric_name] = score_BiB
     compg = {'n' : n,
              'm' : m-1,
              'cv' : ccv,
@@ -200,7 +200,8 @@ def performance_multiple_metrics(data: pd.DataFrame, gold: str,
              'PPI' : cppi}
     performance_dict = {'samples' : results,
                         'performance' : perfo,
-                        'compg' : compg}
+                        'compg' : compg,
+                        'BiB': cBiB}
     return performance_dict 
 
 def plot_performance2(results: dict, CI: float=0.05,
@@ -232,7 +233,7 @@ def plot_performance2(results: dict, CI: float=0.05,
                          kind=kind, errorbar=ci, sharex=sharex, **kwargs)
     return f_grid
 
-def plot_performance_multiple(results_dict, CI=0.05, capsize=0.2, linestyle='none', kind='point', **kwargs):
+def plot_performance_difference_multiple(results_dict, CI=0.05, capsize=0.2, linestyle='none', kind='point', **kwargs):
     """
     Create multiple performance plots, one for each performance metric in the results dictionary.
     
@@ -269,7 +270,10 @@ def difference_multiple(results_dict, CI: float=0.05,):
         # Convert scores to arrays for vectorized operations
         scores_arrays = {alg: np.array(scores) for alg, scores in results.items()}
         # Identify the best performing algorithm (highest mean score)
-        best_alg = max(scores_arrays, key=lambda alg: np.mean(scores_arrays[alg]))
+        if results_dict['BiB'][metric]:
+            best_alg = max(scores_arrays, key=lambda alg: np.mean(scores_arrays[alg]))
+        else:
+            best_alg = min(scores_arrays, key=lambda alg: np.mean(scores_arrays[alg]))
         best_scores = scores_arrays[best_alg]
         
         # Calculate differences to the best performing algorithm, excluding the best from comparing with itself
@@ -277,7 +281,7 @@ def difference_multiple(results_dict, CI: float=0.05,):
 
         # Calculate Confidence interval for differences to the bet performing algorithm.
         CI_differences = {alg: measurements.CI(np.array(scores), alpha=CI) for alg, scores in differences.items()}
-        p_value_differences = {alg: measurements.difference_p_value(np.array(scores)) for alg, scores in differences.items()}
+        p_value_differences = {alg: measurements.difference_p_value(np.array(scores), BiB= results_dict['BiB'][metric]) for alg, scores in differences.items()}
 
 
         # Store the differences and the best algorithm under the current metric
@@ -401,7 +405,9 @@ def unique_pairs_differences(results_dict, alpha: float=0.05):
     all = {}
     for metric, results in results_dict['samples'].items():
         # Convert scores to arrays for vectorized operations
-        scores_arrays = {alg: np.array(scores) for alg, scores in results.items()}
+        scores_arrays = {alg: np.array(scores) for alg, scores in results.items()}      
+        scores_arrays = dict(sorted(scores_arrays.items(), key=lambda item: np.mean(item[1]), reverse=results_dict['BiB'][metric]))
+
         
         differences = {}
         p_value_differences = {}
@@ -416,7 +422,7 @@ def unique_pairs_differences(results_dict, alpha: float=0.05):
                 
                 # Placeholder for confidence interval calculation
                 # Replace the string with an actual call to your CI calculation function
-                p_value_differences[f"{alg_a} vs {alg_b}"] = measurements.difference_p_value(diff)
+                p_value_differences[f"{alg_a} vs {alg_b}"] = measurements.difference_p_value(diff, BiB=results_dict['BiB'][metric])
                 # For example:
                 # CI_differences[f"{alg_a} vs {alg_b}"] = measurements.CI(diff, alpha=CI)
                 

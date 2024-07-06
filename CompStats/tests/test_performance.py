@@ -14,9 +14,9 @@
 import numpy as np
 import pandas as pd
 import os
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, mean_absolute_error
 import seaborn as sns
-from CompStats.performance import performance, plot_performance, difference, plot_difference, all_differences, performance_multiple_metrics, plot_performance2, plot_performance_multiple, difference_multiple, plot_scatter_matrix, unique_pairs_differences
+from CompStats.performance import performance, plot_performance, difference, plot_difference, all_differences, performance_multiple_metrics, plot_performance2, plot_performance_difference_multiple, difference_multiple, plot_scatter_matrix, unique_pairs_differences
 
 
 DATA = os.path.join(os.path.dirname(__file__), 'data.csv')
@@ -63,30 +63,30 @@ def test_performance_multiple_metrics():
     """Test performance_multiple_metrics"""
     df = pd.read_csv(DATA)
     metrics = [
-        {"func": accuracy_score},
-        {"func": f1_score, "args": {"average": "macro"}},
-        {"func": precision_score, "args": {"average": "macro"}},
-        {"func": recall_score, "args": {"average": "macro"}}
+        {"func": accuracy_score, 'BiB': True},
+        {"func": f1_score, "args": {"average": "macro"}, 'BiB': True},
+        {"func": precision_score, "args": {"average": "macro"}, 'BiB': True},
+        {"func": mean_absolute_error, 'BiB': False}
         ]
     perf = performance_multiple_metrics(df, "y", metrics)
-    assert 'accuracy_score_' in perf['samples']
-    assert 'y' not in perf['samples']['accuracy_score_']
-    assert 'INGEOTEC' in perf['samples']['accuracy_score_']
+    assert 'accuracy_score' in perf['samples']
+    assert 'y' not in perf['samples']['accuracy_score']
+    assert 'INGEOTEC' in perf['samples']['accuracy_score']
 
 
 def test_difference_multiple():
     """Test difference_multiple"""
     df = pd.read_csv(DATA)
     metrics = [
-        {"func": accuracy_score},
-        {"func": f1_score, "args": {"average": "macro"}},
-        {"func": precision_score, "args": {"average": "macro"}},
-        {"func": recall_score, "args": {"average": "macro"}}
+        {"func": accuracy_score, 'BiB': True},
+        {"func": f1_score, "args": {"average": "macro"}, 'BiB': True},
+        {"func": precision_score, "args": {"average": "macro"}, 'BiB': True},
+        {"func": mean_absolute_error, 'BiB': False}
         ]
     perf = performance_multiple_metrics(df, "y", metrics)
     diff = difference_multiple(perf)
-    assert diff['winner']['accuracy_score_']['best'] == 'BoW'
-    assert 'BoW' not in diff['winner']['accuracy_score_']['diff'].keys()
+    assert diff['winner']['accuracy_score']['best'] == 'BoW'
+    assert 'BoW' not in diff['winner']['accuracy_score']['diff'].keys()
     # ins = plot_performance_multiple(diff)
     # assert isinstance(ins, sns.FacetGrid)
 
@@ -95,16 +95,16 @@ def test_difference_summary():
     """Test difference_summary"""
     df = pd.read_csv(DATA)
     metrics = [
-        {"func": accuracy_score},
-        {"func": f1_score, "args": {"average": "macro"}},
-        {"func": precision_score, "args": {"average": "macro"}},
-        {"func": recall_score, "args": {"average": "macro"}}
+        {"func": accuracy_score, 'BiB': True},
+        {"func": f1_score, "args": {"average": "macro"}, 'BiB': True},
+        {"func": precision_score, "args": {"average": "macro"}, 'BiB': True},
+        {"func": mean_absolute_error, 'BiB': False}
         ]
     perf = performance_multiple_metrics(df, "y", metrics)
     diff = difference_multiple(perf)
     all_dif = unique_pairs_differences(perf)
-    assert diff['winner']['accuracy_score_']['best'] == 'BoW'
-    assert 'BoW' not in diff['winner']['accuracy_score_']['diff'].keys()
-    assert all_dif['all']['accuracy_score_']['none'] == 9
+    assert diff['winner']['accuracy_score']['best'] == 'BoW'
+    assert 'BoW' not in diff['winner']['accuracy_score']['diff'].keys()
+    assert all_dif['all']['accuracy_score']['none'] == 6
     # ins = plot_performance_multiple(diff)
     # assert isinstance(ins, sns.FacetGrid)

@@ -57,8 +57,8 @@ def test_all_differences():
     """Test all_differences"""
     df = pd.read_csv(DATA)
     perf = performance(df, score=lambda y, hy: f1_score(y, hy, average='weighted'))
-    res = all_differences(perf)
-    assert 'INGEOTEC - BoW' in res.calls
+    resa = all_differences(perf)
+    assert 'INGEOTEC - BoW' in resa.calls
 
 
 def test_performance_multiple_metrics():
@@ -91,8 +91,7 @@ def test_difference_multiple():
     ins = plot_performance_difference_multiple(diff)
     assert diff['winner']['accuracy_score']['best'] == 'BoW'
     assert 'BoW' not in diff['winner']['accuracy_score']['diff'].keys()
-    # ins = plot_performance_multiple(diff)
-    # assert isinstance(ins, sns.FacetGrid)
+    assert isinstance(ins, sns.FacetGrid)
 
 
 def test_difference_summary():
@@ -106,9 +105,7 @@ def test_difference_summary():
         ]
     perf = performance_multiple_metrics(df, "y", metrics)
     diff = difference_multiple(perf)
-    all_dif = unique_pairs_differences(perf)
+    all_dif = unique_pairs_differences(diff)
     assert diff['winner']['accuracy_score']['best'] == 'BoW'
     assert 'BoW' not in diff['winner']['accuracy_score']['diff'].keys()
     assert all_dif['all']['accuracy_score']['none'] == 6
-    # ins = plot_performance_multiple(diff)
-    # assert isinstance(ins, sns.FacetGrid)

@@ -51,7 +51,7 @@ def performance(data: pd.DataFrame,
     >>> import pandas as pd
     >>> from CompStats import performance
     >>> df = pd.read_csv('path/to/data.csv')
-    >>> perf = performance(df, gold='target', score=accuracy_score, num_samples=1000)
+    >>> perf = performance(df, gold='y', score=accuracy_score, num_samples=1000)
     """
     if statistic_samples is None:
         statistic_samples = StatisticSamples(statistic=score, num_samples=num_samples,

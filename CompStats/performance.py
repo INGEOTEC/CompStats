@@ -529,8 +529,8 @@ def plot_difference2(diff_dictionary: dict,
     if hue is not None:
         df2[hue] = True
     at_least_one = False
-    for key, (left, _) in diff_dictionary['CI'].items():
-        if left < 0:
+    for key, (left, right) in diff_dictionary['CI'].items():
+        if left < 0 < right:
             rows = df2[var_name] == key
             df2.loc[rows, hue] = False
             at_least_one = True
@@ -614,21 +614,13 @@ def plot_difference_multiple(results_dict, CI=0.05, capsize=0.2, linestyle='none
     :param kind: Type of the plot, e.g., 'point', 'bar'.
     :param kwargs: Additional keyword arguments for seaborn.catplot.
     """   
-    for metric_name, metric_results in results_dict.items():
+    for metric_name, metric_results in results_dict['winner'].items():
         # Usa catplot para crear y mostrar el gráfico
         g = plot_difference2(metric_results)
         g.figure.suptitle(metric_name)  
         # plt.show()
  
 
-
-def plot_difference_scatter_multiple(results_dict,algorithm: str):
-    dict = {}
-    for metric_name, metric_results in results_dict.items():
-        # Usa catplot para crear y mostrar el gráfico
-        g = plot_difference2(metric_results)
-        g.figure.suptitle(metric_name)  
-        # plt.show()
 
 
 ### este por el momento no.

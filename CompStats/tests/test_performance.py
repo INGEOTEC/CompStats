@@ -17,9 +17,9 @@ import os
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, mean_absolute_error
 import seaborn as sns
 from CompStats.performance import performance, plot_performance, difference, plot_difference, all_differences
-from CompStats.performance import performance_multiple_metrics, plot_performance2, plot_performance_difference_multiple
+from CompStats.performance import performance_multiple_metrics, plot_performance2
 from CompStats.performance import difference_multiple, plot_scatter_matrix, unique_pairs_differences, plot_performance_multiple
-from CompStats.performance import plot_performance_difference_multiple, plot_difference2, plot_difference_multiple
+from CompStats.performance import plot_difference2, plot_difference_multiple
 
 
 
@@ -90,7 +90,6 @@ def test_difference_multiple():
         ]
     perf = performance_multiple_metrics(df, "y", metrics)
     diff = difference_multiple(perf)
-    ins = plot_performance_difference_multiple(diff)
     ins = plot_difference_multiple(diff)
     assert diff['winner']['accuracy_score']['best'] == 'BoW'
     assert 'BoW' not in diff['winner']['accuracy_score']['diff'].keys()

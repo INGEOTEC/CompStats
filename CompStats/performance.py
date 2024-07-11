@@ -17,6 +17,7 @@ from typing import List, Callable
 import pandas as pd
 import numpy as np
 import seaborn as sns
+import math
 from CompStats.bootstrap import StatisticSamples
 from CompStats.utils import progress_bar
 from CompStats import measurements
@@ -263,7 +264,9 @@ def plot_difference(statistic_samples: StatisticSamples, CI: float=0.05,
             at_least_one = True
     if at_least_one and palette is None:
         palette = ['r', 'b']
-    f_grid = plot_performance(df2, var_name=var_name,
+    else:
+        palette = ['b']        
+    f_grid = plot_performance(df2, CI=CI, var_name=var_name,
                               value_name=value_name, hue=hue,
                               palette=palette,
                               **kwargs)
@@ -330,7 +333,7 @@ def performance_multiple_metrics(data: pd.DataFrame, gold: str,
     for score_info in scores:
         score_func = score_info["func"]
         score_args = score_info.get("args", {})
-        score_BiB = score_info["BiB"]
+        score_BiB = score_info.get("BiB", True)  # Default to True if not specified
         # Prepara el StatisticSamples con los argumentos específicos para esta métrica
         statistic_samples = StatisticSamples(num_samples=num_samples, n_jobs=n_jobs, BiB=score_BiB)
         # Calcula la métrica para cada muestra
@@ -364,7 +367,7 @@ def plot_performance2(results: dict, CI: float=0.05,
                      capsize=0.2, linestyle='none', kind='point',
                      sharex=False, **kwargs):
     """
-    Plot the performance with confidence intervals. This function is used by plot_performance_difference_multiple
+    Plot the performance with confidence intervals. This function is used by plot_difference_multiple
 
     Parameters:
     results (dict): A dictionary where keys are algorithm names and values are lists of performance scores.
@@ -399,45 +402,8 @@ def plot_performance2(results: dict, CI: float=0.05,
                          kind=kind, errorbar=ci, sharex=sharex, **kwargs)
     return f_grid
 
-def plot_performance_difference_multiple(results_dict, CI=0.05, capsize=0.2, linestyle='none', kind='point', **kwargs):
-    """
-    Create multiple performance plots, one for each performance metric in the results dictionary.
 
-    Parameters:
-    results_dict (dict): A dictionary where keys are metric names and values are dictionaries 
-                         with algorithm names as keys and lists of scores as values.
-    CI (float, optional): Confidence interval level for error bars. Defaults to 0.05.
-    capsize (float, optional): Cap size for error bars. Defaults to 0.2.
-    linestyle (str, optional): Line style for the plot. Defaults to 'none'.
-    kind (str, optional): Type of the plot, e.g., 'point', 'bar'. Defaults to 'point'.
-    **kwargs: Additional keyword arguments for seaborn.catplot.
 
-    Returns:
-    None: The function creates and displays plots.
-
-    The function works as follows:
-    1. Iterates over each metric in the results dictionary.
-    2. Uses seaborn's catplot to create and display the plot for each metric.
-    3. Sets the title of each plot to the metric name and the best performing algorithm.
-
-    Example usage:
-    >>> from CompStats import plot_performance_difference_multiple
-    >>> import pandas as pd
-    >>> from CompStats import performance_multiple_metrics
-    >>> df = pd.read_csv('path/to/data.csv')
-    >>> scores = [
-    >>>     {"func": accuracy_score, "BiB": True},
-    >>>     {"func": f1_score, "args": {"average": "weighted"}, "BiB": True}
-    >>> ]
-    >>> results = performance_multiple_metrics(df, gold='target', scores=scores, num_samples=1000)
-    >>> plot_performance_difference_multiple(results, CI=0.05)
-    """ 
-    for metric_name, metric_results in results_dict['winner'].items():
-        # Usa catplot para crear y mostrar el gráfico
-        g = plot_performance2(metric_results['diff'], CI=CI)
-        g.figure.suptitle(metric_name+'('+metric_results['best']+')')  
-        # plt.show()
- 
 
 def difference_multiple(results_dict, CI: float=0.05,):
     """
@@ -506,10 +472,10 @@ def difference_multiple(results_dict, CI: float=0.05,):
     return differences_dict
 
 
-def plot_difference2(diff_dictionary: dict, 
+def plot_difference2(diff_dictionary: dict, CI: float = 0.05,
                     var_name='Comparison', value_name='Difference',
                     set_refline=True, set_title=True,
-                    hue='Significant', palette=None,
+                    hue='Significant', palette=None, BiB: bool=True,
                     **kwargs):
     """Plot the difference in performance with its confidence intervals
     
@@ -523,9 +489,11 @@ def plot_difference2(diff_dictionary: dict,
     >>> diff = difference(perf)
     >>> ins = plot_difference(diff)
     """
-
-    df2 = pd.DataFrame(diff_dictionary['diff']).melt(var_name=var_name,
-                                                     value_name=value_name)
+    if isinstance(diff_dictionary, dict):
+        lista_ordenada = sorted(diff_dictionary['diff'].items(), key=lambda x: np.mean(x[1]), reverse=BiB)
+        diccionario_ordenado = {nombre: muestras for nombre, muestras in lista_ordenada}
+        df2 = pd.DataFrame(diccionario_ordenado).melt(var_name=var_name,
+                                                         value_name=value_name)
     if hue is not None:
         df2[hue] = True
     at_least_one = False
@@ -536,9 +504,11 @@ def plot_difference2(diff_dictionary: dict,
             at_least_one = True
     if at_least_one and palette is None:
         palette = ['r', 'b']
-    f_grid = plot_performance(df2, var_name=var_name,
+    else:
+        palette = ['b']
+    f_grid = plot_performance(df2, CI=CI, var_name=var_name,
                               value_name=value_name, hue=hue,
-                              palette=palette,
+                              palette=palette, 
                               **kwargs)
     if set_refline:
         f_grid.refline(x=0)
@@ -615,8 +585,8 @@ def plot_difference_multiple(results_dict, CI=0.05, capsize=0.2, linestyle='none
     :param kwargs: Additional keyword arguments for seaborn.catplot.
     """   
     for metric_name, metric_results in results_dict['winner'].items():
-        # Usa catplot para crear y mostrar el gráfico
-        g = plot_difference2(metric_results)
+        # Usa catplot para crear y mostrar el gráfico        
+        g = plot_difference2(metric_results,BiB=results_dict['BiB'][metric_name], CI=CI)
         g.figure.suptitle(metric_name)  
         # plt.show()
  
@@ -635,7 +605,7 @@ def plot_scatter_matrix(perf):
     # Convertir 'perf' en un DataFrame de pandas para facilitar la manipulación
     df_long = pd.DataFrame([
         {"Metric": metric, "Algorithm": alg, "Score": score, "Indice": i}
-        for metric, alg_scores in perf.items()
+        for metric, alg_scores in perf['samples'].items()
         for alg, scores in alg_scores.items()
         for i, (score)  in enumerate(scores)
         ])

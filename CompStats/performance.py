@@ -617,7 +617,7 @@ def plot_scatter_matrix(perf):
 
 
 
-def unique_pairs_differences(results_dict, alpha: float=0.05):
+def all_differences_multiple(results_dict, alpha: float=0.05):
     """
     Calculate performance differences for unique pairs of algorithms for multiple metrics.
     Also, calculates the confidence interval for the differences.

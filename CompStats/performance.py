@@ -251,9 +251,11 @@ def plot_difference(statistic_samples: StatisticSamples, CI: float=0.05,
     >>> diff = difference(perf)
     >>> ins = plot_difference(diff)
     """
-
-    df2 = pd.DataFrame(statistic_samples.calls).melt(var_name=var_name,
-                                                     value_name=value_name)
+    if isinstance(statistic_samples, StatisticSamples):
+        lista_ordenada = sorted(statistic_samples.calls.items(), key=lambda x: np.mean(x[1]), reverse=statistic_samples.BiB)
+        diccionario_ordenado = {nombre: muestras for nombre, muestras in lista_ordenada}
+        df2 = pd.DataFrame(diccionario_ordenado).melt(var_name=var_name,
+                                                         value_name=value_name)
     if hue is not None:
         df2[hue] = True
     at_least_one = False
@@ -555,9 +557,14 @@ def plot_performance_multiple(results_dict: dict, CI: float = 0.05, capsize: flo
     """
     
     for metric_name, metric_results in results_dict['samples'].items():
+        BiB = results_dict['BiB'].get(metric_name, True)
         # Convert results to long format DataFrame
-        df2 = pd.DataFrame(metric_results).melt(var_name='Algorithm', value_name='Score')
-        
+        if isinstance(metric_results, dict):
+            lista_ordenada = sorted(metric_results.items(), key=lambda x: np.mean(x[1]), reverse=BiB)
+            diccionario_ordenado = {nombre: muestras for nombre, muestras in lista_ordenada}
+            df2 = pd.DataFrame(diccionario_ordenado).melt(var_name='Algorithm',
+                                                             value_name='Score')
+         
         # Define the confidence interval function
         if isinstance(CI, float):
             ci = lambda x: measurements.CI(x, alpha=CI)
@@ -585,8 +592,11 @@ def plot_difference_multiple(results_dict, CI=0.05, capsize=0.2, linestyle='none
     :param kwargs: Additional keyword arguments for seaborn.catplot.
     """   
     for metric_name, metric_results in results_dict['winner'].items():
+        print(f'metric_name  : {metric_name}')
+        BiB = results_dict['BiB'].get(metric_name, True)
+        print(f'BiB: {BiB}')
         # Usa catplot para crear y mostrar el gráfico        
-        g = plot_difference2(metric_results,BiB=results_dict['BiB'][metric_name], CI=CI)
+        g = plot_difference2(metric_results, BiB=BiB, CI=CI)
         g.figure.suptitle(metric_name)  
         # plt.show()
  

@@ -14,12 +14,12 @@
 import numpy as np
 import pandas as pd
 import os
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, mean_absolute_error
+from sklearn.metrics import accuracy_score, precision_score, f1_score, mean_absolute_error
 import seaborn as sns
 from CompStats.performance import performance, plot_performance, difference, plot_difference, all_differences
-from CompStats.performance import performance_multiple_metrics, plot_performance2
-from CompStats.performance import difference_multiple, plot_scatter_matrix, all_differences_multiple, plot_performance_multiple
-from CompStats.performance import plot_difference2, plot_difference_multiple
+from CompStats.performance import performance_multiple_metrics
+from CompStats.performance import difference_multiple, all_differences_multiple, plot_performance_multiple
+from CompStats.performance import plot_difference_multiple
 
 
 

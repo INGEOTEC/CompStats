@@ -592,9 +592,7 @@ def plot_difference_multiple(results_dict, CI=0.05, capsize=0.2, linestyle='none
     :param kwargs: Additional keyword arguments for seaborn.catplot.
     """   
     for metric_name, metric_results in results_dict['winner'].items():
-        print(f'metric_name  : {metric_name}')
         BiB = results_dict['BiB'].get(metric_name, True)
-        print(f'BiB: {BiB}')
         # Usa catplot para crear y mostrar el gráfico        
         g = plot_difference2(metric_results, BiB=BiB, CI=CI)
         g.figure.suptitle(metric_name)  

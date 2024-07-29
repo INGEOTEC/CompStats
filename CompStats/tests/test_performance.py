@@ -11,14 +11,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import numpy as np
 import pandas as pd
 import os
-from sklearn.metrics import accuracy_score, precision_score, f1_score, mean_absolute_error
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, mean_absolute_error
 import seaborn as sns
-from CompStats.performance import performance, plot_performance, difference, plot_difference, all_differences
-from CompStats.performance import performance_multiple_metrics
-from CompStats.performance import difference_multiple, all_differences_multiple, plot_performance_multiple
-from CompStats.performance import plot_difference_multiple
+from CompStats import performance, plot_performance, difference, plot_difference, all_differences
+from CompStats import performance_multiple_metrics, plot_performance2
+from CompStats import difference_multiple, plot_scatter_matrix, all_differences_multiple, plot_performance_multiple
+from CompStats import plot_difference2, plot_difference_multiple
 
 
 

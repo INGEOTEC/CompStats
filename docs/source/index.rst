@@ -3,6 +3,9 @@
 ====================================
 CompStats
 ====================================
+.. image:: https://img.shields.io/badge/GitHub-CompStats-black?logo=github
+        :target: https://github.com/INGEOTEC/CompStats
+
 .. image:: https://github.com/INGEOTEC/CompStats/actions/workflows/test.yaml/badge.svg
 		:target: https://github.com/INGEOTEC/CompStats/actions/workflows/test.yaml
 

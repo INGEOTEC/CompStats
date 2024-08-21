@@ -46,10 +46,12 @@ class StatisticSamples:
     def __init__(self,
                  statistic: Callable[[np.ndarray], float]=np.mean,
                  num_samples: int=500,
-                 n_jobs: int=1):
+                 n_jobs: int=1,
+                 BiB: bool=True):
         self.statistic = statistic
         self.num_samples = num_samples
         self.n_jobs = n_jobs
+        self.BiB = BiB  # Guardar el parámetro BiB        
         self._samples = None
         self._calls = {}
         self._info = {}
@@ -67,7 +69,8 @@ class StatisticSamples:
         """Parameters"""
         return dict(statistic=self.statistic,
                     num_samples=self.num_samples,
-                    n_jobs=self.n_jobs)
+                    n_jobs=self.n_jobs,
+                    BiB=self.BiB)  # Añadir BiB a los parámetros
 
     def __sklearn_clone__(self):
         klass = self.__class__

@@ -1,5 +1,7 @@
 [project]
 name = 'CompStats'
+description = 'CompStats implements an evaluation methodology for statistically analyzing competition results and competition'
+readme = "README.rst"
 dependencies = [
     'numpy',
     'scikit-learn>=1.3.0',
@@ -8,5 +10,23 @@ dependencies = [
 ]
 dynamic = ['version']
 
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Information Analysis"
+]
+
 [tool.setuptools.dynamic]
 version = {attr = 'CompStats.__version__'}
+
+[project.urls]
+Homepage = "https://compstats.readthedocs.io"
+Repository = "https://github.com/INGEOTEC/CompStats"
+Issues = "https://github.com/INGEOTEC/CompStats/issues"

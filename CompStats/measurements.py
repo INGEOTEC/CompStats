@@ -34,13 +34,38 @@ def CI(samples: np.ndarray, alpha=0.05):
     (0.6, 1.0)
     """
     if isinstance(samples, StatisticSamples):
-        return {k: CI(v) for k, v in samples.calls.items()}
+        return {k: CI(v, alpha=alpha) for k, v in samples.calls.items()}
     alpha = alpha / 2
     return (np.percentile(samples, alpha * 100, axis=0),
             np.percentile(samples, (1 - alpha) * 100, axis=0))
 
+
+def SE(samples: np.ndarray):
+    """Compute the Standard Error of a statistic using bootstrap.
     
-def difference_p_value(statistic_samples: StatisticSamples):
+    >>> from CompStats import StatisticSamples, SE
+    >>> from sklearn.metrics import accuracy_score
+    >>> import numpy as np    
+    >>> labels = np.r_[[0, 0, 0, 0, 0, 1, 1, 1, 1, 1]]
+    >>> pred   = np.r_[[0, 0, 1, 0, 0, 1, 1, 1, 0, 1]]
+    >>> bootstrap = StatisticSamples(statistic=accuracy_score)
+    >>> samples = bootstrap(labels, pred)
+    >>> SE(samples)
+    """
+    if isinstance(samples, StatisticSamples):
+        return {k: SE(v) for k, v in samples.calls.items()}
+    return np.std(samples, axis=0)
+
+    
+def difference_p_value(samples: np.ndarray, BiB: bool = True):
     """Compute the difference p-value"""
-    return {k: (v > 2 * np.mean(v)).mean()
-            for k, v in statistic_samples.calls.items()}
+    if isinstance(samples, StatisticSamples):
+        if samples.BiB:
+            return {k: (v > 2 * np.mean(v)).mean() for k, v in samples.calls.items()}
+        else:
+            return {k: (v < 2 * np.mean(v)).mean() for k, v in samples.calls.items()}
+    else:
+        if BiB:
+            return np.mean(samples > 2 * np.mean(samples, axis=0), axis=0)
+        else:
+            return np.mean(samples < 2 * np.mean(samples, axis=0), axis=0)

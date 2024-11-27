@@ -16,6 +16,7 @@ from CompStats.bootstrap import StatisticSamples
 
 
 def problem_algorithms():
+    """Problem and three predictions"""
     labels = [0, 0, 0, 0, 0,
                 1, 1, 1, 1, 1]
     a = [0, 0, 0, 0, 0,
@@ -26,8 +27,8 @@ def problem_algorithms():
             1, 1, 0, 1, 0]
     return (np.array(labels),
             dict(a=np.array(a),
-                    b=np.array(b),
-                    c=np.array(c)))
+                 b=np.array(b),
+                 c=np.array(c)))
 
 
 def test_StatisticSample():
@@ -50,6 +51,18 @@ def test_StatisticSample_name():
     indexes = statistic.samples(5)
     samples = statistic(np.r_[3, 4, 5, 2, 4], name='first')
     assert np.fabs(samples - statistic['first']).sum() == 0
+
+
+def test_StatisticSamples_melt():
+    """Test StatisticSamples melt"""
+    from sklearn.metrics import accuracy_score
+    import pandas as pd
+    labels, algs = problem_algorithms()
+    stats = StatisticSamples(num_samples=15, statistic=accuracy_score)
+    for k, v in algs.items():
+        stats(labels, v, name=k)
+    df = stats.melt()
+    assert isinstance(df, pd.DataFrame)
 
 
 

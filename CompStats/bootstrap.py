@@ -164,6 +164,14 @@ class StatisticSamples:
             self.calls[name] = self.statistic_samples
         return self.statistic_samples
 
+    def melt(self, var_name='Algorithm', value_name='Score'):
+        """Represent into a long DataFrame"""
+        import pandas as pd
+
+        return pd.DataFrame(self.calls).melt(var_name=var_name,
+                                             value_name=value_name)
+
+
 
 # class CI(StatisticSamples):
 #     """Compute the Confidence Interval of a statistic using bootstrap.

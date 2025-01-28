@@ -1,4 +1,4 @@
-# Copyright 2024 Sergio Nava Muñoz and Mario Graff Guerrero
+# Copyright 2025 Sergio Nava Muñoz and Mario Graff Guerrero
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -70,8 +70,22 @@ def test_Perf_clone():
     X_train, X_val, y_train, y_val = _
     ens = RandomForestClassifier().fit(X_train, y_train)
     perf = Perf(y_val, forest=ens.predict(X_val))
-    samples = perf.statistic_samples.samples
+    samples = perf.statistic_samples._samples
     perf2 = clone(perf)
     perf2.error_func = lambda y, hy: (y != hy).mean()
     assert 'forest' in perf2.statistic_samples.calls
-    assert np.all(samples == perf2.statistic_samples.samples)
+    assert np.all(samples == perf2.statistic_samples._samples)
+
+
+def test_Perf_best():
+    """Test Perf.best"""
+    from CompStats.interface import Perf
+
+    X, y = load_iris(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3)
+    X_train, X_val, y_train, y_val = _
+    m = LinearSVC().fit(X_train, y_train)
+    hy = m.predict(X_val)
+    ens = RandomForestClassifier().fit(X_train, y_train)
+    perf = Perf(y_val, hy, forest=ens.predict(X_val))
+    assert len(perf.best) == 2

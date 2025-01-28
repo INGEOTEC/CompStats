@@ -1,4 +1,4 @@
-# Copyright 2024 Sergio Nava Muñoz and Mario Graff Guerrero
+# Copyright 2025 Sergio Nava Muñoz and Mario Graff Guerrero
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -86,9 +86,7 @@ class Perf(object):
                                  n_jobs=self.n_jobs,
                                  num_samples=self.num_samples,
                                  BiB=bib)
-        if len(self.predictions):
-            for key, value in progress_bar(self.predictions.items()):
-                _(self.gold, value, name=key)
+            _.samples(N=self.gold.shape[0])
         self.statistic_samples = _
 
     def get_params(self):
@@ -105,7 +103,7 @@ class Perf(object):
         params = self.get_params()
         ins = klass(**params)
         ins.predictions = self.predictions
-        ins._statistic_samples.samples = self.statistic_samples.samples
+        ins._statistic_samples._samples = self.statistic_samples._samples
         return ins
 
     def __str__(self):
@@ -116,6 +114,20 @@ class Perf(object):
         for key, value in self.statistic().items():
             output.append(f'{key} = {value:0.3f} ({se[key]:0.3f})')
         return "\n".join(output)
+
+    @property
+    def best(self):
+        """Best system"""
+
+        try:
+            return self._best
+        except AttributeError:
+            statistic = [(k, self.statistic_func(self.gold, value))
+                         for k, value in self.predictions.items()]
+            statistic = sorted(statistic, key=lambda x: [1],
+                               reverse=self.statistic_samples.BiB)
+            self._best = statistic[0]
+        return self._best            
 
     def statistic(self):
         """Statistic

@@ -14,6 +14,8 @@
 from dataclasses import dataclass
 from sklearn.metrics import f1_score
 from sklearn.base import clone
+import pandas as pd
+import numpy as np
 from CompStats.bootstrap import StatisticSamples
 from CompStats.utils import progress_bar
 from CompStats.measurements import SE
@@ -26,6 +28,335 @@ def macro(func):
     def inner(y, hy):
         return func(y, hy, average='macro')
     return inner
+
+
+class Perf(object):
+    """Perf is an entry point to CompStats
+
+    :param y_true: True measurement or could be a pandas.DataFrame where column label 'y' corresponds to the true measurement.
+    :type y_true: numpy.ndarray or pandas.DataFrame
+    :param score_func: Function to measure the performance, it is assumed that the best algorithm has the highest value.
+    :type score_func: Function where the first argument is :math:`y` and the second is :math:`\\hat{y}.`
+    :param error_func: Function to measure the performance where the best algorithm has the lowest value.
+    :type error_func: Function where the first argument is :math:`y` and the second is :math:`\\hat{y}.` 
+    :param args: Predictions, the algorithms will be identified with alg-k where k=1 is the first argument included in :py:attr:`args.`
+    :type args: numpy.ndarray
+    :param kwargs: Predictions, the algorithms will be identified using the keyword
+    :type args: numpy.ndarray
+    :param n_jobs: Number of jobs to compute the statistic, default=-1 corresponding to use all threads.
+    :type n_jobs: int
+    :param num_samples: Number of bootstrap samples, default=500.
+    :type num_samples: int
+
+    >>> from sklearn.svm import LinearSVC
+    >>> from sklearn.ensemble import RandomForestClassifier
+    >>> from sklearn.datasets import load_iris
+    >>> from sklearn.model_selection import train_test_split
+    >>> from sklearn.base import clone
+    >>> from CompStats.interface import Perf
+    >>> X, y = load_iris(return_X_y=True)
+    >>> _ = train_test_split(X, y, test_size=0.3)
+    >>> X_train, X_val, y_train, y_val = _
+    >>> m = LinearSVC().fit(X_train, y_train)
+    >>> hy = m.predict(X_val)
+    >>> ens = RandomForestClassifier().fit(X_train, y_train)
+    >>> perf = Perf(y_val, hy, forest=ens.predict(X_val))
+    >>> perf
+    <Perf>
+    Prediction statistics with standard error
+    alg-1 = 1.000 (0.000)
+    forest = 0.978 (0.019)
+
+    >>> perf_error = clone(perf)
+    >>> perf_error.error_func = lambda y, hy: (y != hy).mean()
+    >>> perf_error
+    <Perf>
+    Prediction statistics with standard error
+    alg-1 = 0.000 (0.000)
+    forest = 0.022 (0.018)    
+
+    """
+    def __init__(self, y_true, *args,
+                 score_func=macro(f1_score),
+                 error_func=None,
+                 num_samples: int=500,
+                 n_jobs: int=-1,
+                 **kwargs):
+        assert (score_func is None) ^ (error_func is None)
+        self.score_func = score_func
+        self.error_func = error_func
+        algs = {}
+        for k, v in enumerate(args):
+            algs[f'alg-{k+1}'] = np.asanyarray(v)
+        algs.update(**kwargs)
+        self.predictions = algs
+        self.y_true = y_true
+        self.num_samples = num_samples
+        self.n_jobs = n_jobs
+        self._init()
+
+    def _init(self):
+        """Compute the bootstrap statistic"""
+
+        bib = True if self.score_func is not None else False
+        if hasattr(self, '_statistic_samples'):
+            _ = self.statistic_samples
+            _.BiB = bib
+        else:
+            _ = StatisticSamples(statistic=self.statistic_func,
+                                 n_jobs=self.n_jobs,
+                                 num_samples=self.num_samples,
+                                 BiB=bib)
+            _.samples(N=self.y_true.shape[0])
+        self.statistic_samples = _
+
+    def get_params(self):
+        """Parameters"""
+
+        return dict(y_true=self.y_true,
+                    score_func=self.score_func,
+                    error_func=self.error_func,
+                    num_samples=self.num_samples,
+                    n_jobs=self.n_jobs)
+
+    def __sklearn_clone__(self):
+        klass = self.__class__
+        params = self.get_params()
+        ins = klass(**params)
+        ins.predictions = dict(self.predictions)
+        ins._statistic_samples._samples = self.statistic_samples._samples
+        return ins
+    
+    def __repr__(self):
+        """Prediction statistics with standard error in parenthesis"""
+        return f"<{self.__class__.__name__}>\n{self}"
+
+    def __str__(self):
+        """Prediction statistics with standard error in parenthesis"""
+
+        se = self.se()
+        output = ["Prediction statistics with standard error"]
+        for key, value in self.statistic().items():
+            output.append(f'{key} = {value:0.3f} ({se[key]:0.3f})')
+        return "\n".join(output)
+
+    def difference(self, wrt_to: str=None):
+        """Compute the difference w.r.t any algorithm by default is the best
+
+        >>> from sklearn.svm import LinearSVC
+        >>> from sklearn.ensemble import RandomForestClassifier
+        >>> from sklearn.datasets import load_iris
+        >>> from sklearn.model_selection import train_test_split
+        >>> from sklearn.base import clone
+        >>> from CompStats.interface import Perf
+        >>> X, y = load_iris(return_X_y=True)
+        >>> _ = train_test_split(X, y, test_size=0.3)
+        >>> X_train, X_val, y_train, y_val = _
+        >>> m = LinearSVC().fit(X_train, y_train)
+        >>> hy = m.predict(X_val)
+        >>> ens = RandomForestClassifier().fit(X_train, y_train)
+        >>> perf = Perf(y_val, hy, forest=ens.predict(X_val))
+        >>> perf.difference()
+        <Difference>
+        difference p-values w.r.t alg-1
+        forest 0.06        
+        """
+        if wrt_to is None:
+            wrt_to = self.best[0]
+        base = self.statistic_samples.calls[wrt_to]
+        sign = 1 if self.statistic_samples.BiB else -1
+        diff = dict()
+        for k, v in self.statistic_samples.calls.items():
+            if k == wrt_to:
+                continue
+            diff[k] = sign * (base - v)
+        diff_ins = Difference(statistic_samples=clone(self.statistic_samples),
+                              statistic=self.statistic(),
+                              best=self.best[0])
+        diff_ins.statistic_samples.calls = diff
+        diff_ins.statistic_samples.info['best'] = self.best[0]
+        return diff_ins
+
+    @property
+    def best(self):
+        """Best system"""
+
+        try:
+            return self._best
+        except AttributeError:
+            statistic = [(k, v) for k, v in self.statistic().items()]
+            statistic = sorted(statistic, key=lambda x: x[1],
+                               reverse=self.statistic_samples.BiB)
+            self._best = statistic[0]
+        return self._best
+
+    def statistic(self):
+        """Statistic
+
+        >>> from sklearn.svm import LinearSVC
+        >>> from sklearn.ensemble import RandomForestClassifier
+        >>> from sklearn.datasets import load_iris
+        >>> from sklearn.model_selection import train_test_split
+        >>> from CompStats.interface import Perf
+        >>> X, y = load_iris(return_X_y=True)
+        >>> _ = train_test_split(X, y, test_size=0.3)
+        >>> X_train, X_val, y_train, y_val = _
+        >>> m = LinearSVC().fit(X_train, y_train)
+        >>> hy = m.predict(X_val)
+        >>> ens = RandomForestClassifier().fit(X_train, y_train)
+        >>> perf = Perf(y_val, hy, forest=ens.predict(X_val))
+        >>> perf.statistic()
+        {'alg-1': 1.0, 'forest': 0.9500891265597148}     
+        """
+
+        data = sorted([(k, self.statistic_func(self.y_true, v))
+                       for k, v in self.predictions.items()],
+                      key=lambda x: x[1], reverse=self.statistic_samples.BiB)
+        return dict(data)
+
+    def se(self):
+        """Standard Error
+    
+        >>> from sklearn.svm import LinearSVC
+        >>> from sklearn.ensemble import RandomForestClassifier
+        >>> from sklearn.datasets import load_iris
+        >>> from sklearn.model_selection import train_test_split
+        >>> from CompStats.interface import Perf
+        >>> X, y = load_iris(return_X_y=True)
+        >>> _ = train_test_split(X, y, test_size=0.3)
+        >>> X_train, X_val, y_train, y_val = _
+        >>> m = LinearSVC().fit(X_train, y_train)
+        >>> hy = m.predict(X_val)
+        >>> ens = RandomForestClassifier().fit(X_train, y_train)
+        >>> perf = Perf(y_val, hy, forest=ens.predict(X_val))
+        >>> print(perf.se())
+        {'alg-1': 0.0, 'forest': 0.026945730782184187}
+        """
+        return SE(self.statistic_samples)
+
+    def plot(self, **kwargs):
+        """plot with seaborn
+
+        >>> from sklearn.svm import LinearSVC
+        >>> from sklearn.ensemble import RandomForestClassifier
+        >>> from sklearn.datasets import load_iris
+        >>> from sklearn.model_selection import train_test_split
+        >>> from CompStats.interface import Perf
+        >>> X, y = load_iris(return_X_y=True)
+        >>> _ = train_test_split(X, y, test_size=0.3)
+        >>> X_train, X_val, y_train, y_val = _
+        >>> m = LinearSVC().fit(X_train, y_train)
+        >>> hy = m.predict(X_val)
+        >>> ens = RandomForestClassifier().fit(X_train, y_train)
+        >>> perf = Perf(y_val, hy, score_func=None,
+                        error_func=lambda y, hy: (y != hy).mean(),
+                        forest=ens.predict(X_val))
+        >>> perf.plot()
+        """
+        if self.score_func is not None:
+            value_name = 'Score'
+        else:
+            value_name = 'Error'
+        _ = dict(value_name=value_name)
+        _.update(kwargs)  
+        return plot_performance(self.statistic_samples, **_)
+
+    @property
+    def n_jobs(self):
+        """Number of jobs to compute the statistics"""
+        return self._n_jobs
+
+    @n_jobs.setter
+    def n_jobs(self, value):
+        self._n_jobs = value
+
+    @property
+    def statistic_func(self):
+        """Statistic function"""
+        if self.score_func is not None:
+            return self.score_func
+        return self.error_func
+
+    @property
+    def statistic_samples(self):
+        """Statistic Samples"""
+
+        samples = self._statistic_samples
+        algs = set(samples.calls.keys())
+        algs = set(self.predictions.keys()) - algs
+        if len(algs):
+            for key in progress_bar(algs):
+                samples(self.y_true, self.predictions[key], name=key)
+        return self._statistic_samples
+
+    @statistic_samples.setter
+    def statistic_samples(self, value):
+        self._statistic_samples = value
+
+    @property
+    def num_samples(self):
+        """Number of bootstrap samples"""
+        return self._num_samples
+
+    @num_samples.setter
+    def num_samples(self, value):
+        self._num_samples = value
+
+    @property
+    def predictions(self):
+        """Predictions"""
+        return self._predictions
+
+    @predictions.setter
+    def predictions(self, value):
+        self._predictions = value
+
+    @property
+    def y_true(self):
+        """True output, gold standard o :math:`y`"""
+
+        return self._y_true
+
+    @y_true.setter
+    def y_true(self, value):
+        if isinstance(value, pd.DataFrame):
+            self._y_true = value['y'].to_numpy()
+            algs = {}
+            for c in value.columns:
+                if c == 'y':
+                    continue
+                algs[c] = value[c].to_numpy()
+            self.predictions.update(algs)
+            return
+        self._y_true = value
+
+    @property
+    def score_func(self):
+        """Score function"""
+        return self._score_func
+
+    @score_func.setter
+    def score_func(self, value):
+        self._score_func = value
+        if value is not None:
+            self.error_func = None
+            if hasattr(self, '_statistic_samples'):
+                self._statistic_samples.statistic = value
+                self._statistic_samples.BiB = True
+
+    @property
+    def error_func(self):
+        """Error function"""
+        return self._error_func
+
+    @error_func.setter
+    def error_func(self, value):
+        self._error_func = value
+        if value is not None:
+            self.score_func = None
+            if hasattr(self, '_statistic_samples'):
+                self._statistic_samples.statistic = value
+                self._statistic_samples.BiB = False
 
 
 @dataclass
@@ -116,309 +447,3 @@ class Difference:
         """
 
         return plot_difference(self.statistic_samples, **kwargs)
-
-
-
-class Perf(object):
-    """Perf is an entry point to CompStats
-
-    >>> from sklearn.svm import LinearSVC
-    >>> from sklearn.ensemble import RandomForestClassifier
-    >>> from sklearn.datasets import load_iris
-    >>> from sklearn.model_selection import train_test_split
-    >>> from sklearn.base import clone
-    >>> from CompStats.interface import Perf
-    >>> X, y = load_iris(return_X_y=True)
-    >>> _ = train_test_split(X, y, test_size=0.3)
-    >>> X_train, X_val, y_train, y_val = _
-    >>> m = LinearSVC().fit(X_train, y_train)
-    >>> hy = m.predict(X_val)
-    >>> ens = RandomForestClassifier().fit(X_train, y_train)
-    >>> perf = Perf(y_val, hy, forest=ens.predict(X_val))
-    >>> perf
-    <Perf>
-    Prediction statistics with standard error
-    alg-1 = 1.000 (0.000)
-    forest = 0.978 (0.019)
-
-    >>> perf_error = clone(perf)
-    >>> perf_error.error_func = lambda y, hy: (y != hy).mean()
-    >>> perf_error
-    <Perf>
-    Prediction statistics with standard error
-    alg-1 = 0.000 (0.000)
-    forest = 0.022 (0.018)    
-
-    """
-    def __init__(self, gold, *args,
-                 score_func=macro(f1_score),
-                 error_func=None,
-                 num_samples: int=50,
-                 n_jobs: int=-1,
-                 **kwargs):
-        assert (score_func is None) ^ (error_func is None)
-        self.score_func = score_func
-        self.error_func = error_func
-        self.gold = gold
-        algs = {}
-        for k, v in enumerate(args):
-            algs[f'alg-{k+1}'] = v
-        algs.update(**kwargs)
-        self.predictions = algs
-        self.num_samples = num_samples
-        self.n_jobs = n_jobs
-        self._init()
-
-    def _init(self):
-        """Compute the bootstrap statistic"""
-
-        bib = True if self.score_func is not None else False
-        if hasattr(self, '_statistic_samples'):
-            _ = self.statistic_samples
-            _.BiB = bib
-        else:
-            _ = StatisticSamples(statistic=self.statistic_func,
-                                 n_jobs=self.n_jobs,
-                                 num_samples=self.num_samples,
-                                 BiB=bib)
-            _.samples(N=self.gold.shape[0])
-        self.statistic_samples = _
-
-    def get_params(self):
-        """Parameters"""
-
-        return dict(gold=self.gold,
-                    score_func=self.score_func,
-                    error_func=self.error_func,
-                    num_samples=self.num_samples,
-                    n_jobs=self.n_jobs)
-
-    def __sklearn_clone__(self):
-        klass = self.__class__
-        params = self.get_params()
-        ins = klass(**params)
-        ins.predictions = dict(self.predictions)
-        ins._statistic_samples._samples = self.statistic_samples._samples
-        return ins
-    
-    def __repr__(self):
-        """Prediction statistics with standard error in parenthesis"""
-        return f"<{self.__class__.__name__}>\n{self}"
-
-    def __str__(self):
-        """Prediction statistics with standard error in parenthesis"""
-
-        se = self.se()
-        output = ["Prediction statistics with standard error"]
-        for key, value in self.statistic().items():
-            output.append(f'{key} = {value:0.3f} ({se[key]:0.3f})')
-        return "\n".join(output)
-
-    def difference(self, wrt_to: str=None):
-        """Compute the difference w.r.t any algorithm by default is the best
-
-        >>> from sklearn.svm import LinearSVC
-        >>> from sklearn.ensemble import RandomForestClassifier
-        >>> from sklearn.datasets import load_iris
-        >>> from sklearn.model_selection import train_test_split
-        >>> from sklearn.base import clone
-        >>> from CompStats.interface import Perf
-        >>> X, y = load_iris(return_X_y=True)
-        >>> _ = train_test_split(X, y, test_size=0.3)
-        >>> X_train, X_val, y_train, y_val = _
-        >>> m = LinearSVC().fit(X_train, y_train)
-        >>> hy = m.predict(X_val)
-        >>> ens = RandomForestClassifier().fit(X_train, y_train)
-        >>> perf = Perf(y_val, hy, forest=ens.predict(X_val))
-        >>> perf.difference()
-        <Difference>
-        difference p-values w.r.t alg-1
-        forest 0.06        
-        """
-        if wrt_to is None:
-            wrt_to = self.best[0]
-        base = self.statistic_samples.calls[wrt_to]
-        sign = 1 if self.statistic_samples.BiB else -1
-        diff = dict()
-        for k, v in self.statistic_samples.calls.items():
-            if k == wrt_to:
-                continue
-            diff[k] = sign * (base - v)
-        diff_ins = Difference(statistic_samples=clone(self.statistic_samples),
-                              statistic=self.statistic(),
-                              best=self.best[0])
-        diff_ins.statistic_samples.calls = diff
-        diff_ins.statistic_samples.info['best'] = self.best[0]
-        return diff_ins
-
-    @property
-    def best(self):
-        """Best system"""
-
-        try:
-            return self._best
-        except AttributeError:
-            statistic = [(k, v) for k, v in self.statistic().items()]
-            statistic = sorted(statistic, key=lambda x: x[1],
-                               reverse=self.statistic_samples.BiB)
-            self._best = statistic[0]
-        return self._best            
-
-    def statistic(self):
-        """Statistic
-
-        >>> from sklearn.svm import LinearSVC
-        >>> from sklearn.ensemble import RandomForestClassifier
-        >>> from sklearn.datasets import load_iris
-        >>> from sklearn.model_selection import train_test_split
-        >>> from CompStats.interface import Perf
-        >>> X, y = load_iris(return_X_y=True)
-        >>> _ = train_test_split(X, y, test_size=0.3)
-        >>> X_train, X_val, y_train, y_val = _
-        >>> m = LinearSVC().fit(X_train, y_train)
-        >>> hy = m.predict(X_val)
-        >>> ens = RandomForestClassifier().fit(X_train, y_train)
-        >>> perf = Perf(y_val, hy, forest=ens.predict(X_val))
-        >>> print(perf.statistic())
-        {'alg-1': 1.0, 'forest': 0.9500891265597148}     
-        """
-
-        data = sorted([(k, self.statistic_func(self.gold, v))
-                       for k, v in self.predictions.items()],
-                      key=lambda x: x[1], reverse=self.statistic_samples.BiB)
-        return dict(data)
-
-    def se(self):
-        """Standard Error
-    
-        >>> from sklearn.svm import LinearSVC
-        >>> from sklearn.ensemble import RandomForestClassifier
-        >>> from sklearn.datasets import load_iris
-        >>> from sklearn.model_selection import train_test_split
-        >>> from CompStats.interface import Perf
-        >>> X, y = load_iris(return_X_y=True)
-        >>> _ = train_test_split(X, y, test_size=0.3)
-        >>> X_train, X_val, y_train, y_val = _
-        >>> m = LinearSVC().fit(X_train, y_train)
-        >>> hy = m.predict(X_val)
-        >>> ens = RandomForestClassifier().fit(X_train, y_train)
-        >>> perf = Perf(y_val, hy, forest=ens.predict(X_val))
-        >>> print(perf.se())
-        {'alg-1': 0.0, 'forest': 0.026945730782184187}
-        """
-        return SE(self.statistic_samples)
-
-    def plot(self, **kwargs):
-        """plot with seaborn
-
-        >>> from sklearn.svm import LinearSVC
-        >>> from sklearn.ensemble import RandomForestClassifier
-        >>> from sklearn.datasets import load_iris
-        >>> from sklearn.model_selection import train_test_split
-        >>> from CompStats.interface import Perf
-        >>> X, y = load_iris(return_X_y=True)
-        >>> _ = train_test_split(X, y, test_size=0.3)
-        >>> X_train, X_val, y_train, y_val = _
-        >>> m = LinearSVC().fit(X_train, y_train)
-        >>> hy = m.predict(X_val)
-        >>> ens = RandomForestClassifier().fit(X_train, y_train)
-        >>> perf = Perf(y_val, hy, score_func=None,
-                        error_func=lambda y, hy: (y != hy).mean(),
-                        forest=ens.predict(X_val))
-        >>> perf.plot()
-        """
-        if self.score_func is not None:
-            value_name = 'Score'
-        else:
-            value_name = 'Error'
-        _ = dict(value_name=value_name)
-        _.update(kwargs)  
-        return plot_performance(self.statistic_samples, **_)
-
-    @property
-    def n_jobs(self):
-        """Number of jobs to compute the statistics"""
-        return self._n_jobs
-
-    @n_jobs.setter
-    def n_jobs(self, value):
-        self._n_jobs = value
-
-    @property
-    def statistic_func(self):
-        """Statistic function"""
-        if self.score_func is not None:
-            return self.score_func
-        return self.error_func
-
-    @property
-    def statistic_samples(self):
-        """Statistic Samples"""
-
-        samples = self._statistic_samples
-        algs = set(samples.calls.keys())
-        algs = set(self.predictions.keys()) - algs
-        if len(algs):
-            for key in progress_bar(algs):
-                samples(self.gold, self.predictions[key], name=key)
-        return self._statistic_samples
-
-    @statistic_samples.setter
-    def statistic_samples(self, value):
-        self._statistic_samples = value
-
-    @property
-    def num_samples(self):
-        """Number of bootstrap samples"""
-        return self._num_samples
-
-    @num_samples.setter
-    def num_samples(self, value):
-        self._num_samples = value
-
-    @property
-    def predictions(self):
-        """Predictions"""
-        return self._predictions
-
-    @predictions.setter
-    def predictions(self, value):
-        self._predictions = value
-
-    @property
-    def gold(self):
-        """True output, gold standard o :math:`y`"""
-
-        return self._gold
-
-    @gold.setter
-    def gold(self, value):
-        self._gold = value
-
-    @property
-    def score_func(self):
-        """Score function"""
-        return self._score_func
-
-    @score_func.setter
-    def score_func(self, value):
-        self._score_func = value
-        if value is not None:
-            self.error_func = None
-            if hasattr(self, '_statistic_samples'):
-                self._statistic_samples.statistic = value
-                self._statistic_samples.BiB = True
-
-    @property
-    def error_func(self):
-        """Error function"""
-        return self._error_func
-
-    @error_func.setter
-    def error_func(self, value):
-        self._error_func = value
-        if value is not None:
-            self.score_func = None
-            if hasattr(self, '_statistic_samples'):
-                self._statistic_samples.statistic = value
-                self._statistic_samples.BiB = False

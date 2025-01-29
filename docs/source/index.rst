@@ -285,6 +285,8 @@ API
 .. toctree::
    :maxdepth: 1
 
+   metrics_api
+   interface_api
    performance_api
    measurements_api
    bootstrap_api

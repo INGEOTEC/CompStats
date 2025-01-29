@@ -17,3 +17,4 @@ from CompStats.measurements import CI, SE, difference_p_value
 from CompStats.performance import performance, difference, all_differences, plot_performance, plot_difference
 from CompStats.performance import performance_multiple_metrics, difference_multiple, plot_performance_multiple, plot_difference_multiple
 from CompStats.performance import all_differences_multiple, plot_performance2, plot_difference2, plot_scatter_matrix
+from CompStats.interface import Perf

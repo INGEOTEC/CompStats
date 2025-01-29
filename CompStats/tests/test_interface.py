@@ -89,3 +89,19 @@ def test_Perf_best():
     ens = RandomForestClassifier().fit(X_train, y_train)
     perf = Perf(y_val, hy, forest=ens.predict(X_val))
     assert len(perf.best) == 2
+
+
+def test_Perf_difference():
+    """Test difference"""
+    from CompStats.interface import Perf, Difference
+
+    X, y = load_iris(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3)
+    X_train, X_val, y_train, y_val = _
+    m = LinearSVC().fit(X_train, y_train)
+    hy = m.predict(X_val)
+    ens = RandomForestClassifier().fit(X_train, y_train)
+    perf = Perf(y_val, hy, forest=ens.predict(X_val))
+    diff = perf.difference()
+    assert isinstance(diff, Difference)
+    assert isinstance(str(diff), str)

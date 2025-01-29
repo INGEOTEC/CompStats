@@ -11,7 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from dataclasses import dataclass
 from sklearn.metrics import f1_score
+from sklearn.base import clone
 from CompStats.bootstrap import StatisticSamples
 from CompStats.utils import progress_bar
 from CompStats.measurements import SE
@@ -24,6 +26,49 @@ def macro(func):
     def inner(y, hy):
         return func(y, hy, average='macro')
     return inner
+
+
+@dataclass
+class Difference:
+    """Difference"""
+
+    statistic_samples:StatisticSamples=None
+    best:str=None
+    statistic:dict=None
+
+    def __str__(self):
+        output = [f"difference p-values w.r.t {self.best}"]
+        for k, v in self.p_value().items():
+            output.append(f'{k} {v}')
+        return "\n".join(output)
+
+    def p_value(self):
+        """Compute p_value of the differences
+        
+        >>> from sklearn.svm import LinearSVC
+        >>> from sklearn.ensemble import RandomForestClassifier
+        >>> from sklearn.datasets import load_iris
+        >>> from sklearn.model_selection import train_test_split
+        >>> from sklearn.base import clone
+        >>> from CompStats.interface import Perf
+        >>> X, y = load_iris(return_X_y=True)
+        >>> _ = train_test_split(X, y, test_size=0.3)
+        >>> X_train, X_val, y_train, y_val = _
+        >>> m = LinearSVC().fit(X_train, y_train)
+        >>> hy = m.predict(X_val)
+        >>> ens = RandomForestClassifier().fit(X_train, y_train)
+        >>> perf = Perf(y_val, hy, forest=ens.predict(X_val))
+        >>> diff = perf.difference()
+        >>> diff.p_value()
+        {'forest': np.float64(0.3)}
+        """
+        values = []
+        sign = 1 if self.statistic_samples.BiB else -1
+        for k, v in self.statistic_samples.calls.items():
+            delta = 2 * sign * (self.statistic[self.best] - self.statistic[k])
+            values.append((k, (v > delta).mean()))
+        values.sort(key=lambda x: x[1])
+        return dict(values)
 
 
 class Perf(object):
@@ -102,7 +147,7 @@ class Perf(object):
         klass = self.__class__
         params = self.get_params()
         ins = klass(**params)
-        ins.predictions = self.predictions
+        ins.predictions = dict(self.predictions)
         ins._statistic_samples._samples = self.statistic_samples._samples
         return ins
 
@@ -115,6 +160,40 @@ class Perf(object):
             output.append(f'{key} = {value:0.3f} ({se[key]:0.3f})')
         return "\n".join(output)
 
+    def difference(self, wrt_to: str=None):
+        """Compute the difference w.r.t any algorithm by default is the best
+
+        >>> from sklearn.svm import LinearSVC
+        >>> from sklearn.ensemble import RandomForestClassifier
+        >>> from sklearn.datasets import load_iris
+        >>> from sklearn.model_selection import train_test_split
+        >>> from sklearn.base import clone
+        >>> from CompStats.interface import Perf
+        >>> X, y = load_iris(return_X_y=True)
+        >>> _ = train_test_split(X, y, test_size=0.3)
+        >>> X_train, X_val, y_train, y_val = _
+        >>> m = LinearSVC().fit(X_train, y_train)
+        >>> hy = m.predict(X_val)
+        >>> ens = RandomForestClassifier().fit(X_train, y_train)
+        >>> perf = Perf(y_val, hy, forest=ens.predict(X_val))
+        >>> diff = perf.difference()
+        """
+        if wrt_to is None:
+            wrt_to = self.best[0]
+        base = self.statistic_samples.calls[wrt_to]
+        sign = 1 if self.statistic_samples.BiB else -1
+        diff = dict()
+        for k, v in self.statistic_samples.calls.items():
+            if k == wrt_to:
+                continue
+            diff[k] = sign * (base - v)
+        diff_ins = Difference(statistic_samples=clone(self.statistic_samples),
+                              statistic=self.statistic(),
+                              best=self.best[0])
+        diff_ins.statistic_samples.calls = diff
+        diff_ins.statistic_samples.info['best'] = self.best[0]
+        return diff_ins
+
     @property
     def best(self):
         """Best system"""
@@ -122,9 +201,8 @@ class Perf(object):
         try:
             return self._best
         except AttributeError:
-            statistic = [(k, self.statistic_func(self.gold, value))
-                         for k, value in self.predictions.items()]
-            statistic = sorted(statistic, key=lambda x: [1],
+            statistic = [(k, v) for k, v in self.statistic().items()]
+            statistic = sorted(statistic, key=lambda x: x[1],
                                reverse=self.statistic_samples.BiB)
             self._best = statistic[0]
         return self._best            

@@ -131,3 +131,23 @@ def test_Perf_dataframe():
     df = pd.read_csv(DATA)
     perf = Perf(df, num_samples=50)
     assert 'INGEOTEC' in perf.statistic()
+
+
+def test_Perf_call():
+    """Test Perf call"""
+    from CompStats.interface import Perf
+
+    X, y = load_iris(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3)
+    X_train, X_val, y_train, y_val = _
+    m = LinearSVC().fit(X_train, y_train)
+    hy = m.predict(X_val)
+    ens = RandomForestClassifier().fit(X_train, y_train)
+    hy2 = ens.predict(X_val)
+    perf = Perf(y_val, num_samples=50)
+    for xx in [hy, hy2]:
+        _ = perf(xx)
+        print(_)
+    perf(hy, name='alg-2')
+    assert 'alg-2' not in perf._statistic_samples.calls
+    assert 'alg-1' in perf._statistic_samples.calls

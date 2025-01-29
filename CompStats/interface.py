@@ -47,8 +47,12 @@ class Perf(object):
     :type n_jobs: int
     :param num_samples: Number of bootstrap samples, default=500.
     :type num_samples: int
+    :param use_tqdm: Whether to use tqdm.tqdm to visualize the progress, default=True
+    :type use_tqdm: bool
+
 
     >>> from sklearn.svm import LinearSVC
+    >>> from sklearn.linear_model import LogisticRegression
     >>> from sklearn.ensemble import RandomForestClassifier
     >>> from sklearn.datasets import load_iris
     >>> from sklearn.model_selection import train_test_split
@@ -65,7 +69,19 @@ class Perf(object):
     <Perf>
     Prediction statistics with standard error
     alg-1 = 1.000 (0.000)
-    forest = 0.978 (0.019)
+    forest = 0.946 (0.038)
+    
+    If an algorithm's prediction is missing, this can be included by calling the instance, as can be seen in the following instruction. Note that the algorithm's name can also be given with the keyword :py:attr:`name.`
+
+    >>> lr = LogisticRegression().fit(X_train, y_train)
+    >>> perf(lr.predict(X_val), name='Log. Reg.')
+    <Perf>
+    Prediction statistics with standard error
+    alg-1 = 1.000 (0.000)
+    forest = 0.946 (0.038)
+    Log. Reg. = 0.946 (0.038)
+    
+    The performance function used to compare the algorithms can be changed, and the same bootstrap samples would be used if the instance were cloned. Consequently, the values are computed using the same samples, as can be seen in the following example.
 
     >>> perf_error = clone(perf)
     >>> perf_error.error_func = lambda y, hy: (y != hy).mean()
@@ -73,7 +89,8 @@ class Perf(object):
     <Perf>
     Prediction statistics with standard error
     alg-1 = 0.000 (0.000)
-    forest = 0.022 (0.018)    
+    forest = 0.044 (0.030)
+    Log. Reg. = 0.044 (0.030)
 
     """
     def __init__(self, y_true, *args,
@@ -81,6 +98,7 @@ class Perf(object):
                  error_func=None,
                  num_samples: int=500,
                  n_jobs: int=-1,
+                 use_tqdm=True,
                  **kwargs):
         assert (score_func is None) ^ (error_func is None)
         self.score_func = score_func
@@ -93,6 +111,7 @@ class Perf(object):
         self.y_true = y_true
         self.num_samples = num_samples
         self.n_jobs = n_jobs
+        self.use_tqdm = use_tqdm
         self._init()
 
     def _init(self):
@@ -139,6 +158,20 @@ class Perf(object):
         for key, value in self.statistic().items():
             output.append(f'{key} = {value:0.3f} ({se[key]:0.3f})')
         return "\n".join(output)
+
+    def __call__(self, y_pred, name=None):
+        """Add predictions"""
+        if name is None:
+            k = len(self.predictions) + 1
+            if k == 0:
+                k = 1
+            name = f'alg-{k}'
+        self.predictions[name] = np.asanyarray(y_pred)
+        samples = self._statistic_samples
+        calls = samples.calls
+        if name in calls:
+            del calls[name]
+        return self
 
     def difference(self, wrt_to: str=None):
         """Compute the difference w.r.t any algorithm by default is the best
@@ -285,7 +318,7 @@ class Perf(object):
         algs = set(samples.calls.keys())
         algs = set(self.predictions.keys()) - algs
         if len(algs):
-            for key in progress_bar(algs):
+            for key in progress_bar(algs, use_tqdm=self.use_tqdm):
                 samples(self.y_true, self.predictions[key], name=key)
         return self._statistic_samples
 

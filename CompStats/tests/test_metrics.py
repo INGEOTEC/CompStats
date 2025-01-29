@@ -28,3 +28,29 @@ def test_f1_score():
     perf = f1_score(y_val, forest=ens.predict(X_val),
                     num_samples=50, average='macro')
     assert 'forest' in perf.statistic()
+
+
+def test_accuracy_score():
+    """Test f1_score"""
+    from CompStats.metrics import accuracy_score
+
+    X, y = load_iris(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestClassifier().fit(X_train, y_train)
+    perf = accuracy_score(y_val, forest=ens.predict(X_val),
+                          num_samples=50)
+    assert 'forest' in perf.statistic()
+
+
+def test_balanced_accuracy_score():
+    """Test f1_score"""
+    from CompStats.metrics import balanced_accuracy_score
+
+    X, y = load_iris(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestClassifier().fit(X_train, y_train)
+    perf = balanced_accuracy_score(y_val, forest=ens.predict(X_val),
+                                   num_samples=50)
+    assert 'forest' in perf.statistic()        

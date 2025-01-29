@@ -17,7 +17,7 @@ from sklearn.base import clone
 from CompStats.bootstrap import StatisticSamples
 from CompStats.utils import progress_bar
 from CompStats.measurements import SE
-from CompStats.performance import plot_performance
+from CompStats.performance import plot_performance, plot_difference
 
 
 def macro(func):
@@ -30,13 +30,38 @@ def macro(func):
 
 @dataclass
 class Difference:
-    """Difference"""
+    """Difference
+    
+    >>> from sklearn.svm import LinearSVC
+    >>> from sklearn.ensemble import RandomForestClassifier
+    >>> from sklearn.datasets import load_iris
+    >>> from sklearn.model_selection import train_test_split
+    >>> from sklearn.base import clone
+    >>> from CompStats.interface import Perf
+    >>> X, y = load_iris(return_X_y=True)
+    >>> _ = train_test_split(X, y, test_size=0.3)
+    >>> X_train, X_val, y_train, y_val = _
+    >>> m = LinearSVC().fit(X_train, y_train)
+    >>> hy = m.predict(X_val)
+    >>> ens = RandomForestClassifier().fit(X_train, y_train)
+    >>> perf = Perf(y_val, hy, forest=ens.predict(X_val))
+    >>> diff = perf.difference()
+    >>> diff
+    <Difference>
+    difference p-values w.r.t alg-1
+    forest 0.3
+    """
 
     statistic_samples:StatisticSamples=None
     best:str=None
     statistic:dict=None
 
+    def __repr__(self):
+        """p-value"""
+        return f"<{self.__class__.__name__}>\n{self}"    
+
     def __str__(self):
+        """p-value"""
         output = [f"difference p-values w.r.t {self.best}"]
         for k, v in self.p_value().items():
             output.append(f'{k} {v}')
@@ -70,6 +95,29 @@ class Difference:
         values.sort(key=lambda x: x[1])
         return dict(values)
 
+    def plot(self, **kwargs):
+        """Plot
+
+        >>> from sklearn.svm import LinearSVC
+        >>> from sklearn.ensemble import RandomForestClassifier
+        >>> from sklearn.datasets import load_iris
+        >>> from sklearn.model_selection import train_test_split
+        >>> from sklearn.base import clone
+        >>> from CompStats.interface import Perf
+        >>> X, y = load_iris(return_X_y=True)
+        >>> _ = train_test_split(X, y, test_size=0.3)
+        >>> X_train, X_val, y_train, y_val = _
+        >>> m = LinearSVC().fit(X_train, y_train)
+        >>> hy = m.predict(X_val)
+        >>> ens = RandomForestClassifier().fit(X_train, y_train)
+        >>> perf = Perf(y_val, hy, forest=ens.predict(X_val))
+        >>> diff = perf.difference()
+        >>> diff.plot()
+        """
+
+        return plot_difference(self.statistic_samples, **kwargs)
+
+
 
 class Perf(object):
     """Perf is an entry point to CompStats
@@ -87,14 +135,16 @@ class Perf(object):
     >>> hy = m.predict(X_val)
     >>> ens = RandomForestClassifier().fit(X_train, y_train)
     >>> perf = Perf(y_val, hy, forest=ens.predict(X_val))
-    >>> print(perf)
+    >>> perf
+    <Perf>
     Prediction statistics with standard error
     alg-1 = 1.000 (0.000)
     forest = 0.978 (0.019)
 
     >>> perf_error = clone(perf)
     >>> perf_error.error_func = lambda y, hy: (y != hy).mean()
-    >>> print(perf_error)
+    >>> perf_error
+    <Perf>
     Prediction statistics with standard error
     alg-1 = 0.000 (0.000)
     forest = 0.022 (0.018)    
@@ -150,6 +200,10 @@ class Perf(object):
         ins.predictions = dict(self.predictions)
         ins._statistic_samples._samples = self.statistic_samples._samples
         return ins
+    
+    def __repr__(self):
+        """Prediction statistics with standard error in parenthesis"""
+        return f"<{self.__class__.__name__}>\n{self}"
 
     def __str__(self):
         """Prediction statistics with standard error in parenthesis"""
@@ -176,7 +230,10 @@ class Perf(object):
         >>> hy = m.predict(X_val)
         >>> ens = RandomForestClassifier().fit(X_train, y_train)
         >>> perf = Perf(y_val, hy, forest=ens.predict(X_val))
-        >>> diff = perf.difference()
+        >>> perf.difference()
+        <Difference>
+        difference p-values w.r.t alg-1
+        forest 0.06        
         """
         if wrt_to is None:
             wrt_to = self.best[0]
@@ -225,8 +282,11 @@ class Perf(object):
         >>> print(perf.statistic())
         {'alg-1': 1.0, 'forest': 0.9500891265597148}     
         """
-        return {k: self.statistic_func(self.gold, v)
-                for k, v in self.predictions.items()}
+
+        data = sorted([(k, self.statistic_func(self.gold, v))
+                       for k, v in self.predictions.items()],
+                      key=lambda x: x[1], reverse=self.statistic_samples.BiB)
+        return dict(data)
 
     def se(self):
         """Standard Error

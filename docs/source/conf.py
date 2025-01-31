@@ -48,7 +48,8 @@ extensions = [
     'sphinx.ext.intersphinx'    
 ]
 
-intersphinx_mapping = {}
+# intersphinx_mapping = {}
+intersphinx_mapping = {'sklearn': ('https://scikit-learn.org/stable/', None)}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

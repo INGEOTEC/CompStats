@@ -89,3 +89,5 @@ Naive Bayes 0.0
 The class `Difference` has the `plot` method that can be used to depict the difference with respect to the best. 
 
 >>> diff.plot()
+
+.. image:: https://github.com/INGEOTEC/CompStats/raw/docs/docs/source/digits_difference.png

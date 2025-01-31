@@ -5,6 +5,7 @@ dependencies:
   - python
   - pip
   - scikit-learn
+  - statsmodels
   - pytest
   - tqdm
   - sphinx

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from dataclasses import dataclass
-from sklearn.metrics import f1_score
+from sklearn.metrics import balanced_accuracy_score
 from sklearn.base import clone
 import pandas as pd
 import numpy as np
@@ -20,14 +20,6 @@ from CompStats.bootstrap import StatisticSamples
 from CompStats.utils import progress_bar
 from CompStats.measurements import SE
 from CompStats.performance import plot_performance, plot_difference
-
-
-def macro(func):
-    """Macro score"""
-
-    def inner(y, hy):
-        return func(y, hy, average='macro')
-    return inner
 
 
 class Perf(object):
@@ -42,12 +34,12 @@ class Perf(object):
     :param args: Predictions, the algorithms will be identified with alg-k where k=1 is the first argument included in :py:attr:`args.`
     :type args: numpy.ndarray
     :param kwargs: Predictions, the algorithms will be identified using the keyword
-    :type args: numpy.ndarray
+    :type kwargs: numpy.ndarray
     :param n_jobs: Number of jobs to compute the statistic, default=-1 corresponding to use all threads.
     :type n_jobs: int
     :param num_samples: Number of bootstrap samples, default=500.
     :type num_samples: int
-    :param use_tqdm: Whether to use tqdm.tqdm to visualize the progress, default=True
+    :param use_tqdm: Whether to use tqdm.tqdm to visualize the progress, default=True.
     :type use_tqdm: bool
 
 
@@ -94,7 +86,7 @@ class Perf(object):
 
     """
     def __init__(self, y_true, *args,
-                 score_func=macro(f1_score),
+                 score_func=balanced_accuracy_score,
                  error_func=None,
                  num_samples: int=500,
                  n_jobs: int=-1,

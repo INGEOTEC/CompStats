@@ -5,7 +5,9 @@ dependencies:
   - python
   - pip
   - scikit-learn
-  - pandas
-  - seaborn
   - pytest
   - tqdm
+  - sphinx
+  - pip:
+    - pandas
+    - seaborn

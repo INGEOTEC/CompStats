@@ -8,5 +8,4 @@ dependencies:
   - pandas
   - seaborn
   - pytest
-  - sphinx
   - tqdm

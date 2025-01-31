@@ -73,7 +73,7 @@ def test_performance_multiple_metrics():
         {"func": mean_absolute_error, 'BiB': False}
         ]
     perf = performance_multiple_metrics(df, "y", metrics)
-    ins = plot_performance_multiple(perf)
+    plot_performance_multiple(perf)
     assert 'accuracy_score' in perf['samples']
     assert 'y' not in perf['samples']['accuracy_score']
     assert 'INGEOTEC' in perf['samples']['accuracy_score']
@@ -90,7 +90,7 @@ def test_difference_multiple():
         ]
     perf = performance_multiple_metrics(df, "y", metrics)
     diff = difference_multiple(perf)
-    ins = plot_difference_multiple(diff)
+    plot_difference_multiple(diff)
     assert diff['winner']['accuracy_score']['best'] == 'BoW'
     assert 'BoW' not in diff['winner']['accuracy_score']['diff'].keys()
     # assert isinstance(ins, sns.FacetGrid)

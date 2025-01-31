@@ -18,8 +18,8 @@ except ImportError:
     USE_TQDM = False
 
 
-def progress_bar(arg, **kwargs):
+def progress_bar(arg, use_tqdm: bool=True, **kwargs):
     """Progress bar using tqdm"""
-    if USE_TQDM:
-        return tqdm(arg, **kwargs)
-    return arg
+    if not USE_TQDM or not use_tqdm:
+        return arg
+    return tqdm(arg, **kwargs)

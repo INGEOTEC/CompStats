@@ -1,4 +1,6 @@
-{
-    "image":"mcr.microsoft.com/devcontainers/universal:2-linux",
-    "postCreateCommand": "conda install -c conda-forge --yes numpy scipy scikit-learn nose pandas"
+{"image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+"features": {
+    "ghcr.io/rocker-org/devcontainer-features/miniforge:2": {}
+    },
+"postCreateCommand": "conda env create --file environment.yml"
 }

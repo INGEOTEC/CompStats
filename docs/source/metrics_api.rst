@@ -1,6 +1,30 @@
 :mod:`CompStats.metrics`
 ==================================
 
+.. image:: https://github.com/INGEOTEC/CompStats/actions/workflows/test.yaml/badge.svg
+		:target: https://github.com/INGEOTEC/CompStats/actions/workflows/test.yaml
+
+.. image:: https://coveralls.io/repos/github/INGEOTEC/CompStats/badge.svg?branch=develop
+		:target: https://coveralls.io/github/INGEOTEC/CompStats?branch=develop
+
+.. image:: https://badge.fury.io/py/CompStats.svg
+		:target: https://badge.fury.io/py/CompStats
+
+.. image:: https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/compstats-feedstock?branchName=main
+	    :target: https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=20297&branchName=main
+
+.. image:: https://img.shields.io/conda/vn/conda-forge/compstats.svg
+		:target: https://anaconda.org/conda-forge/compstats
+
+.. image:: https://img.shields.io/conda/pn/conda-forge/compstats.svg
+		:target: https://anaconda.org/conda-forge/compstats
+
+.. image:: https://readthedocs.org/projects/compstats/badge/?version=latest
+		:target: https://compstats.readthedocs.io/en/latest/?badge=latest
+
+.. image:: https://colab.research.google.com/assets/colab-badge.svg
+		:target: https://colab.research.google.com/github/INGEOTEC/CompStats/blob/docs/docs/CompStats_metrics.ipynb
+
 :py:mod:`CompStats.metrics` aims to facilitate performance measurement (with standard errors and confidence intervals) and statistical comparisons between algorithms on a single problem, wrapping the different scores and loss functions found on :py:mod:`~sklearn.metrics`.
 
 To illustrate the use of :py:mod:`CompStats.metrics`, the following snippets show an example. The instructions load the necessary libraries, including the one to obtain the problem (e.g., digits), three different classifiers, and the last line is the score used to measure the performance and compare the algorithm. 

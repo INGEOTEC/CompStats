@@ -27,7 +27,7 @@ CompStats
 
 Collaborative competitions have gained popularity in the scientific and technological fields. These competitions involve defining tasks, selecting evaluation scores, and devising result verification methods. In the standard scenario, participants receive a training set and are expected to provide a solution for a held-out dataset kept by organizers. An essential challenge for organizers arises when comparing algorithms' performance, assessing multiple participants, and ranking them. Statistical tools are often used for this purpose; however, traditional statistical methods often fail to capture decisive differences between systems' performance. CompStats implements an evaluation methodology for statistically analyzing competition results and competition. CompStats offers several advantages, including off-the-shell comparisons with correction mechanisms and the inclusion of confidence intervals. 
 
-To illustrate the use of :py:mod:`CompStats`, the following snippets show an example. The following instructions load the necessary libraries to load the problem (e.g., digits), three different classifiers, and the last line is the score used to measure the performance and compare the algorithm. 
+To illustrate the use of :py:mod:`CompStats`, the following snippets show an example. The instructions load the necessary libraries, including the one to obtain the problem (e.g., digits), three different classifiers, and the last line is the score used to measure the performance and compare the algorithm. 
 
 >>> from sklearn.svm import LinearSVC
 >>> from sklearn.naive_bayes import GaussianNB

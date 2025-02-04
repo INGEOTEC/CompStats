@@ -3,7 +3,7 @@
 
 :py:mod:`CompStats.metrics` aims to facilitate performance measurement (with standard errors and confidence intervals) and statistical comparisons between algorithms on a single problem, wrapping the different scores and loss functions found on :py:mod:`~sklearn.metrics`.
 
-To illustrate the use of :py:mod:`CompStats.metrics`, the following snippets show an example. The following instructions load the necessary libraries to load the problem (e.g., digits), three different classifiers, and the last line is the score used to measure the performance and compare the algorithm. 
+To illustrate the use of :py:mod:`CompStats.metrics`, the following snippets show an example. The instructions load the necessary libraries, including the one to obtain the problem (e.g., digits), three different classifiers, and the last line is the score used to measure the performance and compare the algorithm. 
 
 >>> from sklearn.svm import LinearSVC
 >>> from sklearn.naive_bayes import GaussianNB

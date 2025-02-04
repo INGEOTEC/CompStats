@@ -27,7 +27,7 @@ CompStats
 
 Collaborative competitions have gained popularity in the scientific and technological fields. These competitions involve defining tasks, selecting evaluation scores, and devising result verification methods. In the standard scenario, participants receive a training set and are expected to provide a solution for a held-out dataset kept by organizers. An essential challenge for organizers arises when comparing algorithms' performance, assessing multiple participants, and ranking them. Statistical tools are often used for this purpose; however, traditional statistical methods often fail to capture decisive differences between systems' performance. CompStats implements an evaluation methodology for statistically analyzing competition results and competition. CompStats offers several advantages, including off-the-shell comparisons with correction mechanisms and the inclusion of confidence intervals. 
 
-To illustrate the use of :py:mod:`CompStats`, the following snippets show an example. The instructions load the necessary libraries, including the one to obtain the problem (e.g., digits), three different classifiers, and the last line is the score used to measure the performance and compare the algorithm. 
+To illustrate the use of `CompStats`, the following snippets show an example. The instructions load the necessary libraries, including the one to obtain the problem (e.g., digits), three different classifiers, and the last line is the score used to measure the performance and compare the algorithm. 
 
 >>> from sklearn.svm import LinearSVC
 >>> from sklearn.naive_bayes import GaussianNB
@@ -37,7 +37,7 @@ To illustrate the use of :py:mod:`CompStats`, the following snippets show an exa
 >>> from sklearn.base import clone
 >>> from CompStats.metrics import f1_score
 
-The first step is to load the digits problem and split the dataset into training and validation sets. The second step is to estimate the parameters of a linear Support Vector Machine and predict the validation set's classes. The predictions are stored in the variable :py:attr:`hy`.
+The first step is to load the digits problem and split the dataset into training and validation sets. The second step is to estimate the parameters of a linear Support Vector Machine and predict the validation set's classes. The predictions are stored in the variable `hy`.
 
 >>> X, y = load_digits(return_X_y=True)
 >>> _ = train_test_split(X, y, test_size=0.3)
@@ -45,7 +45,7 @@ The first step is to load the digits problem and split the dataset into training
 >>> m = LinearSVC().fit(X_train, y_train)
 >>> hy = m.predict(X_val)
 
-Once the predictions are available, it is time to measure the algorithm's performance, as seen in the following code. It is essential to note that the API used in :py:mod:`~sklearn.metrics` is followed; the difference is that the function returns an instance with different methods that can be used to estimate different performance statistics and compare algorithms. 
+Once the predictions are available, it is time to measure the algorithm's performance, as seen in the following code. It is essential to note that the API used in `sklearn.metrics` is followed; the difference is that the function returns an instance with different methods that can be used to estimate different performance statistics and compare algorithms. 
 
 >>> score = f1_score(y_val, hy, average='macro')
 >>> score
@@ -53,7 +53,7 @@ Once the predictions are available, it is time to measure the algorithm's perfor
 Prediction statistics with standard error
 alg-1 = 0.936 (0.010)
 
-The previous code shows the macro-f1 score and, in parenthesis, its standard error. The actual performance value is stored in the :py:func:`~CompStats.interface.Perf.statistic` function.
+The previous code shows the macro-f1 score and, in parenthesis, its standard error. The actual performance value is stored in the `statistic` function.
 
 >>> score.statistic()
 {'alg-1': 0.9355476018466147}
@@ -77,7 +77,7 @@ Random Forest = 0.970 (0.008)
 alg-1 = 0.936 (0.010)
 Naive Bayes = 0.821 (0.016)
 
-The final step is to compare the performance of the three classifiers, which can be done with the :py:func:`~CompStats.interface.Perf.difference` method, as seen next.  
+The final step is to compare the performance of the three classifiers, which can be done with the `difference` method, as seen next.  
 
 >>> diff = score.difference()
 >>> diff
@@ -86,6 +86,8 @@ difference p-values w.r.t Random Forest
 alg-1 0.0
 Naive Bayes 0.0
 
-The class :py:class:`~CompStats.Difference` has the :py:class:`~CompStats.Difference.plot` method that can be used to depict the difference with respectto the best. 
+The class `Difference` has the `plot` method that can be used to depict the difference with respect to the best. 
 
 >>> diff.plot()
+
+.. image:: https://github.com/INGEOTEC/CompStats/raw/docs/docs/source/digits_difference.png

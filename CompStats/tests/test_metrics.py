@@ -54,3 +54,17 @@ def test_balanced_accuracy_score():
     perf = balanced_accuracy_score(y_val, forest=ens.predict(X_val),
                                    num_samples=50)
     assert 'forest' in perf.statistic()        
+
+
+def test_top_k_accuracy_score():
+    """Test top_k_accuracy_score"""
+    from CompStats.metrics import top_k_accuracy_score
+
+    X, y = load_iris(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3, stratify=y)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestClassifier().fit(X_train, y_train)
+    perf = top_k_accuracy_score(y_val,
+                                forest=ens.predict_proba(X_val),
+                                num_samples=50)
+    assert 'forest' in perf.statistic()    

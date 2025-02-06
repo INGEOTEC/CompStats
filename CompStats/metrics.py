@@ -105,7 +105,7 @@ def balanced_accuracy_score(y_true, *y_pred,
 
 
 @perf_docs
-def top_k_accuracy_score(y_true, *y_pred, k=2,
+def top_k_accuracy_score(y_true, *y_score, k=2,
                          normalize=True, sample_weight=None,
                          labels=None,
                          num_samples: int=500,
@@ -124,25 +124,21 @@ def top_k_accuracy_score(y_true, *y_pred, k=2,
     >>> X_train, X_val, y_train, y_val = _
     >>> m = LinearSVC().fit(X_train, y_train)
     >>> hy = m.decision_function(X_val)
-    >>> score = top_k_accuracy_score(y_val, hy, n_jobs=1,
-                                     labels=[0, 1, 2])
+    >>> ens = RandomForestClassifier().fit(X_train, y_train)
+    >>> score = top_k_accuracy_score(y_val, hy,
+                                     random_forest=ens.predict_proba(X_val))
     >>> score
     <Perf>
     Prediction statistics with standard error
-    forest = 0.957 (0.031)
-    alg-1 = 0.935 (0.037)
-    >>> diff = score.difference()
-    >>> diff
-    <Difference>
-    difference p-values w.r.t forest
-    alg-1 0.254  
+    alg-1 = 1.000 (0.000)
+    random_forest = 1.000 (0.000)
     """
 
     def inner(y, hy):
         return metrics.top_k_accuracy_score(y, hy, k=k,
                                             normalize=normalize, sample_weight=sample_weight,
                                             labels=labels)
-    return Perf(y_true, *y_pred, score_func=inner,
+    return Perf(y_true, *y_score, score_func=inner,
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)

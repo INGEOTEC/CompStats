@@ -31,8 +31,8 @@ class Perf(object):
     :type score_func: Function where the first argument is :math:`y` and the second is :math:`\\hat{y}.`
     :param error_func: Function to measure the performance where the best algorithm has the lowest value.
     :type error_func: Function where the first argument is :math:`y` and the second is :math:`\\hat{y}.` 
-    :param args: Predictions, the algorithms will be identified with alg-k where k=1 is the first argument included in :py:attr:`args.`
-    :type args: numpy.ndarray
+    :param y_pred: Predictions, the algorithms will be identified with alg-k where k=1 is the first argument included in :py:attr:`args.`
+    :type y_pred: numpy.ndarray
     :param kwargs: Predictions, the algorithms will be identified using the keyword
     :type kwargs: numpy.ndarray
     :param n_jobs: Number of jobs to compute the statistic, default=-1 corresponding to use all threads.
@@ -85,7 +85,7 @@ class Perf(object):
     Log. Reg. = 0.044 (0.030)
 
     """
-    def __init__(self, y_true, *args,
+    def __init__(self, y_true, *y_pred,
                  score_func=balanced_accuracy_score,
                  error_func=None,
                  num_samples: int=500,
@@ -96,7 +96,7 @@ class Perf(object):
         self.score_func = score_func
         self.error_func = error_func
         algs = {}
-        for k, v in enumerate(args):
+        for k, v in enumerate(y_pred):
             algs[f'alg-{k+1}'] = np.asanyarray(v)
         algs.update(**kwargs)
         self.predictions = algs

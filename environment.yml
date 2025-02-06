@@ -5,8 +5,10 @@ dependencies:
   - python
   - pip
   - scikit-learn
-  - pandas
-  - seaborn
+  - statsmodels
   - pytest
-  - sphinx
   - tqdm
+  - sphinx
+  - pip:
+    - pandas
+    - seaborn

@@ -32,8 +32,7 @@ def performance(data: pd.DataFrame,
                 n_jobs: int=-1,
                 BiB: bool=True,
                 statistic_samples: StatisticSamples=None) -> StatisticSamples:
-    """
-    Calculate bootstrap samples of a performance score for a given dataset.
+    """Calculate bootstrap samples of a performance score for a given dataset.
 
     Parameters:
     data (pd.DataFrame): Input dataset.
@@ -48,6 +47,7 @@ def performance(data: pd.DataFrame,
     StatisticSamples: Object containing the bootstrap samples of the performance score.
 
     Example usage:
+
     >>> from sklearn.metrics import accuracy_score
     >>> import pandas as pd
     >>> from CompStats import performance
@@ -86,6 +86,7 @@ def difference(statistic_samples: StatisticSamples): #, best_index: int=-1):
     6. Returns a new StatisticSamples instance with the computed differences and the name of the best performing algorithm.
 
     Example usage:
+
     >>> from CompStats import performance, difference
     >>> from CompStats.tests.test_performance import DATA
     >>> from sklearn.metrics import f1_score
@@ -129,6 +130,7 @@ def all_differences(statistic_samples: StatisticSamples):
     5. Returns a new StatisticSamples instance with the computed differences.
 
     Example usage:
+
     >>> from CompStats import performance, all_differences
     >>> from CompStats.tests.test_performance import DATA
     >>> from sklearn.metrics import f1_score
@@ -163,30 +165,34 @@ def plot_performance(statistic_samples: StatisticSamples, CI: float=0.05,
                      var_name='Algorithm', value_name='Score',
                      capsize=0.2, linestyle='none', kind='point',
                      sharex=False, **kwargs):
-    """
-    Plots the performance of algorithms with confidence intervals.
+    """Plots the performance of algorithms with confidence intervals.
 
-    Parameters:
-    statistic_samples (StatisticSamples or pd.DataFrame): An instance of StatisticSamples containing the performance data, 
-                                                          or a DataFrame in long format.
-    CI (float): Confidence interval level (default is 0.05).
-    var_name (str): Variable name for algorithms (default is 'Algorithm').
-    value_name (str): Variable name for scores (default is 'Score').
-    capsize (float): Size of the caps on error bars (default is 0.2).
-    linestyle (str): Line style for the plot (default is 'none').
-    kind (str): Type of plot (default is 'point').
-    sharex (bool): Whether to share the x-axis among subplots (default is False).
-    **kwargs: Additional keyword arguments passed to seaborn's catplot function.
+    :param statistic_samples: An instance of StatisticSamples containing the performance data, or a DataFrame in long format.
+    :type statistic_samples: StatisticSamples or pd.DataFrame
+    :param CI: Confidence interval level (default is 0.05).
+    :type CI: float
+    :param var_name: Variable name for algorithms (default is 'Algorithm').
+    :type var_name: str
+    :param value_name: Variable name for scores (default is 'Score').
+    :type value_name: str
+    :param capsize: Size of the caps on error bars (default is 0.2).
+    :type capsize: float
+    :param linestyle: Line style for the plot (default is 'none').
+    :type linestyle: str
+    :param kind: Type of plot (default is 'point').
+    :type kind: str
+    :param sharex: Whether to share the x-axis among subplots (default is False).
+    :type sharex: bool
+    :param kwargs: Additional keyword arguments passed to seaborn's catplot function.
 
-    Returns:
-    sns.axisgrid.FacetGrid: A seaborn FacetGrid object containing the plot.
+    :returns: A seaborn FacetGrid object containing the plot.
+    :rtype: sns.axisgrid.FacetGrid
 
     The function works as follows:
     1. If statistic_samples is an instance of StatisticSamples, it extracts and sorts the performance data.
     2. Converts the data into a long format DataFrame.
     3. Computes the confidence intervals if CI is provided as a float.
     4. Plots the performance data with confidence intervals using seaborn's catplot.
-
     
     >>> from CompStats import performance, plot_performance
     >>> from CompStats.tests.test_performance import DATA
@@ -316,6 +322,7 @@ def performance_multiple_metrics(data: pd.DataFrame, gold: str,
     6. Compiles the results into a dictionary and returns it.
 
     Example usage:
+
     >>> from sklearn.metrics import accuracy_score, f1_score
     >>> import pandas as pd
     >>> from CompStats import performance_multiple_metrics
@@ -433,6 +440,7 @@ def difference_multiple(results_dict, CI: float=0.05,):
     7. Returns a dictionary with these calculated differences and additional information.
 
     Example usage:
+
     >>> from CompStats import performance, difference_multiple
     >>> from CompStats.tests.test_performance import DATA
     >>> from sklearn.metrics import f1_score
@@ -542,6 +550,7 @@ def plot_performance_multiple(results_dict: dict, CI: float = 0.05, capsize: flo
     3. Sets the title of each plot to the metric name and the best performing algorithm.
 
     Example usage:
+
     >>> from CompStats import plot_performance_multiple
     >>> results = {
     >>>     'accuracy': {

@@ -11,33 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from CompStats.interface import Perf
 from sklearn import metrics
+from CompStats.interface import Perf
+from CompStats.utils import perf_docs
 
 
-def accuracy_score(y_true, *args,
+@perf_docs
+def accuracy_score(y_true, *y_pred,
                    normalize=True, sample_weight=None,
                    num_samples: int=500,
                    n_jobs: int=-1, 
                    use_tqdm=True,
                    **kwargs):
-    """:py:class:`~CompStats.interface.Perf` with :py:func:`sklearn.metrics.accuracy_score` as :py:attr:`score_func.`
-
-    :param y_true: True measurement or could be a pandas.DataFrame where column label 'y' corresponds to the true measurement.
-    :type y_true: numpy.ndarray or pandas.DataFrame 
-    :param args: Predictions, the algorithms will be identified with alg-k where k=1 is the first argument included in :py:attr:`args.`
-    :type args: numpy.ndarray
-    :param kwargs: Predictions, the algorithms will be identified using the keyword
-    :type args: numpy.ndarray
-    :param num_samples: Number of bootstrap samples, default=500.
-    :type num_samples: int
-    :param n_jobs: Number of jobs to compute the statistic, default=-1 corresponding to use all threads.
-    :type n_jobs: int
-    :param use_tqdm: Whether to use tqdm.tqdm to visualize the progress, default=True
-    :type use_tqdm: bool    
-    :param normalize: see sklearn.metrics.f1_score
-    :param sample_weight: see sklearn.metrics.f1_score
-
+    """
     >>> from sklearn.svm import LinearSVC
     >>> from sklearn.ensemble import RandomForestClassifier
     >>> from sklearn.datasets import load_iris
@@ -61,42 +47,27 @@ def accuracy_score(y_true, *args,
     >>> diff
     <Difference>
     difference p-values w.r.t forest
-    alg-1 0.252  
+    alg-1 0.252
     """
 
     def inner(y, hy):
         return metrics.accuracy_score(y, hy,
                                       normalize=normalize,
                                       sample_weight=sample_weight)
-    return Perf(y_true, *args, score_func=inner,
+    return Perf(y_true, *y_pred, score_func=inner,
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)
 
 
-def balanced_accuracy_score(y_true, *args,
+@perf_docs
+def balanced_accuracy_score(y_true, *y_pred,
                             sample_weight=None, adjusted=False,
                             num_samples: int=500,
                             n_jobs: int=-1,
                             use_tqdm=True,
                             **kwargs):
-    """:py:class:`~CompStats.interface.Perf` with :py:func:`sklearn.metrics.balanced_accuracy_score` as :py:attr:`score_func.`
-
-    :param y_true: True measurement or could be a pandas.DataFrame where column label 'y' corresponds to the true measurement.
-    :type y_true: numpy.ndarray or pandas.DataFrame 
-    :param args: Predictions, the algorithms will be identified with alg-k where k=1 is the first argument included in :py:attr:`args.`
-    :type args: numpy.ndarray
-    :param kwargs: Predictions, the algorithms will be identified using the keyword
-    :type args: numpy.ndarray
-    :param num_samples: Number of bootstrap samples, default=500.
-    :type num_samples: int
-    :param n_jobs: Number of jobs to compute the statistic, default=-1 corresponding to use all threads.
-    :type n_jobs: int
-    :param use_tqdm: Whether to use tqdm.tqdm to visualize the progress, default=True
-    :type use_tqdm: bool    
-    :param sample_weight: see sklearn.metrics.f1_score
-    :param adjusted: see sklearn.metrics.f1_score
-
+    """
     >>> from sklearn.svm import LinearSVC
     >>> from sklearn.ensemble import RandomForestClassifier
     >>> from sklearn.datasets import load_iris
@@ -127,37 +98,19 @@ def balanced_accuracy_score(y_true, *args,
         return metrics.balanced_accuracy_score(y, hy,
                                                adjusted=adjusted,
                                                sample_weight=sample_weight)
-    return Perf(y_true, *args, score_func=inner,
+    return Perf(y_true, *y_pred, score_func=inner,
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)
 
 
-def f1_score(y_true, *args, labels=None, pos_label=1,
+@perf_docs
+def f1_score(y_true, *y_pred, labels=None, pos_label=1,
              average='binary', sample_weight=None,
              zero_division='warn', num_samples: int=500,
              n_jobs: int=-1, use_tqdm=True,
              **kwargs):
-    """:py:class:`~CompStats.interface.Perf` with :py:func:`sklearn.metrics.f1_score` as :py:attr:`score_func.`
-
-    :param y_true: True measurement or could be a pandas.DataFrame where column label 'y' corresponds to the true measurement.
-    :type y_true: numpy.ndarray or pandas.DataFrame 
-    :param args: Predictions, the algorithms will be identified with alg-k where k=1 is the first argument included in :py:attr:`args.`
-    :type args: numpy.ndarray
-    :param kwargs: Predictions, the algorithms will be identified using the keyword
-    :type args: numpy.ndarray
-    :param num_samples: Number of bootstrap samples, default=500.
-    :type num_samples: int
-    :param n_jobs: Number of jobs to compute the statistic, default=-1 corresponding to use all threads.
-    :type n_jobs: int
-    :param use_tqdm: Whether to use tqdm.tqdm to visualize the progress, default=True
-    :type use_tqdm: bool    
-    :param labels: see sklearn.metrics.f1_score
-    :param pos_label: see sklearn.metrics.f1_score
-    :param average: see sklearn.metrics.f1_score
-    :param sample_weight: see sklearn.metrics.f1_score
-    :param zero_division: see sklearn.metrics.f1_score
-
+    """
     >>> from sklearn.svm import LinearSVC
     >>> from sklearn.ensemble import RandomForestClassifier
     >>> from sklearn.datasets import load_iris
@@ -191,7 +144,7 @@ def f1_score(y_true, *args, labels=None, pos_label=1,
                                 average=average,
                                 sample_weight=sample_weight,
                                 zero_division=zero_division)
-    return Perf(y_true, *args, score_func=inner,
+    return Perf(y_true, *y_pred, score_func=inner,
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)

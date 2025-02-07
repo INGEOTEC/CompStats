@@ -23,32 +23,7 @@ def accuracy_score(y_true, *y_pred,
                    n_jobs: int=-1, 
                    use_tqdm=True,
                    **kwargs):
-    """
-    >>> from sklearn.svm import LinearSVC
-    >>> from sklearn.ensemble import RandomForestClassifier
-    >>> from sklearn.datasets import load_iris
-    >>> from sklearn.model_selection import train_test_split
-    >>> from sklearn.base import clone
-    >>> from CompStats.metrics import accuracy_score
-    >>> X, y = load_iris(return_X_y=True)
-    >>> _ = train_test_split(X, y, test_size=0.3)
-    >>> X_train, X_val, y_train, y_val = _
-    >>> m = LinearSVC().fit(X_train, y_train)
-    >>> hy = m.predict(X_val)
-    >>> ens = RandomForestClassifier().fit(X_train, y_train)
-    >>> score = accuracy_score(y_val, hy,
-                               forest=ens.predict(X_val))
-    >>> score
-    <Perf>
-    Prediction statistics with standard error
-    forest = 0.978 (0.023)
-    alg-1 = 0.956 (0.030)
-    >>> diff = score.difference()
-    >>> diff
-    <Difference>
-    difference p-values w.r.t forest
-    alg-1 0.252
-    """
+    """accuracy_score"""
 
     def inner(y, hy):
         return metrics.accuracy_score(y, hy,
@@ -67,32 +42,7 @@ def balanced_accuracy_score(y_true, *y_pred,
                             n_jobs: int=-1,
                             use_tqdm=True,
                             **kwargs):
-    """
-    >>> from sklearn.svm import LinearSVC
-    >>> from sklearn.ensemble import RandomForestClassifier
-    >>> from sklearn.datasets import load_iris
-    >>> from sklearn.model_selection import train_test_split
-    >>> from sklearn.base import clone
-    >>> from CompStats.metrics import balanced_accuracy_score
-    >>> X, y = load_iris(return_X_y=True)
-    >>> _ = train_test_split(X, y, test_size=0.3)
-    >>> X_train, X_val, y_train, y_val = _
-    >>> m = LinearSVC().fit(X_train, y_train)
-    >>> hy = m.predict(X_val)
-    >>> ens = RandomForestClassifier().fit(X_train, y_train)
-    >>> score = balanced_accuracy_score(y_val, hy,
-                                        forest=ens.predict(X_val))
-    >>> score
-    <Perf>
-    Prediction statistics with standard error
-    forest = 0.957 (0.031)
-    alg-1 = 0.935 (0.037)
-    >>> diff = score.difference()
-    >>> diff
-    <Difference>
-    difference p-values w.r.t forest
-    alg-1 0.254  
-    """
+    """balanced_accuracy_score"""
 
     def inner(y, hy):
         return metrics.balanced_accuracy_score(y, hy,
@@ -112,27 +62,7 @@ def top_k_accuracy_score(y_true, *y_score, k=2,
                          n_jobs: int=-1,
                          use_tqdm=True,
                          **kwargs):
-    """
-    >>> from sklearn.svm import LinearSVC
-    >>> from sklearn.ensemble import RandomForestClassifier
-    >>> from sklearn.datasets import load_iris
-    >>> from sklearn.model_selection import train_test_split
-    >>> from sklearn.base import clone
-    >>> from CompStats.metrics import top_k_accuracy_score
-    >>> X, y = load_iris(return_X_y=True)
-    >>> _ = train_test_split(X, y, test_size=0.3)
-    >>> X_train, X_val, y_train, y_val = _
-    >>> m = LinearSVC().fit(X_train, y_train)
-    >>> hy = m.decision_function(X_val)
-    >>> ens = RandomForestClassifier().fit(X_train, y_train)
-    >>> score = top_k_accuracy_score(y_val, hy,
-                                     random_forest=ens.predict_proba(X_val))
-    >>> score
-    <Perf>
-    Prediction statistics with standard error
-    alg-1 = 1.000 (0.000)
-    random_forest = 1.000 (0.000)
-    """
+    """top_k_accuracy_score"""
 
     def inner(y, hy):
         return metrics.top_k_accuracy_score(y, hy, k=k,
@@ -145,38 +75,53 @@ def top_k_accuracy_score(y_true, *y_score, k=2,
 
 
 @perf_docs
+def average_precision_score(y_true, *y_score,
+                            average='macro',
+                            sample_weight=None,
+                            num_samples: int=500,
+                            n_jobs: int=-1,
+                            use_tqdm=True,
+                            **kwargs):
+    """average_precision_score"""
+
+    def inner(y, hy):
+        return metrics.average_precision_score(y, hy,
+                                               average=average,
+                                               sample_weight=sample_weight)
+    return Perf(y_true, *y_score, score_func=inner,
+                num_samples=num_samples, n_jobs=n_jobs,
+                use_tqdm=use_tqdm,
+                **kwargs)
+
+
+@perf_docs
+def brier_score_loss(y_true, *y_proba,
+                     sample_weight=None,
+                     pos_label=None,
+                     num_samples: int=500,
+                     n_jobs: int=-1,
+                     use_tqdm=True,
+                     **kwargs                     
+                     ):
+    """brier_score_loss"""
+
+    def inner(y, hy):
+        return metrics.brier_score_loss(y, hy,
+                                        sample_weight=sample_weight,
+                                        pos_label=pos_label)
+    return Perf(y_true, *y_proba, score_func=None, error_func=inner,
+                num_samples=num_samples, n_jobs=n_jobs,
+                use_tqdm=use_tqdm,
+                **kwargs)
+    
+
+@perf_docs
 def f1_score(y_true, *y_pred, labels=None, pos_label=1,
              average='binary', sample_weight=None,
              zero_division='warn', num_samples: int=500,
              n_jobs: int=-1, use_tqdm=True,
              **kwargs):
-    """
-    >>> from sklearn.svm import LinearSVC
-    >>> from sklearn.ensemble import RandomForestClassifier
-    >>> from sklearn.datasets import load_iris
-    >>> from sklearn.model_selection import train_test_split
-    >>> from sklearn.base import clone
-    >>> from CompStats.metrics import f1_score
-    >>> X, y = load_iris(return_X_y=True)
-    >>> _ = train_test_split(X, y, test_size=0.3)
-    >>> X_train, X_val, y_train, y_val = _
-    >>> m = LinearSVC().fit(X_train, y_train)
-    >>> hy = m.predict(X_val)
-    >>> ens = RandomForestClassifier().fit(X_train, y_train)
-    >>> score = f1_score(y_val, hy,
-                         forest=ens.predict(X_val),
-                         average='macro')
-    >>> score
-    <Perf>
-    Prediction statistics with standard error
-    forest = 0.954 (0.032)
-    alg-1 = 0.931 (0.040)
-    >>> diff = score.difference()
-    >>> diff
-    <Difference>
-    difference p-values w.r.t forest
-    alg-1 0.176   
-    """
+    """f1_score"""
 
     def inner(y, hy):
         return metrics.f1_score(y, hy, labels=labels,
@@ -188,3 +133,24 @@ def f1_score(y_true, *y_pred, labels=None, pos_label=1,
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)
+
+
+@perf_docs
+def log_loss(y_true, *y_pred,
+             normalize=True,
+             sample_weight=None,
+             labels=None,
+             num_samples: int=500,
+             n_jobs: int=-1,
+             use_tqdm=True,
+             **kwargs):
+    """log_loss"""
+    def inner(y, hy):
+        return metrics.log_loss(y, hy, normalize=normalize,
+                                sample_weight=sample_weight,
+                                labels=labels)
+    return Perf(y_true, *y_pred, error_func=inner, score_func=None,
+                num_samples=num_samples, n_jobs=n_jobs,
+                use_tqdm=use_tqdm,
+                **kwargs)
+

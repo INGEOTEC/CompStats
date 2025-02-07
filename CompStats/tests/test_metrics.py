@@ -13,8 +13,10 @@
 # limitations under the License.
 from sklearn.svm import LinearSVC
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.naive_bayes import GaussianNB
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
+from sklearn import metrics
 
 
 def test_f1_score():
@@ -25,9 +27,12 @@ def test_f1_score():
     _ = train_test_split(X, y, test_size=0.3)
     X_train, X_val, y_train, y_val = _
     ens = RandomForestClassifier().fit(X_train, y_train)
-    perf = f1_score(y_val, forest=ens.predict(X_val),
+    hy = ens.predict(X_val)
+    perf = f1_score(y_val, forest=hy,
                     num_samples=50, average='macro')
-    assert 'forest' in perf.statistic()
+    assert 'forest' in perf.statistic
+    _ = metrics.f1_score(y_val, hy, average='macro')
+    assert _ == perf.statistic['forest']
 
 
 def test_accuracy_score():
@@ -38,9 +43,12 @@ def test_accuracy_score():
     _ = train_test_split(X, y, test_size=0.3)
     X_train, X_val, y_train, y_val = _
     ens = RandomForestClassifier().fit(X_train, y_train)
-    perf = accuracy_score(y_val, forest=ens.predict(X_val),
+    hy = ens.predict(X_val)
+    perf = accuracy_score(y_val, forest=hy,
                           num_samples=50)
-    assert 'forest' in perf.statistic()
+    assert 'forest' in perf.statistic
+    _ = metrics.accuracy_score(y_val, hy)
+    assert _ == perf.statistic['forest']
 
 
 def test_balanced_accuracy_score():
@@ -51,9 +59,12 @@ def test_balanced_accuracy_score():
     _ = train_test_split(X, y, test_size=0.3)
     X_train, X_val, y_train, y_val = _
     ens = RandomForestClassifier().fit(X_train, y_train)
-    perf = balanced_accuracy_score(y_val, forest=ens.predict(X_val),
+    hy = ens.predict(X_val)
+    perf = balanced_accuracy_score(y_val, forest=hy,
                                    num_samples=50)
-    assert 'forest' in perf.statistic()        
+    assert 'forest' in perf.statistic
+    _ = metrics.balanced_accuracy_score(y_val, hy)
+    assert _ == perf.statistic['forest']
 
 
 def test_top_k_accuracy_score():
@@ -64,7 +75,67 @@ def test_top_k_accuracy_score():
     _ = train_test_split(X, y, test_size=0.3, stratify=y)
     X_train, X_val, y_train, y_val = _
     ens = RandomForestClassifier().fit(X_train, y_train)
+    hy = ens.predict_proba(X_val)
     perf = top_k_accuracy_score(y_val,
-                                forest=ens.predict_proba(X_val),
+                                forest=hy,
                                 num_samples=50)
-    assert 'forest' in perf.statistic()    
+    assert 'forest' in perf.statistic
+    _ = metrics.top_k_accuracy_score(y_val, hy)
+    assert _ == perf.statistic['forest']
+
+
+def test_average_precision_score():
+    """Test average_precision_score"""
+    from CompStats.metrics import average_precision_score
+
+    X, y = load_iris(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3, stratify=y)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestClassifier().fit(X_train, y_train)
+    hy = ens.predict_proba(X_val)
+    perf = average_precision_score(y_val,
+                                forest=hy,
+                                num_samples=50)
+    assert 'forest' in perf.statistic
+    _ = metrics.average_precision_score(y_val, hy)
+    assert _ == perf.statistic['forest']
+
+
+def test_brier_score_loss():
+    """Test brier_score_loss"""
+    from CompStats.metrics import brier_score_loss
+    import numpy as np
+
+    X, y = load_iris(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3, stratify=y)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestClassifier().fit(X_train, y_train)
+    hy = ens.predict_proba(X_val)[:, 0]
+    perf = brier_score_loss(np.where(y_val == 0, 1, 0),
+                            forest=hy,
+                            num_samples=50)
+    nb = GaussianNB().fit(X_train, y_train)
+    perf(nb.predict_proba(X_val)[:, 0])
+    assert 'forest' in perf.statistic
+    _ = metrics.brier_score_loss(np.where(y_val == 0, 1, 0), hy)
+    assert _ == perf.statistic['forest']
+
+
+def test_log_loss():
+    """Test log_loss"""
+    from CompStats.metrics import log_loss
+    import numpy as np
+
+    X, y = load_iris(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3, stratify=y)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestClassifier().fit(X_train, y_train)
+    hy = ens.predict_proba(X_val)
+    perf = log_loss(y_val,
+                    forest=hy,
+                    num_samples=50)
+    nb = GaussianNB().fit(X_train, y_train)
+    perf(nb.predict_proba(X_val))
+    assert 'forest' in perf.statistic
+    _ = metrics.log_loss(y_val, hy)
+    assert _ == perf.statistic['forest']

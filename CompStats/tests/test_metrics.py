@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from sklearn.svm import LinearSVC
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.naive_bayes import GaussianNB
-from sklearn.datasets import load_iris
+from sklearn.datasets import load_iris, load_diabetes
 from sklearn.model_selection import train_test_split
 from sklearn import metrics
 
@@ -139,3 +139,137 @@ def test_log_loss():
     assert 'forest' in perf.statistic
     _ = metrics.log_loss(y_val, hy)
     assert _ == perf.statistic['forest']
+
+
+def test_precision_score():
+    """Test precision_score"""
+    from CompStats.metrics import precision_score
+    import numpy as np
+
+    X, y = load_iris(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3, stratify=y)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestClassifier().fit(X_train, y_train)
+    hy = ens.predict(X_val)
+    perf = precision_score(y_val,
+                           forest=hy,
+                           num_samples=50, average='macro')
+    assert 'forest' in perf.statistic
+    _ = metrics.precision_score(y_val, hy, average='macro')
+    assert _ == perf.statistic['forest']
+
+
+def test_recall_score():
+    """Test recall_score"""
+    from CompStats.metrics import recall_score
+    import numpy as np
+
+    X, y = load_iris(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3, stratify=y)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestClassifier().fit(X_train, y_train)
+    hy = ens.predict(X_val)
+    perf = recall_score(y_val,
+                           forest=hy,
+                           num_samples=50, average='macro')
+    assert 'forest' in perf.statistic
+    _ = metrics.recall_score(y_val, hy, average='macro')
+    assert _ == perf.statistic['forest']
+
+
+def test_jaccard_score():
+    """jaccard_score"""
+    from CompStats.metrics import jaccard_score
+    try:
+        jaccard_score()
+    except RuntimeError:
+        return
+    raise False
+
+
+def test_roc_auc_score():
+    """roc_auc_score"""
+    from CompStats.metrics import roc_auc_score
+    try:
+        roc_auc_score()
+    except RuntimeError:
+        return
+    raise False
+
+
+def test_d2_log_loss_score():
+    """d2_log_loss_score"""
+    from CompStats.metrics import d2_log_loss_score
+    try:
+        d2_log_loss_score()
+    except RuntimeError:
+        return
+    raise False
+
+
+def test_explained_variance_score():
+    """explained_variance_score"""
+    from CompStats.metrics import explained_variance_score
+
+    X, y = load_diabetes(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestRegressor().fit(X_train, y_train)
+    hy = ens.predict(X_val)
+    perf = explained_variance_score(y_val,
+                                    forest=hy,
+                                    num_samples=50)
+    assert 'forest' in perf.statistic
+    _ = metrics.explained_variance_score(y_val, hy)
+    assert _ == perf.statistic['forest']
+
+
+def test_max_error():
+    """max_error"""
+    from CompStats.metrics import max_error
+
+    X, y = load_diabetes(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestRegressor().fit(X_train, y_train)
+    hy = ens.predict(X_val)
+    perf = max_error(y_val,
+                     forest=hy,
+                     num_samples=50)
+    assert 'forest' in perf.statistic
+    _ = metrics.max_error(y_val, hy)
+    assert _ == perf.statistic['forest']
+
+
+def test_mean_absolute_error():
+    """mean_absolute_error"""
+    from CompStats.metrics import mean_absolute_error
+
+    X, y = load_diabetes(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestRegressor().fit(X_train, y_train)
+    hy = ens.predict(X_val)
+    perf = mean_absolute_error(y_val,
+                               forest=hy,
+                               num_samples=50)
+    assert 'forest' in perf.statistic
+    _ = metrics.mean_absolute_error(y_val, hy)
+    assert _ == perf.statistic['forest']
+
+
+def test_mean_squared_error():
+    """mean_absolute_error"""
+    from CompStats.metrics import mean_squared_error
+
+    X, y = load_diabetes(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestRegressor().fit(X_train, y_train)
+    hy = ens.predict(X_val)
+    perf = mean_squared_error(y_val,
+                               forest=hy,
+                               num_samples=50)
+    assert 'forest' in perf.statistic
+    _ = metrics.mean_squared_error(y_val, hy)
+    assert _ == perf.statistic['forest']    

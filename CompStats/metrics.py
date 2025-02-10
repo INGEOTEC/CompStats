@@ -15,6 +15,9 @@ from sklearn import metrics
 from CompStats.interface import Perf
 from CompStats.utils import perf_docs
 
+########################################################
+#################### Classification ####################
+########################################################
 
 @perf_docs
 def accuracy_score(y_true, *y_pred,
@@ -153,4 +156,159 @@ def log_loss(y_true, *y_pred,
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)
+
+
+@perf_docs
+def precision_score(y_true,
+                    *y_pred,
+                    labels=None,
+                    pos_label=1,
+                    average='binary',
+                    sample_weight=None,
+                    zero_division='warn',
+                    num_samples: int=500,
+                    n_jobs: int=-1,
+                    use_tqdm=True,
+                    **kwargs):
+    """precision_score"""
+    def inner(y, hy):
+        return metrics.precision_score(y, hy,
+                                       labels=labels,
+                                       pos_label=pos_label,
+                                       average=average,
+                                       sample_weight=sample_weight,
+                                       zero_division=zero_division)
+    return Perf(y_true, *y_pred, score_func=inner,
+                num_samples=num_samples, n_jobs=n_jobs,
+                use_tqdm=use_tqdm,
+                **kwargs)
+
+
+@perf_docs
+def recall_score(y_true,
+                 *y_pred,
+                 labels=None,
+                 pos_label=1,
+                 average='binary',
+                 sample_weight=None,
+                 zero_division='warn',
+                 num_samples: int=500,
+                 n_jobs: int=-1,
+                 use_tqdm=True,
+                 **kwargs):
+    """recall_score"""
+    def inner(y, hy):
+        return metrics.recall_score(y, hy,
+                                    labels=labels,
+                                    pos_label=pos_label,
+                                    average=average,
+                                    sample_weight=sample_weight,
+                                    zero_division=zero_division)
+    return Perf(y_true, *y_pred, score_func=inner,
+                num_samples=num_samples, n_jobs=n_jobs,
+                use_tqdm=use_tqdm,
+                **kwargs)
+
+
+@perf_docs
+def jaccard_score():
+    """jaccard_score"""
+    raise RuntimeError('Not Implemented')
+
+
+@perf_docs
+def roc_auc_score():
+    """roc_auc_score"""
+    raise RuntimeError('Not Implemented')
+
+
+@perf_docs
+def d2_log_loss_score():
+    """d2_log_loss_score"""
+    raise RuntimeError('Not Implemented')
+
+
+########################################################
+#################### Regression ########################
+########################################################
+
+
+@perf_docs
+def explained_variance_score(y_true,
+                             *y_pred,
+                             sample_weight=None,
+                             multioutput='uniform_average',
+                             force_finite=True,
+                             num_samples: int=500,
+                             n_jobs: int=-1,
+                             use_tqdm=True,
+                             **kwargs):
+    """explained_variance_score"""
+    def inner(y, hy):
+        return metrics.explained_variance_score(y, hy,
+                                                sample_weight=sample_weight,
+                                                multioutput=multioutput,
+                                                force_finite=force_finite)
+    return Perf(y_true, *y_pred, score_func=inner,
+                num_samples=num_samples, n_jobs=n_jobs,
+                use_tqdm=use_tqdm,
+                **kwargs)
+
+
+@perf_docs
+def max_error(y_true, *y_pred, 
+              num_samples: int=500,
+              n_jobs: int=-1,
+              use_tqdm=True,
+              **kwargs):
+    """max_error"""
+    def inner(y, hy):
+        return metrics.max_error(y, hy)
+    return Perf(y_true, *y_pred, score_func=None, error_func=inner,
+                num_samples=num_samples, n_jobs=n_jobs,
+                use_tqdm=use_tqdm,
+                **kwargs)
+
+
+@perf_docs
+def mean_absolute_error(y_true,
+                        *y_pred,
+                        sample_weight=None,
+                        multioutput='uniform_average',
+                        num_samples: int=500,
+                        n_jobs: int=-1,
+                        use_tqdm=True,
+                        **kwargs):
+    """mean_absolute_error"""
+    def inner(y, hy):
+        return metrics.mean_absolute_error(y, hy,
+                                           sample_weight=sample_weight,
+                                           multioutput=multioutput)
+
+    return Perf(y_true, *y_pred, score_func=None, error_func=inner,
+                num_samples=num_samples, n_jobs=n_jobs,
+                use_tqdm=use_tqdm,
+                **kwargs)
+
+
+@perf_docs
+def mean_squared_error(y_true,
+                       *y_pred,
+                       sample_weight=None,
+                       multioutput='uniform_average',
+                       num_samples: int=500,
+                       n_jobs: int=-1,
+                       use_tqdm=True,
+                       **kwargs):
+    """mean_squared_error"""
+    def inner(y, hy):
+        return metrics.mean_squared_error(y, hy,
+                                          sample_weight=sample_weight,
+                                          multioutput=multioutput)
+
+    return Perf(y_true, *y_pred, score_func=None, error_func=inner,
+                num_samples=num_samples, n_jobs=n_jobs,
+                use_tqdm=use_tqdm,
+                **kwargs)
+
 

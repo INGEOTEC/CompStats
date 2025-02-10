@@ -259,7 +259,7 @@ def test_mean_absolute_error():
 
 
 def test_mean_squared_error():
-    """mean_absolute_error"""
+    """mean_squared_error"""
     from CompStats.metrics import mean_squared_error
 
     X, y = load_diabetes(return_X_y=True)
@@ -272,4 +272,55 @@ def test_mean_squared_error():
                                num_samples=50)
     assert 'forest' in perf.statistic
     _ = metrics.mean_squared_error(y_val, hy)
+    assert _ == perf.statistic['forest']
+
+
+def test_root_mean_squared_error():
+    """root_mean_absolute_error"""
+    from CompStats.metrics import root_mean_squared_error
+
+    X, y = load_diabetes(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestRegressor().fit(X_train, y_train)
+    hy = ens.predict(X_val)
+    perf = root_mean_squared_error(y_val,
+                                   forest=hy,
+                                   num_samples=50)
+    assert 'forest' in perf.statistic
+    _ = metrics.root_mean_squared_error(y_val, hy)
+    assert _ == perf.statistic['forest']
+
+
+def test_mean_squared_log_error():
+    """mean_squared_log_error"""
+    from CompStats.metrics import mean_squared_log_error
+
+    X, y = load_diabetes(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestRegressor().fit(X_train, y_train)
+    hy = ens.predict(X_val)
+    perf = mean_squared_log_error(y_val,
+                                   forest=hy,
+                                   num_samples=50)
+    assert 'forest' in perf.statistic
+    _ = metrics.mean_squared_log_error(y_val, hy)
+    assert _ == perf.statistic['forest']
+
+
+def test_root_mean_squared_log_error():
+    """root_mean_squared_log_error"""
+    from CompStats.metrics import root_mean_squared_log_error
+
+    X, y = load_diabetes(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestRegressor().fit(X_train, y_train)
+    hy = ens.predict(X_val)
+    perf = root_mean_squared_log_error(y_val,
+                                       forest=hy,
+                                       num_samples=50)
+    assert 'forest' in perf.statistic
+    _ = metrics.root_mean_squared_log_error(y_val, hy)
     assert _ == perf.statistic['forest']    

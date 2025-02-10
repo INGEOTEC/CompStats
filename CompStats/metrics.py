@@ -312,3 +312,64 @@ def mean_squared_error(y_true,
                 **kwargs)
 
 
+@perf_docs
+def root_mean_squared_error(y_true,
+                            *y_pred,
+                            sample_weight=None,
+                            multioutput='uniform_average',
+                            num_samples: int=500,
+                            n_jobs: int=-1,
+                            use_tqdm=True,
+                            **kwargs):
+    """root_mean_squared_error"""
+    def inner(y, hy):
+        return metrics.root_mean_squared_error(y, hy,
+                                               sample_weight=sample_weight,
+                                               multioutput=multioutput)
+
+    return Perf(y_true, *y_pred, score_func=None, error_func=inner,
+                num_samples=num_samples, n_jobs=n_jobs,
+                use_tqdm=use_tqdm,
+                **kwargs)
+
+
+@perf_docs
+def mean_squared_log_error(y_true,
+                           *y_pred,
+                           sample_weight=None,
+                           multioutput='uniform_average',
+                           num_samples: int=500,
+                           n_jobs: int=-1,
+                           use_tqdm=True,
+                           **kwargs):
+    """mean_squared_log_error"""
+    def inner(y, hy):
+        return metrics.mean_squared_log_error(y, hy,
+                                              sample_weight=sample_weight,
+                                              multioutput=multioutput)
+
+    return Perf(y_true, *y_pred, score_func=None, error_func=inner,
+                num_samples=num_samples, n_jobs=n_jobs,
+                use_tqdm=use_tqdm,
+                **kwargs)
+
+
+@perf_docs
+def root_mean_squared_log_error(y_true,
+                                *y_pred,
+                                sample_weight=None,
+                                multioutput='uniform_average',
+                                num_samples: int=500,
+                                n_jobs: int=-1,
+                                use_tqdm=True,
+                                **kwargs):
+    """root_mean_squared_log_error"""
+    def inner(y, hy):
+        return metrics.root_mean_squared_log_error(y, hy,
+                                                   sample_weight=sample_weight,
+                                                   multioutput=multioutput)
+
+    return Perf(y_true, *y_pred, score_func=None, error_func=inner,
+                num_samples=num_samples, n_jobs=n_jobs,
+                use_tqdm=use_tqdm,
+                **kwargs)

@@ -180,31 +180,56 @@ def test_recall_score():
 def test_jaccard_score():
     """jaccard_score"""
     from CompStats.metrics import jaccard_score
-    try:
-        jaccard_score()
-    except RuntimeError:
-        return
-    raise False
+    import numpy as np
+
+    X, y = load_iris(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3, stratify=y)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestClassifier().fit(X_train, y_train)
+    hy = ens.predict(X_val)
+    perf = jaccard_score(y_val,
+                         forest=hy,
+                         num_samples=50, average='macro')
+    assert 'forest' in perf.statistic
+    _ = metrics.jaccard_score(y_val, hy, average='macro')
+    assert _ == perf.statistic['forest']
 
 
 def test_roc_auc_score():
     """roc_auc_score"""
     from CompStats.metrics import roc_auc_score
-    try:
-        roc_auc_score()
-    except RuntimeError:
-        return
-    raise False
+    import numpy as np
+
+    X, y = load_iris(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3, stratify=y)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestClassifier().fit(X_train, y_train)
+    hy = ens.predict_proba(X_val)
+    perf = roc_auc_score(y_val,
+                         forest=hy, multi_class='ovr',
+                         num_samples=50, average='macro')
+    assert 'forest' in perf.statistic
+    _ = metrics.roc_auc_score(y_val, hy, multi_class='ovr',
+                              average='macro')
+    assert _ == perf.statistic['forest']
 
 
 def test_d2_log_loss_score():
     """d2_log_loss_score"""
     from CompStats.metrics import d2_log_loss_score
-    try:
-        d2_log_loss_score()
-    except RuntimeError:
-        return
-    raise False
+    import numpy as np
+
+    X, y = load_iris(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3, stratify=y)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestClassifier().fit(X_train, y_train)
+    hy = ens.predict_proba(X_val)
+    perf = d2_log_loss_score(y_val,
+                         forest=hy,
+                         num_samples=50)
+    assert 'forest' in perf.statistic
+    _ = metrics.d2_log_loss_score(y_val, hy)
+    assert _ == perf.statistic['forest']
 
 
 def test_explained_variance_score():
@@ -323,4 +348,106 @@ def test_root_mean_squared_log_error():
                                        num_samples=50)
     assert 'forest' in perf.statistic
     _ = metrics.root_mean_squared_log_error(y_val, hy)
-    assert _ == perf.statistic['forest']    
+    assert _ == perf.statistic['forest']
+
+
+def test_median_absolute_error():
+    """median_absolute_error"""
+    from CompStats.metrics import median_absolute_error
+
+    X, y = load_diabetes(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestRegressor().fit(X_train, y_train)
+    hy = ens.predict(X_val)
+    perf = median_absolute_error(y_val,
+                                       forest=hy,
+                                       num_samples=50)
+    assert 'forest' in perf.statistic
+    _ = metrics.median_absolute_error(y_val, hy)
+    assert _ == perf.statistic['forest']
+
+
+def test_r2_score():
+    """r2_score"""
+    from CompStats.metrics import r2_score
+
+    X, y = load_diabetes(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestRegressor().fit(X_train, y_train)
+    hy = ens.predict(X_val)
+    perf = r2_score(y_val,
+                                       forest=hy,
+                                       num_samples=50)
+    assert 'forest' in perf.statistic
+    _ = metrics.r2_score(y_val, hy)
+    assert _ == perf.statistic['forest']
+
+
+def test_mean_poisson_deviance():
+    """mean_poisson_deviance"""
+    from CompStats.metrics import mean_poisson_deviance
+
+    X, y = load_diabetes(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestRegressor().fit(X_train, y_train)
+    hy = ens.predict(X_val)
+    perf = mean_poisson_deviance(y_val,
+                                 forest=hy,
+                                 num_samples=50)
+    assert 'forest' in perf.statistic
+    _ = metrics.mean_poisson_deviance(y_val, hy)
+    assert _ == perf.statistic['forest']
+
+
+def test_mean_gamma_deviance():
+    """mean_gamma_deviance"""
+    from CompStats.metrics import mean_gamma_deviance
+
+    X, y = load_diabetes(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestRegressor().fit(X_train, y_train)
+    hy = ens.predict(X_val)
+    perf = mean_gamma_deviance(y_val,
+                                 forest=hy,
+                                 num_samples=50)
+    assert 'forest' in perf.statistic
+    _ = metrics.mean_gamma_deviance(y_val, hy)
+    assert _ == perf.statistic['forest']       
+
+
+def test_mean_absolute_percentage_error():
+    """mean_absolute_percentage_error"""
+    from CompStats.metrics import mean_absolute_percentage_error
+
+    X, y = load_diabetes(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestRegressor().fit(X_train, y_train)
+    hy = ens.predict(X_val)
+    perf = mean_absolute_percentage_error(y_val,
+                                          forest=hy,
+                                          num_samples=50)
+    assert 'forest' in perf.statistic
+    _ = metrics.mean_absolute_percentage_error(y_val, hy)
+    assert _ == perf.statistic['forest']
+
+
+def test_d2_absolute_error_score():
+    """d2_absolute_error_score"""
+    from CompStats.metrics import d2_absolute_error_score
+
+    X, y = load_diabetes(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestRegressor().fit(X_train, y_train)
+    hy = ens.predict(X_val)
+    perf = d2_absolute_error_score(y_val,
+                                   forest=hy,
+                                   num_samples=50)
+    assert 'forest' in perf.statistic
+    _ = metrics.d2_absolute_error_score(y_val, hy)
+    assert _ == perf.statistic['forest']      

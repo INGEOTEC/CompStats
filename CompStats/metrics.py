@@ -211,21 +211,75 @@ def recall_score(y_true,
 
 
 @perf_docs
-def jaccard_score():
+def jaccard_score(y_true,
+                  *y_pred,
+                  labels=None,
+                  pos_label=1,
+                  average='binary',
+                  sample_weight=None,
+                  zero_division='warn',
+                  num_samples: int=500,
+                  n_jobs: int=-1,
+                  use_tqdm=True,
+                  **kwargs):
     """jaccard_score"""
-    raise RuntimeError('Not Implemented')
+    def inner(y, hy):
+        return metrics.jaccard_score(y, hy,
+                                     labels=labels,
+                                     pos_label=pos_label,
+                                     average=average,
+                                     sample_weight=sample_weight,
+                                     zero_division=zero_division)
+    return Perf(y_true, *y_pred, score_func=inner,
+                num_samples=num_samples, n_jobs=n_jobs,
+                use_tqdm=use_tqdm,
+                **kwargs)
 
 
 @perf_docs
-def roc_auc_score():
+def roc_auc_score(y_true,
+                  *y_score,
+                  average='macro',
+                  sample_weight=None,
+                  max_fpr=None,
+                  multi_class='raise',
+                  labels=None,
+                  num_samples: int=500,
+                  n_jobs: int=-1,
+                  use_tqdm=True,
+                  **kwargs):
     """roc_auc_score"""
-    raise RuntimeError('Not Implemented')
+    def inner(y, hy):
+        return metrics.roc_auc_score(y, hy,
+                                     average=average,
+                                     sample_weight=sample_weight,
+                                     max_fpr=max_fpr,
+                                     multi_class=multi_class,
+                                     labels=labels)
+    return Perf(y_true, *y_score, score_func=inner,
+                num_samples=num_samples, n_jobs=n_jobs,
+                use_tqdm=use_tqdm,
+                **kwargs)
 
 
 @perf_docs
-def d2_log_loss_score():
+def d2_log_loss_score(y_true, *y_proba,
+                      sample_weight=None,
+                      labels=None,
+                      num_samples: int=500,
+                      n_jobs: int=-1,
+                      use_tqdm=True,
+                      **kwargs):
     """d2_log_loss_score"""
-    raise RuntimeError('Not Implemented')
+
+    def inner(y, hy):
+        return metrics.d2_log_loss_score(y, hy,
+                                        sample_weight=sample_weight,
+                                        labels=labels)
+    return Perf(y_true, *y_proba, score_func=inner, error_func=None,
+                num_samples=num_samples, n_jobs=n_jobs,
+                use_tqdm=use_tqdm,
+                **kwargs)
 
 
 ########################################################
@@ -370,6 +424,130 @@ def root_mean_squared_log_error(y_true,
                                                    multioutput=multioutput)
 
     return Perf(y_true, *y_pred, score_func=None, error_func=inner,
+                num_samples=num_samples, n_jobs=n_jobs,
+                use_tqdm=use_tqdm,
+                **kwargs)
+
+
+@perf_docs
+def median_absolute_error(y_true,
+                          *y_pred,
+                          sample_weight=None,
+                          multioutput='uniform_average',
+                          num_samples: int=500,
+                          n_jobs: int=-1,
+                          use_tqdm=True,
+                          **kwargs):
+    """median_absolute_error"""
+    def inner(y, hy):
+        return metrics.median_absolute_error(y, hy,
+                                                   sample_weight=sample_weight,
+                                                   multioutput=multioutput)
+
+    return Perf(y_true, *y_pred, score_func=None, error_func=inner,
+                num_samples=num_samples, n_jobs=n_jobs,
+                use_tqdm=use_tqdm,
+                **kwargs)
+
+
+@perf_docs
+def r2_score(y_true,
+             *y_pred,
+             sample_weight=None,
+             multioutput='uniform_average',
+             force_finite=True,
+             num_samples: int=500,
+             n_jobs: int=-1,
+             use_tqdm=True,
+             **kwargs):
+    """r2_score"""
+    def inner(y, hy):
+        return metrics.r2_score(y, hy,
+                                sample_weight=sample_weight,
+                                multioutput=multioutput,
+                                force_finite=force_finite)
+
+    return Perf(y_true, *y_pred, score_func=inner, error_func=None,
+                num_samples=num_samples, n_jobs=n_jobs,
+                use_tqdm=use_tqdm,
+                **kwargs)
+
+
+@perf_docs
+def mean_poisson_deviance(y_true,
+                          *y_pred,
+                          sample_weight=None,
+                          num_samples: int=500,
+                          n_jobs: int=-1,
+                          use_tqdm=True,
+                          **kwargs):
+    """mean_poisson_deviance"""
+    def inner(y, hy):
+        return metrics.mean_poisson_deviance(y, hy,
+                                             sample_weight=sample_weight)
+
+    return Perf(y_true, *y_pred, score_func=None, error_func=inner,
+                num_samples=num_samples, n_jobs=n_jobs,
+                use_tqdm=use_tqdm,
+                **kwargs)
+
+
+@perf_docs
+def mean_gamma_deviance(y_true,
+                        *y_pred,
+                        sample_weight=None,
+                        num_samples: int=500,
+                        n_jobs: int=-1,
+                        use_tqdm=True,
+                        **kwargs):
+    """mean_gamma_deviance"""
+    def inner(y, hy):
+        return metrics.mean_gamma_deviance(y, hy,
+                                           sample_weight=sample_weight)
+
+    return Perf(y_true, *y_pred, score_func=None, error_func=inner,
+                num_samples=num_samples, n_jobs=n_jobs,
+                use_tqdm=use_tqdm,
+                **kwargs)
+
+
+@perf_docs
+def mean_absolute_percentage_error(y_true,
+                                   *y_pred,
+                                   sample_weight=None,
+                                   multioutput='uniform_average',
+                                   num_samples: int=500,
+                                   n_jobs: int=-1,
+                                   use_tqdm=True,
+                                   **kwargs):
+    """mean_absolute_percentage_error"""
+    def inner(y, hy):
+        return metrics.mean_absolute_percentage_error(y, hy,
+                                                      sample_weight=sample_weight,
+                                                      multioutput=multioutput)
+
+    return Perf(y_true, *y_pred, score_func=None, error_func=inner,
+                num_samples=num_samples, n_jobs=n_jobs,
+                use_tqdm=use_tqdm,
+                **kwargs)
+
+
+@perf_docs
+def d2_absolute_error_score(y_true,
+                            *y_pred,
+                            sample_weight=None,
+                            multioutput='uniform_average',
+                            num_samples: int=500,
+                            n_jobs: int=-1,
+                            use_tqdm=True,
+                            **kwargs):
+    """d2_absolute_error_score"""
+    def inner(y, hy):
+        return metrics.d2_absolute_error_score(y, hy,
+                                               sample_weight=sample_weight,
+                                               multioutput=multioutput)
+
+    return Perf(y_true, *y_pred, score_func=inner, error_func=None,
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)

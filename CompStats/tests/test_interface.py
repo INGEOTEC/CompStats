@@ -47,7 +47,7 @@ def test_Perf_statistic():
     X_train, X_val, y_train, y_val = _
     ens = RandomForestClassifier().fit(X_train, y_train)
     perf = Perf(y_val, forest=ens.predict(X_val), num_samples=50)
-    assert 'forest' in perf.statistic()
+    assert 'forest' in perf.statistic
 
 
 def test_Perf_plot():
@@ -130,7 +130,7 @@ def test_Perf_dataframe():
 
     df = pd.read_csv(DATA)
     perf = Perf(df, num_samples=50)
-    assert 'INGEOTEC' in perf.statistic()
+    assert 'INGEOTEC' in perf.statistic
 
 
 def test_Perf_call():

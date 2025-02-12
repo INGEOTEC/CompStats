@@ -59,19 +59,21 @@ class Perf(object):
     >>> perf = Perf(y_val, hy, forest=ens.predict(X_val))
     >>> perf
     <Perf>
-    Prediction statistics with standard error
-    alg-1 = 1.000 (0.000)
-    forest = 0.946 (0.038)
+    Statistic with its standard error (se)
+    statistic (se)
+    0.9792 (0.0221) <= alg-1
+    0.9744 (0.0246) <= forest
     
     If an algorithm's prediction is missing, this can be included by calling the instance, as can be seen in the following instruction. Note that the algorithm's name can also be given with the keyword :py:attr:`name.`
 
     >>> lr = LogisticRegression().fit(X_train, y_train)
     >>> perf(lr.predict(X_val), name='Log. Reg.')
     <Perf>
-    Prediction statistics with standard error
-    alg-1 = 1.000 (0.000)
-    forest = 0.946 (0.038)
-    Log. Reg. = 0.946 (0.038)
+    Statistic with its standard error (se)
+    statistic (se)
+    1.0000 (0.0000) <= Log. Reg.
+    0.9792 (0.0221) <= alg-1
+    0.9744 (0.0246) <= forest
     
     The performance function used to compare the algorithms can be changed, and the same bootstrap samples would be used if the instance were cloned. Consequently, the values are computed using the same samples, as can be seen in the following example.
 
@@ -79,10 +81,11 @@ class Perf(object):
     >>> perf_error.error_func = lambda y, hy: (y != hy).mean()
     >>> perf_error
     <Perf>
-    Prediction statistics with standard error
-    alg-1 = 0.000 (0.000)
-    forest = 0.044 (0.030)
-    Log. Reg. = 0.044 (0.030)
+    Statistic with its standard error (se)
+    statistic (se)
+    0.0000 (0.0000) <= Log. Reg.
+    0.0222 (0.0237) <= alg-1
+    0.0222 (0.0215) <= forest
 
     """
     def __init__(self, y_true, *y_pred,
@@ -137,7 +140,7 @@ class Perf(object):
         ins.predictions = dict(self.predictions)
         ins._statistic_samples._samples = self.statistic_samples._samples
         return ins
-    
+
     def __repr__(self):
         """Prediction statistics with standard error in parenthesis"""
         return f"<{self.__class__.__name__}>\n{self}"
@@ -145,10 +148,11 @@ class Perf(object):
     def __str__(self):
         """Prediction statistics with standard error in parenthesis"""
 
-        se = self.se()
-        output = ["Prediction statistics with standard error"]
-        for key, value in self.statistic().items():
-            output.append(f'{key} = {value:0.3f} ({se[key]:0.3f})')
+        se = self.se
+        output = ["Statistic with its standard error (se)"]
+        output.append("statistic (se)")
+        for key, value in self.statistic.items():
+            output.append(f'{value:0.4f} ({se[key]:0.4f}) <= {key}')
         return "\n".join(output)
 
     def __call__(self, y_pred, name=None):
@@ -196,7 +200,7 @@ class Perf(object):
                 continue
             diff[k] = sign * (base - v)
         diff_ins = Difference(statistic_samples=clone(self.statistic_samples),
-                              statistic=self.statistic(),
+                              statistic=self.statistic,
                               best=self.best[0])
         diff_ins.statistic_samples.calls = diff
         diff_ins.statistic_samples.info['best'] = self.best[0]
@@ -209,12 +213,13 @@ class Perf(object):
         try:
             return self._best
         except AttributeError:
-            statistic = [(k, v) for k, v in self.statistic().items()]
+            statistic = [(k, v) for k, v in self.statistic.items()]
             statistic = sorted(statistic, key=lambda x: x[1],
                                reverse=self.statistic_samples.BiB)
             self._best = statistic[0]
         return self._best
 
+    @property
     def statistic(self):
         """Statistic
 
@@ -230,7 +235,7 @@ class Perf(object):
         >>> hy = m.predict(X_val)
         >>> ens = RandomForestClassifier().fit(X_train, y_train)
         >>> perf = Perf(y_val, hy, forest=ens.predict(X_val))
-        >>> perf.statistic()
+        >>> perf.statistic
         {'alg-1': 1.0, 'forest': 0.9500891265597148}     
         """
 
@@ -239,6 +244,7 @@ class Perf(object):
                       key=lambda x: x[1], reverse=self.statistic_samples.BiB)
         return dict(data)
 
+    @property
     def se(self):
         """Standard Error
     
@@ -254,9 +260,10 @@ class Perf(object):
         >>> hy = m.predict(X_val)
         >>> ens = RandomForestClassifier().fit(X_train, y_train)
         >>> perf = Perf(y_val, hy, forest=ens.predict(X_val))
-        >>> print(perf.se())
+        >>> perf.se
         {'alg-1': 0.0, 'forest': 0.026945730782184187}
         """
+
         return SE(self.statistic_samples)
 
     def plot(self, **kwargs):
@@ -405,7 +412,7 @@ class Difference:
     >>> diff
     <Difference>
     difference p-values w.r.t alg-1
-    forest 0.3
+    0.0780 <= forest
     """
 
     statistic_samples:StatisticSamples=None
@@ -420,7 +427,7 @@ class Difference:
         """p-value"""
         output = [f"difference p-values w.r.t {self.best}"]
         for k, v in self.p_value().items():
-            output.append(f'{k} {v}')
+            output.append(f'{v:0.4f} <= {k}')
         return "\n".join(output)
 
     def p_value(self):

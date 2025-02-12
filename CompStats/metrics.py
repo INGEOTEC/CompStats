@@ -13,13 +13,15 @@
 # limitations under the License.
 from sklearn import metrics
 from CompStats.interface import Perf
-from CompStats.utils import perf_docs
+from CompStats.utils import metrics_docs
+
 
 ########################################################
 #################### Classification ####################
 ########################################################
 
-@perf_docs
+
+@metrics_docs(hy_name='y_pred', attr_name='score_func')
 def accuracy_score(y_true, *y_pred,
                    normalize=True, sample_weight=None,
                    num_samples: int=500,
@@ -38,7 +40,7 @@ def accuracy_score(y_true, *y_pred,
                 **kwargs)
 
 
-@perf_docs
+@metrics_docs(hy_name='y_pred', attr_name='score_func')
 def balanced_accuracy_score(y_true, *y_pred,
                             sample_weight=None, adjusted=False,
                             num_samples: int=500,
@@ -57,7 +59,7 @@ def balanced_accuracy_score(y_true, *y_pred,
                 **kwargs)
 
 
-@perf_docs
+@metrics_docs(hy_name='y_score', attr_name='score_func')
 def top_k_accuracy_score(y_true, *y_score, k=2,
                          normalize=True, sample_weight=None,
                          labels=None,
@@ -77,7 +79,7 @@ def top_k_accuracy_score(y_true, *y_score, k=2,
                 **kwargs)
 
 
-@perf_docs
+@metrics_docs(hy_name='y_score', attr_name='score_func')
 def average_precision_score(y_true, *y_score,
                             average='macro',
                             sample_weight=None,
@@ -97,7 +99,7 @@ def average_precision_score(y_true, *y_score,
                 **kwargs)
 
 
-@perf_docs
+@metrics_docs(hy_name='y_proba', attr_name='error_func')
 def brier_score_loss(y_true, *y_proba,
                      sample_weight=None,
                      pos_label=None,
@@ -116,9 +118,9 @@ def brier_score_loss(y_true, *y_proba,
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)
-    
 
-@perf_docs
+
+@metrics_docs(hy_name='y_pred', attr_name='score_func')
 def f1_score(y_true, *y_pred, labels=None, pos_label=1,
              average='binary', sample_weight=None,
              zero_division='warn', num_samples: int=500,
@@ -138,7 +140,7 @@ def f1_score(y_true, *y_pred, labels=None, pos_label=1,
                 **kwargs)
 
 
-@perf_docs
+@metrics_docs(hy_name='y_pred', attr_name='error_func')
 def log_loss(y_true, *y_pred,
              normalize=True,
              sample_weight=None,
@@ -158,7 +160,7 @@ def log_loss(y_true, *y_pred,
                 **kwargs)
 
 
-@perf_docs
+@metrics_docs(hy_name='y_pred', attr_name='score_func')
 def precision_score(y_true,
                     *y_pred,
                     labels=None,
@@ -184,7 +186,7 @@ def precision_score(y_true,
                 **kwargs)
 
 
-@perf_docs
+@metrics_docs(hy_name='y_pred', attr_name='score_func')
 def recall_score(y_true,
                  *y_pred,
                  labels=None,
@@ -210,7 +212,7 @@ def recall_score(y_true,
                 **kwargs)
 
 
-@perf_docs
+@metrics_docs(hy_name='y_pred', attr_name='score_func')
 def jaccard_score(y_true,
                   *y_pred,
                   labels=None,
@@ -236,7 +238,7 @@ def jaccard_score(y_true,
                 **kwargs)
 
 
-@perf_docs
+@metrics_docs(hy_name='y_score', attr_name='score_func')
 def roc_auc_score(y_true,
                   *y_score,
                   average='macro',
@@ -262,7 +264,7 @@ def roc_auc_score(y_true,
                 **kwargs)
 
 
-@perf_docs
+@metrics_docs(hy_name='y_proba', attr_name='score_func')
 def d2_log_loss_score(y_true, *y_proba,
                       sample_weight=None,
                       labels=None,
@@ -287,7 +289,7 @@ def d2_log_loss_score(y_true, *y_proba,
 ########################################################
 
 
-@perf_docs
+@metrics_docs(hy_name='y_pred', attr_name='score_func')
 def explained_variance_score(y_true,
                              *y_pred,
                              sample_weight=None,
@@ -309,7 +311,7 @@ def explained_variance_score(y_true,
                 **kwargs)
 
 
-@perf_docs
+@metrics_docs(hy_name='y_pred', attr_name='error_func')
 def max_error(y_true, *y_pred, 
               num_samples: int=500,
               n_jobs: int=-1,
@@ -324,7 +326,7 @@ def max_error(y_true, *y_pred,
                 **kwargs)
 
 
-@perf_docs
+@metrics_docs(hy_name='y_pred', attr_name='error_func')
 def mean_absolute_error(y_true,
                         *y_pred,
                         sample_weight=None,
@@ -345,7 +347,7 @@ def mean_absolute_error(y_true,
                 **kwargs)
 
 
-@perf_docs
+@metrics_docs(hy_name='y_pred', attr_name='error_func')
 def mean_squared_error(y_true,
                        *y_pred,
                        sample_weight=None,
@@ -366,7 +368,7 @@ def mean_squared_error(y_true,
                 **kwargs)
 
 
-@perf_docs
+@metrics_docs(hy_name='y_pred', attr_name='error_func')
 def root_mean_squared_error(y_true,
                             *y_pred,
                             sample_weight=None,
@@ -387,7 +389,7 @@ def root_mean_squared_error(y_true,
                 **kwargs)
 
 
-@perf_docs
+@metrics_docs(hy_name='y_pred', attr_name='error_func')
 def mean_squared_log_error(y_true,
                            *y_pred,
                            sample_weight=None,
@@ -408,7 +410,7 @@ def mean_squared_log_error(y_true,
                 **kwargs)
 
 
-@perf_docs
+@metrics_docs(hy_name='y_pred', attr_name='error_func')
 def root_mean_squared_log_error(y_true,
                                 *y_pred,
                                 sample_weight=None,
@@ -429,7 +431,7 @@ def root_mean_squared_log_error(y_true,
                 **kwargs)
 
 
-@perf_docs
+@metrics_docs(hy_name='y_pred', attr_name='error_func')
 def median_absolute_error(y_true,
                           *y_pred,
                           sample_weight=None,
@@ -441,8 +443,8 @@ def median_absolute_error(y_true,
     """median_absolute_error"""
     def inner(y, hy):
         return metrics.median_absolute_error(y, hy,
-                                                   sample_weight=sample_weight,
-                                                   multioutput=multioutput)
+                                             sample_weight=sample_weight,
+                                             multioutput=multioutput)
 
     return Perf(y_true, *y_pred, score_func=None, error_func=inner,
                 num_samples=num_samples, n_jobs=n_jobs,
@@ -450,7 +452,7 @@ def median_absolute_error(y_true,
                 **kwargs)
 
 
-@perf_docs
+@metrics_docs(hy_name='y_pred', attr_name='score_func')
 def r2_score(y_true,
              *y_pred,
              sample_weight=None,
@@ -473,7 +475,7 @@ def r2_score(y_true,
                 **kwargs)
 
 
-@perf_docs
+@metrics_docs(hy_name='y_pred', attr_name='error_func')
 def mean_poisson_deviance(y_true,
                           *y_pred,
                           sample_weight=None,
@@ -492,7 +494,7 @@ def mean_poisson_deviance(y_true,
                 **kwargs)
 
 
-@perf_docs
+@metrics_docs(hy_name='y_pred', attr_name='error_func')
 def mean_gamma_deviance(y_true,
                         *y_pred,
                         sample_weight=None,
@@ -511,7 +513,7 @@ def mean_gamma_deviance(y_true,
                 **kwargs)
 
 
-@perf_docs
+@metrics_docs(hy_name='y_pred', attr_name='error_func')
 def mean_absolute_percentage_error(y_true,
                                    *y_pred,
                                    sample_weight=None,
@@ -532,7 +534,7 @@ def mean_absolute_percentage_error(y_true,
                 **kwargs)
 
 
-@perf_docs
+@metrics_docs(hy_name='y_pred', attr_name='score_func')
 def d2_absolute_error_score(y_true,
                             *y_pred,
                             sample_weight=None,

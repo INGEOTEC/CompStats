@@ -145,7 +145,7 @@ class Perf(object):
 
     def __repr__(self):
         """Prediction statistics with standard error in parenthesis"""
-        arg = 'score_func' if self.error_func is not None else 'error_func'
+        arg = 'score_func' if self.error_func is None else 'error_func'
         func_name = self.statistic_func.__name__
         return f"<{self.__class__.__name__}({arg}={func_name})>\n{self}"
 

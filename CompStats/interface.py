@@ -107,6 +107,7 @@ class Perf(object):
         self.num_samples = num_samples
         self.n_jobs = n_jobs
         self.use_tqdm = use_tqdm
+        self.sorting_func = np.linalg.norm
         self._init()
 
     def _init(self):
@@ -139,6 +140,7 @@ class Perf(object):
         ins = klass(**params)
         ins.predictions = dict(self.predictions)
         ins._statistic_samples._samples = self.statistic_samples._samples
+        ins.sorting_func = self.sorting_func
         return ins
 
     def __repr__(self):
@@ -223,10 +225,20 @@ class Perf(object):
             return self._best
         except AttributeError:
             statistic = [(k, v) for k, v in self.statistic.items()]
-            statistic = sorted(statistic, key=lambda x: x[1],
+            statistic = sorted(statistic,
+                               key=lambda x: self.sorting_func(x[1]),
                                reverse=self.statistic_samples.BiB)
             self._best = statistic[0]
         return self._best
+    
+    @property
+    def sorting_func(self):
+        """Rank systems when multiple performances are used"""
+        return self._sorting_func
+    
+    @sorting_func.setter
+    def sorting_func(self, value):
+        self._sorting_func = value
 
     @property
     def statistic(self):
@@ -250,7 +262,8 @@ class Perf(object):
 
         data = sorted([(k, self.statistic_func(self.y_true, v))
                        for k, v in self.predictions.items()],
-                      key=lambda x: x[1], reverse=self.statistic_samples.BiB)
+                      key=lambda x: self.sorting_func(x[1]), 
+                      reverse=self.statistic_samples.BiB)
         return dict(data)
 
     @property

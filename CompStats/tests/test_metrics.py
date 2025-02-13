@@ -34,7 +34,10 @@ def test_f1_score():
     _ = metrics.f1_score(y_val, hy, average='macro')
     assert _ == perf.statistic['forest']
     perf = f1_score(y_val, hy, average=None)
-    assert str(perf) is None
+    assert str(perf) is not None
+    nb = GaussianNB().fit(X_train, y_train)
+    perf(nb.predict(X_val))
+    assert str(perf) is not None
 
 
 def test_accuracy_score():

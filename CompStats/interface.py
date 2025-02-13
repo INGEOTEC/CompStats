@@ -143,7 +143,9 @@ class Perf(object):
 
     def __repr__(self):
         """Prediction statistics with standard error in parenthesis"""
-        return f"<{self.__class__.__name__}>\n{self}"
+        arg = 'score_func' if self.error_func is not None else 'error_func'
+        func_name = self.statistic_func.__name__
+        return f"<{self.__class__.__name__}({arg}={func_name})>\n{self}"
 
     def __str__(self):
         """Prediction statistics with standard error in parenthesis"""
@@ -152,7 +154,14 @@ class Perf(object):
         output = ["Statistic with its standard error (se)"]
         output.append("statistic (se)")
         for key, value in self.statistic.items():
-            output.append(f'{value:0.4f} ({se[key]:0.4f}) <= {key}')
+            if isinstance(value, float):
+                desc = f'{value:0.4f} ({se[key]:0.4f}) <= {key}'
+            else:
+                desc = [f'{v:0.4f} ({k:0.4f})'
+                        for v, k in zip(value, se[key])]
+                desc = ', '.join(desc)
+                desc = f'{desc} <= {key}'
+            output.append(desc)
         return "\n".join(output)
 
     def __call__(self, y_pred, name=None):

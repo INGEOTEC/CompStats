@@ -33,6 +33,8 @@ def test_f1_score():
     assert 'forest' in perf.statistic
     _ = metrics.f1_score(y_val, hy, average='macro')
     assert _ == perf.statistic['forest']
+    perf = f1_score(y_val, hy, average=None)
+    assert str(perf) is None
 
 
 def test_accuracy_score():

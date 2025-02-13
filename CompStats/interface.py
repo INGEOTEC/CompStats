@@ -107,6 +107,7 @@ class Perf(object):
         self.num_samples = num_samples
         self.n_jobs = n_jobs
         self.use_tqdm = use_tqdm
+        self.sorting_func = np.linalg.norm
         self._init()
 
     def _init(self):
@@ -139,11 +140,14 @@ class Perf(object):
         ins = klass(**params)
         ins.predictions = dict(self.predictions)
         ins._statistic_samples._samples = self.statistic_samples._samples
+        ins.sorting_func = self.sorting_func
         return ins
 
     def __repr__(self):
         """Prediction statistics with standard error in parenthesis"""
-        return f"<{self.__class__.__name__}>\n{self}"
+        arg = 'score_func' if self.error_func is None else 'error_func'
+        func_name = self.statistic_func.__name__
+        return f"<{self.__class__.__name__}({arg}={func_name})>\n{self}"
 
     def __str__(self):
         """Prediction statistics with standard error in parenthesis"""
@@ -152,7 +156,14 @@ class Perf(object):
         output = ["Statistic with its standard error (se)"]
         output.append("statistic (se)")
         for key, value in self.statistic.items():
-            output.append(f'{value:0.4f} ({se[key]:0.4f}) <= {key}')
+            if isinstance(value, float):
+                desc = f'{value:0.4f} ({se[key]:0.4f}) <= {key}'
+            else:
+                desc = [f'{v:0.4f} ({k:0.4f})'
+                        for v, k in zip(value, se[key])]
+                desc = ', '.join(desc)
+                desc = f'{desc} <= {key}'
+            output.append(desc)
         return "\n".join(output)
 
     def __call__(self, y_pred, name=None):
@@ -202,6 +213,7 @@ class Perf(object):
         diff_ins = Difference(statistic_samples=clone(self.statistic_samples),
                               statistic=self.statistic,
                               best=self.best[0])
+        diff_ins.sorting_func = self.sorting_func
         diff_ins.statistic_samples.calls = diff
         diff_ins.statistic_samples.info['best'] = self.best[0]
         return diff_ins
@@ -214,10 +226,20 @@ class Perf(object):
             return self._best
         except AttributeError:
             statistic = [(k, v) for k, v in self.statistic.items()]
-            statistic = sorted(statistic, key=lambda x: x[1],
+            statistic = sorted(statistic,
+                               key=lambda x: self.sorting_func(x[1]),
                                reverse=self.statistic_samples.BiB)
             self._best = statistic[0]
         return self._best
+    
+    @property
+    def sorting_func(self):
+        """Rank systems when multiple performances are used"""
+        return self._sorting_func
+    
+    @sorting_func.setter
+    def sorting_func(self, value):
+        self._sorting_func = value
 
     @property
     def statistic(self):
@@ -241,7 +263,8 @@ class Perf(object):
 
         data = sorted([(k, self.statistic_func(self.y_true, v))
                        for k, v in self.predictions.items()],
-                      key=lambda x: x[1], reverse=self.statistic_samples.BiB)
+                      key=lambda x: self.sorting_func(x[1]), 
+                      reverse=self.statistic_samples.BiB)
         return dict(data)
 
     @property
@@ -419,6 +442,15 @@ class Difference:
     best:str=None
     statistic:dict=None
 
+    @property
+    def sorting_func(self):
+        """Rank systems when multiple performances are used"""
+        return self._sorting_func
+    
+    @sorting_func.setter
+    def sorting_func(self, value):
+        self._sorting_func = value    
+
     def __repr__(self):
         """p-value"""
         return f"<{self.__class__.__name__}>\n{self}"    
@@ -426,12 +458,20 @@ class Difference:
     def __str__(self):
         """p-value"""
         output = [f"difference p-values w.r.t {self.best}"]
-        for k, v in self.p_value().items():
-            output.append(f'{v:0.4f} <= {k}')
+        for key, value in self.p_value().items():
+            if isinstance(value, float):
+                output.append(f'{value:0.4f} <= {key}')
+            else:
+                desc = [f'{v:0.4f}' for v in value]
+                desc = ', '.join(desc)
+                desc = f'{desc} <= {key}'
         return "\n".join(output)
 
-    def p_value(self):
+    def p_value(self, right:bool=True):
         """Compute p_value of the differences
+
+        :param right: Estimate the p-value using :math:`\\text{sample} \\geq 2\\delta`
+        :type right: bool  
         
         >>> from sklearn.svm import LinearSVC
         >>> from sklearn.ensemble import RandomForestClassifier
@@ -452,10 +492,20 @@ class Difference:
         """
         values = []
         sign = 1 if self.statistic_samples.BiB else -1
+        ndim = self.statistic[self.best].ndim
         for k, v in self.statistic_samples.calls.items():
             delta = 2 * sign * (self.statistic[self.best] - self.statistic[k])
-            values.append((k, (v > delta).mean()))
-        values.sort(key=lambda x: x[1])
+            if ndim == 0:
+                if right:
+                    values.append((k, (v >= delta).mean()))
+                else:
+                    values.append((k, (v <= 0).mean()))
+            else:
+                if right:
+                    values.append((k, (v >= delta).mean(axis=0)))
+                else:
+                    values.append((k, (v <= 0).mean(axis=0)))
+        values.sort(key=lambda x: self.sorting_func(x[1]))
         return dict(values)
 
     def plot(self, **kwargs):

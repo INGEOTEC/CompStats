@@ -453,7 +453,7 @@ class Difference:
 
     def __repr__(self):
         """p-value"""
-        return f"<{self.__class__.__name__}>\n{self}"    
+        return f"<{self.__class__.__name__}>\n{self}"
 
     def __str__(self):
         """p-value"""
@@ -465,6 +465,7 @@ class Difference:
                 desc = [f'{v:0.4f}' for v in value]
                 desc = ', '.join(desc)
                 desc = f'{desc} <= {key}'
+                output.append(desc)
         return "\n".join(output)
 
     def p_value(self, right:bool=True):

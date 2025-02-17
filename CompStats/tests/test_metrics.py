@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import numpy as np
 from sklearn.svm import LinearSVC
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.naive_bayes import GaussianNB
@@ -18,6 +19,24 @@ from sklearn.datasets import load_iris, load_diabetes
 from sklearn.model_selection import train_test_split
 from sklearn import metrics
 
+
+def test_difference_f1_score():
+    """Test f1_score"""
+    from CompStats.metrics import f1_score
+
+    X, y = load_iris(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestClassifier().fit(X_train, y_train)
+    nb = GaussianNB().fit(X_train, y_train)
+    perf = f1_score(y_val, nb.predict(X_val),
+                    forest=ens.predict(X_val),
+                    num_samples=50, average=None)
+    diff = perf.difference()
+    p_values = diff.p_value(right=False)
+    dd = list(p_values.values())[0]
+    assert isinstance(dd, np.ndarray)
+    print(diff)
 
 def test_f1_score():
     """Test f1_score"""
@@ -33,6 +52,11 @@ def test_f1_score():
     assert 'forest' in perf.statistic
     _ = metrics.f1_score(y_val, hy, average='macro')
     assert _ == perf.statistic['forest']
+    perf = f1_score(y_val, hy, average=None)
+    assert str(perf) is not None
+    nb = GaussianNB().fit(X_train, y_train)
+    perf(nb.predict(X_val))
+    assert str(perf) is not None
 
 
 def test_accuracy_score():

@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from functools import wraps
 from sklearn import metrics
 from CompStats.interface import Perf
 from CompStats.utils import metrics_docs
@@ -30,6 +31,7 @@ def accuracy_score(y_true, *y_pred,
                    **kwargs):
     """accuracy_score"""
 
+    @wraps(metrics.accuracy_score)
     def inner(y, hy):
         return metrics.accuracy_score(y, hy,
                                       normalize=normalize,
@@ -49,6 +51,7 @@ def balanced_accuracy_score(y_true, *y_pred,
                             **kwargs):
     """balanced_accuracy_score"""
 
+    @wraps(metrics.balanced_accuracy_score)
     def inner(y, hy):
         return metrics.balanced_accuracy_score(y, hy,
                                                adjusted=adjusted,
@@ -69,6 +72,7 @@ def top_k_accuracy_score(y_true, *y_score, k=2,
                          **kwargs):
     """top_k_accuracy_score"""
 
+    @wraps(metrics.top_k_accuracy_score)
     def inner(y, hy):
         return metrics.top_k_accuracy_score(y, hy, k=k,
                                             normalize=normalize, sample_weight=sample_weight,
@@ -89,6 +93,7 @@ def average_precision_score(y_true, *y_score,
                             **kwargs):
     """average_precision_score"""
 
+    @wraps(metrics.average_precision_score)
     def inner(y, hy):
         return metrics.average_precision_score(y, hy,
                                                average=average,
@@ -110,6 +115,7 @@ def brier_score_loss(y_true, *y_proba,
                      ):
     """brier_score_loss"""
 
+    @wraps(metrics.brier_score_loss)
     def inner(y, hy):
         return metrics.brier_score_loss(y, hy,
                                         sample_weight=sample_weight,
@@ -128,6 +134,7 @@ def f1_score(y_true, *y_pred, labels=None, pos_label=1,
              **kwargs):
     """f1_score"""
 
+    @wraps(metrics.f1_score)
     def inner(y, hy):
         return metrics.f1_score(y, hy, labels=labels,
                                 pos_label=pos_label,
@@ -150,6 +157,8 @@ def log_loss(y_true, *y_pred,
              use_tqdm=True,
              **kwargs):
     """log_loss"""
+
+    @wraps(metrics.log_loss)
     def inner(y, hy):
         return metrics.log_loss(y, hy, normalize=normalize,
                                 sample_weight=sample_weight,
@@ -173,6 +182,8 @@ def precision_score(y_true,
                     use_tqdm=True,
                     **kwargs):
     """precision_score"""
+
+    @wraps(metrics.precision_score)
     def inner(y, hy):
         return metrics.precision_score(y, hy,
                                        labels=labels,
@@ -199,6 +210,8 @@ def recall_score(y_true,
                  use_tqdm=True,
                  **kwargs):
     """recall_score"""
+
+    @wraps(metrics.recall_score)
     def inner(y, hy):
         return metrics.recall_score(y, hy,
                                     labels=labels,
@@ -225,6 +238,8 @@ def jaccard_score(y_true,
                   use_tqdm=True,
                   **kwargs):
     """jaccard_score"""
+
+    @wraps(metrics.jaccard_score)
     def inner(y, hy):
         return metrics.jaccard_score(y, hy,
                                      labels=labels,
@@ -251,6 +266,8 @@ def roc_auc_score(y_true,
                   use_tqdm=True,
                   **kwargs):
     """roc_auc_score"""
+
+    @wraps(metrics.roc_auc_score)
     def inner(y, hy):
         return metrics.roc_auc_score(y, hy,
                                      average=average,
@@ -274,6 +291,7 @@ def d2_log_loss_score(y_true, *y_proba,
                       **kwargs):
     """d2_log_loss_score"""
 
+    @wraps(metrics.d2_log_loss_score)
     def inner(y, hy):
         return metrics.d2_log_loss_score(y, hy,
                                         sample_weight=sample_weight,
@@ -300,6 +318,8 @@ def explained_variance_score(y_true,
                              use_tqdm=True,
                              **kwargs):
     """explained_variance_score"""
+
+    @wraps(metrics.explained_variance_score)
     def inner(y, hy):
         return metrics.explained_variance_score(y, hy,
                                                 sample_weight=sample_weight,
@@ -318,6 +338,8 @@ def max_error(y_true, *y_pred,
               use_tqdm=True,
               **kwargs):
     """max_error"""
+
+    @wraps(metrics.max_error)
     def inner(y, hy):
         return metrics.max_error(y, hy)
     return Perf(y_true, *y_pred, score_func=None, error_func=inner,
@@ -336,6 +358,8 @@ def mean_absolute_error(y_true,
                         use_tqdm=True,
                         **kwargs):
     """mean_absolute_error"""
+
+    @wraps(metrics.mean_absolute_error)
     def inner(y, hy):
         return metrics.mean_absolute_error(y, hy,
                                            sample_weight=sample_weight,
@@ -357,6 +381,8 @@ def mean_squared_error(y_true,
                        use_tqdm=True,
                        **kwargs):
     """mean_squared_error"""
+
+    @wraps(metrics.mean_squared_error)
     def inner(y, hy):
         return metrics.mean_squared_error(y, hy,
                                           sample_weight=sample_weight,
@@ -378,6 +404,8 @@ def root_mean_squared_error(y_true,
                             use_tqdm=True,
                             **kwargs):
     """root_mean_squared_error"""
+
+    @wraps(metrics.root_mean_squared_error)
     def inner(y, hy):
         return metrics.root_mean_squared_error(y, hy,
                                                sample_weight=sample_weight,
@@ -399,6 +427,8 @@ def mean_squared_log_error(y_true,
                            use_tqdm=True,
                            **kwargs):
     """mean_squared_log_error"""
+
+    @wraps(metrics.mean_squared_log_error)
     def inner(y, hy):
         return metrics.mean_squared_log_error(y, hy,
                                               sample_weight=sample_weight,
@@ -420,6 +450,8 @@ def root_mean_squared_log_error(y_true,
                                 use_tqdm=True,
                                 **kwargs):
     """root_mean_squared_log_error"""
+
+    @wraps(metrics.root_mean_squared_log_error)
     def inner(y, hy):
         return metrics.root_mean_squared_log_error(y, hy,
                                                    sample_weight=sample_weight,
@@ -441,6 +473,8 @@ def median_absolute_error(y_true,
                           use_tqdm=True,
                           **kwargs):
     """median_absolute_error"""
+
+    @wraps(metrics.median_absolute_error)
     def inner(y, hy):
         return metrics.median_absolute_error(y, hy,
                                              sample_weight=sample_weight,
@@ -463,6 +497,8 @@ def r2_score(y_true,
              use_tqdm=True,
              **kwargs):
     """r2_score"""
+
+    @wraps(metrics.r2_score)
     def inner(y, hy):
         return metrics.r2_score(y, hy,
                                 sample_weight=sample_weight,
@@ -484,6 +520,8 @@ def mean_poisson_deviance(y_true,
                           use_tqdm=True,
                           **kwargs):
     """mean_poisson_deviance"""
+
+    @wraps(metrics.mean_poisson_deviance)
     def inner(y, hy):
         return metrics.mean_poisson_deviance(y, hy,
                                              sample_weight=sample_weight)
@@ -503,6 +541,8 @@ def mean_gamma_deviance(y_true,
                         use_tqdm=True,
                         **kwargs):
     """mean_gamma_deviance"""
+
+    @wraps(metrics.mean_gamma_deviance)
     def inner(y, hy):
         return metrics.mean_gamma_deviance(y, hy,
                                            sample_weight=sample_weight)
@@ -523,6 +563,8 @@ def mean_absolute_percentage_error(y_true,
                                    use_tqdm=True,
                                    **kwargs):
     """mean_absolute_percentage_error"""
+
+    @wraps(metrics.mean_absolute_percentage_error)
     def inner(y, hy):
         return metrics.mean_absolute_percentage_error(y, hy,
                                                       sample_weight=sample_weight,
@@ -544,6 +586,8 @@ def d2_absolute_error_score(y_true,
                             use_tqdm=True,
                             **kwargs):
     """d2_absolute_error_score"""
+
+    @wraps(metrics.d2_absolute_error_score)
     def inner(y, hy):
         return metrics.d2_absolute_error_score(y, hy,
                                                sample_weight=sample_weight,

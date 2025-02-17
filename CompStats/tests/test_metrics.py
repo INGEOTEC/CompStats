@@ -36,7 +36,14 @@ def test_difference_f1_score():
     p_values = diff.p_value(right=False)
     dd = list(p_values.values())[0]
     assert isinstance(dd, np.ndarray)
-    print(diff)
+    for average in ['macro', None]:
+        perf = f1_score(y_val, nb.predict(X_val),
+                        forest=ens.predict(X_val),
+                        num_samples=50, average=average)
+        diff = perf.difference()
+        print(diff)
+
+
 
 def test_f1_score():
     """Test f1_score"""

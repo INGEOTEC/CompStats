@@ -493,7 +493,10 @@ class Difference:
         """
         values = []
         sign = 1 if self.statistic_samples.BiB else -1
-        ndim = self.statistic[self.best].ndim
+        if hasattr(self.statistic[self.best], 'ndim'):
+            ndim = self.statistic[self.best].ndim
+        else:
+            ndim = 0
         for k, v in self.statistic_samples.calls.items():
             delta = 2 * sign * (self.statistic[self.best] - self.statistic[k])
             if ndim == 0:

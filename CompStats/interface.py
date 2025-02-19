@@ -207,12 +207,11 @@ class Perf(object):
         sign = 1 if self.statistic_samples.BiB else -1
         diff = dict()
         for k, v in self.statistic_samples.calls.items():
-            if k == wrt_to:
+            if k == wrt_to and base.ndim == 1:
                 continue
             diff[k] = sign * (base - v)
         diff_ins = Difference(statistic_samples=clone(self.statistic_samples),
-                              statistic=self.statistic,
-                              best=self.best[0])
+                              statistic=self.statistic)
         diff_ins.sorting_func = self.sorting_func
         diff_ins.statistic_samples.calls = diff
         diff_ins.statistic_samples.info['best'] = self.best[0]
@@ -439,8 +438,29 @@ class Difference:
     """
 
     statistic_samples:StatisticSamples=None
-    best:str=None
     statistic:dict=None
+
+    @property
+    def best(self):
+        """System with best performance"""
+        if hasattr(self, '_best'):
+            return self._best
+        BiB = True if self.statistic_samples.BiB else False
+        keys = np.array(list(self.statistic.keys()))
+        data = np.asanyarray([self.statistic[k]
+                              for k in keys])        
+        if isinstance(self.statistic[keys[0]], np.ndarray):
+            if BiB:
+                best = data.argmax(axis=0)
+            else:
+                best = data.argmin(axis=0)
+        else:
+            if BiB:
+                best = data.argmax()
+            else:
+                best = data.argmin()
+        self._best = keys[best]
+        return self._best
 
     @property
     def sorting_func(self):
@@ -457,7 +477,15 @@ class Difference:
 
     def __str__(self):
         """p-value"""
-        output = [f"difference p-values w.r.t {self.best}"]
+        if isinstance(self.best, str):
+            best = f' w.r.t {self.best}'
+        else:
+            best = ''
+        output = [f"difference p-values {best}"]
+        best = self.best
+        if isinstance(best, np.ndarray):
+            desc = ', '.join(best)
+            output.append(f'{desc} <= Best')
         for key, value in self.p_value().items():
             if isinstance(value, float):
                 output.append(f'{value:0.4f} <= {key}')
@@ -467,6 +495,17 @@ class Difference:
                 desc = f'{desc} <= {key}'
                 output.append(desc)
         return "\n".join(output)
+
+    def __delta_best(self):
+        """Compute multiple delta"""
+        if isinstance(self.best, str):
+            return self.statistic[self.best]
+        keys = np.unique(self.best)
+        statistic = np.array([self.statistic[k]
+                              for k in keys])
+        m = {v: k for k, v in enumerate(keys)}
+        best = np.array([m[x] for x in self.best])
+        return statistic[best, np.arange(best.shape[0])]
 
     def p_value(self, right:bool=True):
         """Compute p_value of the differences
@@ -493,13 +532,10 @@ class Difference:
         """
         values = []
         sign = 1 if self.statistic_samples.BiB else -1
-        if hasattr(self.statistic[self.best], 'ndim'):
-            ndim = self.statistic[self.best].ndim
-        else:
-            ndim = 0
+        delta_best = self.__delta_best()
         for k, v in self.statistic_samples.calls.items():
-            delta = 2 * sign * (self.statistic[self.best] - self.statistic[k])
-            if ndim == 0:
+            delta = 2 * sign * (delta_best - self.statistic[k])
+            if not isinstance(delta_best, np.ndarray):
                 if right:
                     values.append((k, (v >= delta).mean()))
                 else:

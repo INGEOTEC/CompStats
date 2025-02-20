@@ -184,6 +184,7 @@ class Perf(object):
             if k == 0:
                 k = 1
             name = f'alg-{k}'
+        self.best = None
         self.predictions[name] = np.asanyarray(y_pred)
         samples = self._statistic_samples
         calls = samples.calls
@@ -236,7 +237,7 @@ class Perf(object):
     @property
     def best(self):
         """System with best performance"""
-        if hasattr(self, '_best'):
+        if hasattr(self, '_best') and self._best is not None:
             return self._best
         BiB = True if self.statistic_samples.BiB else False
         keys = np.array(list(self.statistic.keys()))
@@ -254,6 +255,10 @@ class Perf(object):
                 best = data.argmin()
         self._best = keys[best]
         return self._best
+    
+    @best.setter
+    def best(self, value):
+        self._best = value
 
     @property
     def sorting_func(self):

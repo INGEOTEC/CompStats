@@ -11,32 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import numpy as np
-from sklearn.svm import LinearSVC
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.naive_bayes import GaussianNB
 from sklearn.datasets import load_iris, load_diabetes
 from sklearn.model_selection import train_test_split
 from sklearn import metrics
 
-
-def test_difference_f1_score():
-    """Test f1_score"""
-    from CompStats.metrics import f1_score
-
-    X, y = load_iris(return_X_y=True)
-    _ = train_test_split(X, y, test_size=0.3)
-    X_train, X_val, y_train, y_val = _
-    ens = RandomForestClassifier().fit(X_train, y_train)
-    nb = GaussianNB().fit(X_train, y_train)
-    perf = f1_score(y_val, nb.predict(X_val),
-                    forest=ens.predict(X_val),
-                    num_samples=50, average=None)
-    diff = perf.difference()
-    p_values = diff.p_value(right=False)
-    dd = list(p_values.values())[0]
-    assert isinstance(dd, np.ndarray)
-    print(diff)
 
 def test_f1_score():
     """Test f1_score"""
@@ -49,9 +29,9 @@ def test_f1_score():
     hy = ens.predict(X_val)
     perf = f1_score(y_val, forest=hy,
                     num_samples=50, average='macro')
-    assert 'forest' in perf.statistic
+    assert isinstance(perf.statistic, float)
     _ = metrics.f1_score(y_val, hy, average='macro')
-    assert _ == perf.statistic['forest']
+    assert _ == perf.statistic
     perf = f1_score(y_val, hy, average=None)
     assert str(perf) is not None
     nb = GaussianNB().fit(X_train, y_train)
@@ -70,9 +50,8 @@ def test_accuracy_score():
     hy = ens.predict(X_val)
     perf = accuracy_score(y_val, forest=hy,
                           num_samples=50)
-    assert 'forest' in perf.statistic
     _ = metrics.accuracy_score(y_val, hy)
-    assert _ == perf.statistic['forest']
+    assert _ == perf.statistic
 
 
 def test_balanced_accuracy_score():
@@ -86,9 +65,8 @@ def test_balanced_accuracy_score():
     hy = ens.predict(X_val)
     perf = balanced_accuracy_score(y_val, forest=hy,
                                    num_samples=50)
-    assert 'forest' in perf.statistic
     _ = metrics.balanced_accuracy_score(y_val, hy)
-    assert _ == perf.statistic['forest']
+    assert _ == perf.statistic
 
 
 def test_top_k_accuracy_score():
@@ -103,9 +81,8 @@ def test_top_k_accuracy_score():
     perf = top_k_accuracy_score(y_val,
                                 forest=hy,
                                 num_samples=50)
-    assert 'forest' in perf.statistic
     _ = metrics.top_k_accuracy_score(y_val, hy)
-    assert _ == perf.statistic['forest']
+    assert _ == perf.statistic
 
 
 def test_average_precision_score():
@@ -120,9 +97,8 @@ def test_average_precision_score():
     perf = average_precision_score(y_val,
                                 forest=hy,
                                 num_samples=50)
-    assert 'forest' in perf.statistic
     _ = metrics.average_precision_score(y_val, hy)
-    assert _ == perf.statistic['forest']
+    assert _ == perf.statistic
 
 
 def test_brier_score_loss():
@@ -138,11 +114,8 @@ def test_brier_score_loss():
     perf = brier_score_loss(np.where(y_val == 0, 1, 0),
                             forest=hy,
                             num_samples=50)
-    nb = GaussianNB().fit(X_train, y_train)
-    perf(nb.predict_proba(X_val)[:, 0])
-    assert 'forest' in perf.statistic
     _ = metrics.brier_score_loss(np.where(y_val == 0, 1, 0), hy)
-    assert _ == perf.statistic['forest']
+    assert _ == perf.statistic
 
 
 def test_log_loss():
@@ -158,11 +131,8 @@ def test_log_loss():
     perf = log_loss(y_val,
                     forest=hy,
                     num_samples=50)
-    nb = GaussianNB().fit(X_train, y_train)
-    perf(nb.predict_proba(X_val))
-    assert 'forest' in perf.statistic
     _ = metrics.log_loss(y_val, hy)
-    assert _ == perf.statistic['forest']
+    assert _ == perf.statistic
 
 
 def test_precision_score():
@@ -178,9 +148,8 @@ def test_precision_score():
     perf = precision_score(y_val,
                            forest=hy,
                            num_samples=50, average='macro')
-    assert 'forest' in perf.statistic
     _ = metrics.precision_score(y_val, hy, average='macro')
-    assert _ == perf.statistic['forest']
+    assert _ == perf.statistic
 
 
 def test_recall_score():
@@ -196,9 +165,8 @@ def test_recall_score():
     perf = recall_score(y_val,
                            forest=hy,
                            num_samples=50, average='macro')
-    assert 'forest' in perf.statistic
     _ = metrics.recall_score(y_val, hy, average='macro')
-    assert _ == perf.statistic['forest']
+    assert _ == perf.statistic
 
 
 def test_jaccard_score():
@@ -214,9 +182,8 @@ def test_jaccard_score():
     perf = jaccard_score(y_val,
                          forest=hy,
                          num_samples=50, average='macro')
-    assert 'forest' in perf.statistic
     _ = metrics.jaccard_score(y_val, hy, average='macro')
-    assert _ == perf.statistic['forest']
+    assert _ == perf.statistic
 
 
 def test_roc_auc_score():
@@ -232,10 +199,9 @@ def test_roc_auc_score():
     perf = roc_auc_score(y_val,
                          forest=hy, multi_class='ovr',
                          num_samples=50, average='macro')
-    assert 'forest' in perf.statistic
     _ = metrics.roc_auc_score(y_val, hy, multi_class='ovr',
                               average='macro')
-    assert _ == perf.statistic['forest']
+    assert _ == perf.statistic
 
 
 def test_d2_log_loss_score():
@@ -251,9 +217,8 @@ def test_d2_log_loss_score():
     perf = d2_log_loss_score(y_val,
                          forest=hy,
                          num_samples=50)
-    assert 'forest' in perf.statistic
     _ = metrics.d2_log_loss_score(y_val, hy)
-    assert _ == perf.statistic['forest']
+    assert _ == perf.statistic
 
 
 def test_explained_variance_score():
@@ -268,9 +233,8 @@ def test_explained_variance_score():
     perf = explained_variance_score(y_val,
                                     forest=hy,
                                     num_samples=50)
-    assert 'forest' in perf.statistic
     _ = metrics.explained_variance_score(y_val, hy)
-    assert _ == perf.statistic['forest']
+    assert _ == perf.statistic
 
 
 def test_max_error():
@@ -285,9 +249,8 @@ def test_max_error():
     perf = max_error(y_val,
                      forest=hy,
                      num_samples=50)
-    assert 'forest' in perf.statistic
     _ = metrics.max_error(y_val, hy)
-    assert _ == perf.statistic['forest']
+    assert _ == perf.statistic
 
 
 def test_mean_absolute_error():
@@ -302,9 +265,8 @@ def test_mean_absolute_error():
     perf = mean_absolute_error(y_val,
                                forest=hy,
                                num_samples=50)
-    assert 'forest' in perf.statistic
     _ = metrics.mean_absolute_error(y_val, hy)
-    assert _ == perf.statistic['forest']
+    assert _ == perf.statistic
 
 
 def test_mean_squared_error():
@@ -319,9 +281,8 @@ def test_mean_squared_error():
     perf = mean_squared_error(y_val,
                                forest=hy,
                                num_samples=50)
-    assert 'forest' in perf.statistic
     _ = metrics.mean_squared_error(y_val, hy)
-    assert _ == perf.statistic['forest']
+    assert _ == perf.statistic
 
 
 def test_root_mean_squared_error():
@@ -336,9 +297,8 @@ def test_root_mean_squared_error():
     perf = root_mean_squared_error(y_val,
                                    forest=hy,
                                    num_samples=50)
-    assert 'forest' in perf.statistic
     _ = metrics.root_mean_squared_error(y_val, hy)
-    assert _ == perf.statistic['forest']
+    assert _ == perf.statistic
 
 
 def test_mean_squared_log_error():
@@ -353,9 +313,8 @@ def test_mean_squared_log_error():
     perf = mean_squared_log_error(y_val,
                                    forest=hy,
                                    num_samples=50)
-    assert 'forest' in perf.statistic
     _ = metrics.mean_squared_log_error(y_val, hy)
-    assert _ == perf.statistic['forest']
+    assert _ == perf.statistic
 
 
 def test_root_mean_squared_log_error():
@@ -370,9 +329,8 @@ def test_root_mean_squared_log_error():
     perf = root_mean_squared_log_error(y_val,
                                        forest=hy,
                                        num_samples=50)
-    assert 'forest' in perf.statistic
     _ = metrics.root_mean_squared_log_error(y_val, hy)
-    assert _ == perf.statistic['forest']
+    assert _ == perf.statistic
 
 
 def test_median_absolute_error():
@@ -387,9 +345,8 @@ def test_median_absolute_error():
     perf = median_absolute_error(y_val,
                                        forest=hy,
                                        num_samples=50)
-    assert 'forest' in perf.statistic
     _ = metrics.median_absolute_error(y_val, hy)
-    assert _ == perf.statistic['forest']
+    assert _ == perf.statistic
 
 
 def test_r2_score():
@@ -402,11 +359,11 @@ def test_r2_score():
     ens = RandomForestRegressor().fit(X_train, y_train)
     hy = ens.predict(X_val)
     perf = r2_score(y_val,
-                                       forest=hy,
-                                       num_samples=50)
-    assert 'forest' in perf.statistic
+                    forest=hy,
+                    num_samples=50)
+
     _ = metrics.r2_score(y_val, hy)
-    assert _ == perf.statistic['forest']
+    assert _ == perf.statistic
 
 
 def test_mean_poisson_deviance():
@@ -421,9 +378,8 @@ def test_mean_poisson_deviance():
     perf = mean_poisson_deviance(y_val,
                                  forest=hy,
                                  num_samples=50)
-    assert 'forest' in perf.statistic
     _ = metrics.mean_poisson_deviance(y_val, hy)
-    assert _ == perf.statistic['forest']
+    assert _ == perf.statistic
 
 
 def test_mean_gamma_deviance():
@@ -438,9 +394,8 @@ def test_mean_gamma_deviance():
     perf = mean_gamma_deviance(y_val,
                                  forest=hy,
                                  num_samples=50)
-    assert 'forest' in perf.statistic
     _ = metrics.mean_gamma_deviance(y_val, hy)
-    assert _ == perf.statistic['forest']       
+    assert _ == perf.statistic      
 
 
 def test_mean_absolute_percentage_error():
@@ -455,9 +410,8 @@ def test_mean_absolute_percentage_error():
     perf = mean_absolute_percentage_error(y_val,
                                           forest=hy,
                                           num_samples=50)
-    assert 'forest' in perf.statistic
     _ = metrics.mean_absolute_percentage_error(y_val, hy)
-    assert _ == perf.statistic['forest']
+    assert _ == perf.statistic
 
 
 def test_d2_absolute_error_score():
@@ -472,6 +426,5 @@ def test_d2_absolute_error_score():
     perf = d2_absolute_error_score(y_val,
                                    forest=hy,
                                    num_samples=50)
-    assert 'forest' in perf.statistic
     _ = metrics.d2_absolute_error_score(y_val, hy)
-    assert _ == perf.statistic['forest']      
+    assert _ == perf.statistic

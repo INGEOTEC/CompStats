@@ -147,10 +147,21 @@ class Perf(object):
         """Prediction statistics with standard error in parenthesis"""
         arg = 'score_func' if self.error_func is None else 'error_func'
         func_name = self.statistic_func.__name__
-        return f"<{self.__class__.__name__}({arg}={func_name})>\n{self}"
-
+        statistic = self.statistic
+        if isinstance(statistic, dict):
+            return f"<{self.__class__.__name__}({arg}={func_name})>\n{self}"
+        elif isinstance(statistic, float):
+            return f"<{self.__class__.__name__}({arg}={func_name}, statistic={statistic:0.4f}, se={self.se:0.4f})>"
+        desc = [f'{k:0.4f}' for k in statistic]
+        desc = ', '.join(desc)
+        desc_se = [f'{k:0.4f}' for k in self.se]
+        desc_se = ', '.join(desc_se)
+        return f"<{self.__class__.__name__}({arg}={func_name}, statistic=[{desc}], se=[{desc_se}])>"
+        
     def __str__(self):
         """Prediction statistics with standard error in parenthesis"""
+        if not isinstance(self.statistic, dict):
+            return self.__repr__()
 
         se = self.se
         output = ["Statistic with its standard error (se)"]
@@ -277,6 +288,8 @@ class Perf(object):
                        for k, v in self.predictions.items()],
                       key=lambda x: self.sorting_func(x[1]), 
                       reverse=self.statistic_samples.BiB)
+        if len(data) == 1:
+            return data[0][1]
         return dict(data)
 
     @property
@@ -299,7 +312,10 @@ class Perf(object):
         {'alg-1': 0.0, 'forest': 0.026945730782184187}
         """
 
-        return SE(self.statistic_samples)
+        output = SE(self.statistic_samples)
+        if len(output) == 1:
+            return list(output.values())[0]
+        return output
 
     def plot(self, **kwargs):
         """plot with seaborn

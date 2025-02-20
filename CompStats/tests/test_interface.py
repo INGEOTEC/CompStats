@@ -23,6 +23,28 @@ import pandas as pd
 from CompStats.tests.test_performance import DATA
 
 
+def test_Perf_statistic_one():
+    """Test Perf statistic one alg"""
+    from CompStats.metrics import f1_score
+
+    X, y = load_digits(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestClassifier().fit(X_train, y_train)
+    nb = GaussianNB().fit(X_train, y_train)
+    svm = LinearSVC().fit(X_train, y_train)
+    score = f1_score(y_val, ens.predict(X_val),
+                     average=None,
+                     num_samples=50)
+    assert isinstance(score.statistic, np.ndarray)
+    assert isinstance(str(score), str)
+    score = f1_score(y_val, ens.predict(X_val),
+                     average='macro',
+                     num_samples=50)
+    assert isinstance(score.statistic, float)
+    assert isinstance(str(score), str)
+    assert isinstance(score.se, float)
+
 def test_Perf_best():
     """Test Perf best"""
     from CompStats.metrics import f1_score

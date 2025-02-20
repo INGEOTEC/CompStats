@@ -180,7 +180,7 @@ class Perf(object):
             del calls[name]
         return self
 
-    def difference(self, wrt_to: str=None):
+    def difference(self, wrt: str=None):
         """Compute the difference w.r.t any algorithm by default is the best
 
         >>> from sklearn.svm import LinearSVC
@@ -201,36 +201,49 @@ class Perf(object):
         difference p-values w.r.t alg-1
         forest 0.06        
         """
-        if wrt_to is None:
-            wrt_to = self.best[0]
-        base = self.statistic_samples.calls[wrt_to]
+        if wrt is None:
+            wrt = self.best
+        if isinstance(wrt, str):
+            base = self.statistic_samples.calls[wrt]
+        else:
+            base = np.array([self.statistic_samples.calls[key][:, col]
+                            for col, key in enumerate(wrt)]).T       
         sign = 1 if self.statistic_samples.BiB else -1
         diff = dict()
         for k, v in self.statistic_samples.calls.items():
-            if k == wrt_to and base.ndim == 1:
+            if base.ndim == 1 and k == wrt:
                 continue
             diff[k] = sign * (base - v)
         diff_ins = Difference(statistic_samples=clone(self.statistic_samples),
                               statistic=self.statistic)
         diff_ins.sorting_func = self.sorting_func
         diff_ins.statistic_samples.calls = diff
-        diff_ins.statistic_samples.info['best'] = self.best[0]
+        diff_ins.statistic_samples.info['best'] = self.best
+        diff_ins.best = self.best
         return diff_ins
 
     @property
     def best(self):
-        """Best system"""
-
-        try:
+        """System with best performance"""
+        if hasattr(self, '_best'):
             return self._best
-        except AttributeError:
-            statistic = [(k, v) for k, v in self.statistic.items()]
-            statistic = sorted(statistic,
-                               key=lambda x: self.sorting_func(x[1]),
-                               reverse=self.statistic_samples.BiB)
-            self._best = statistic[0]
+        BiB = True if self.statistic_samples.BiB else False
+        keys = np.array(list(self.statistic.keys()))
+        data = np.asanyarray([self.statistic[k]
+                              for k in keys])        
+        if isinstance(self.statistic[keys[0]], np.ndarray):
+            if BiB:
+                best = data.argmax(axis=0)
+            else:
+                best = data.argmin(axis=0)
+        else:
+            if BiB:
+                best = data.argmax()
+            else:
+                best = data.argmin()
+        self._best = keys[best]
         return self._best
-    
+
     @property
     def sorting_func(self):
         """Rank systems when multiple performances are used"""
@@ -439,28 +452,7 @@ class Difference:
 
     statistic_samples:StatisticSamples=None
     statistic:dict=None
-
-    @property
-    def best(self):
-        """System with best performance"""
-        if hasattr(self, '_best'):
-            return self._best
-        BiB = True if self.statistic_samples.BiB else False
-        keys = np.array(list(self.statistic.keys()))
-        data = np.asanyarray([self.statistic[k]
-                              for k in keys])        
-        if isinstance(self.statistic[keys[0]], np.ndarray):
-            if BiB:
-                best = data.argmax(axis=0)
-            else:
-                best = data.argmin(axis=0)
-        else:
-            if BiB:
-                best = data.argmax()
-            else:
-                best = data.argmin()
-        self._best = keys[best]
-        return self._best
+    best:str=None
 
     @property
     def sorting_func(self):
@@ -496,7 +488,7 @@ class Difference:
                 output.append(desc)
         return "\n".join(output)
 
-    def __delta_best(self):
+    def _delta_best(self):
         """Compute multiple delta"""
         if isinstance(self.best, str):
             return self.statistic[self.best]
@@ -532,7 +524,7 @@ class Difference:
         """
         values = []
         sign = 1 if self.statistic_samples.BiB else -1
-        delta_best = self.__delta_best()
+        delta_best = self._delta_best()
         for k, v in self.statistic_samples.calls.items():
             delta = 2 * sign * (delta_best - self.statistic[k])
             if not isinstance(delta_best, np.ndarray):

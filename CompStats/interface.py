@@ -18,6 +18,7 @@ import pandas as pd
 import numpy as np
 from CompStats.bootstrap import StatisticSamples
 from CompStats.utils import progress_bar
+from CompStats import measurements
 from CompStats.measurements import SE
 from CompStats.performance import plot_performance, plot_difference
 
@@ -322,7 +323,8 @@ class Perf(object):
             return list(output.values())[0]
         return output
 
-    def plot(self, **kwargs):
+    def plot(self, CI:float=0.05,
+             **kwargs):
         """plot with seaborn
 
         >>> from sklearn.svm import LinearSVC
@@ -341,13 +343,50 @@ class Perf(object):
                         forest=ens.predict(X_val))
         >>> perf.plot()
         """
+        import seaborn as sns
         if self.score_func is not None:
             value_name = 'Score'
         else:
             value_name = 'Error'
         _ = dict(value_name=value_name)
-        _.update(kwargs)  
-        return plot_performance(self.statistic_samples, **_)
+        _.update(kwargs)
+        if isinstance(self.best, str):
+            return plot_performance(self.statistic_samples, **_)
+        kw = {}
+        for key in ['var_name', 'alg_legend', 'perf_names']:
+            if key in kwargs:
+                kw[key] = kwargs[key]
+        df = self.dataframe(value_name=value_name, **kw)
+        ci = lambda x: measurements.CI(x, alpha=CI)
+        f_grid = sns.catplot(df, x=value_name,
+                             errorbar=ci,
+                             y=kwargs.get('alg_legend', 'Algorithm'),
+                             col=kwargs.get('var_name', 'Performance'),
+                             kind=kwargs.get('kind', 'point'),
+                             linestyle=kwargs.get('linestyle', 'none'),
+                             col_wrap=kwargs.get('col_wrap', 3),
+                             capsize=kwargs.get('capsize', 0.2))
+        return f_grid
+
+    
+    def dataframe(self, value_name:str='Score',
+                  var_name:str='Performance',
+                  alg_legend:str='Algorithm',
+                  perf_names:str=None,
+                  **kwargs):
+        """Dataframe"""
+        import pandas as pd
+        df = pd.DataFrame()
+        for key in self.statistic:
+            data = self.statistic_samples[key]
+            if perf_names is None:
+                perf_names = [f'Perf({i + 1})'
+                              for i in range(data.shape[1])]
+            _df = pd.DataFrame(data,
+                               columns=perf_names).melt(value_name=value_name, var_name=var_name)
+            _df[alg_legend] = key
+            df = pd.concat((df, _df))
+        return df
 
     @property
     def n_jobs(self):

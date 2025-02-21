@@ -18,8 +18,10 @@ import pandas as pd
 import numpy as np
 from CompStats.bootstrap import StatisticSamples
 from CompStats.utils import progress_bar
+from CompStats import measurements
 from CompStats.measurements import SE
 from CompStats.performance import plot_performance, plot_difference
+from CompStats.utils import dataframe
 
 
 class Perf(object):
@@ -239,6 +241,13 @@ class Perf(object):
         """System with best performance"""
         if hasattr(self, '_best') and self._best is not None:
             return self._best
+        if not isinstance(self.statistic, dict):
+            key, value = list(self.statistic_samples.calls.items())[0]
+            if value.ndim == 1:
+                self._best = key
+            else:
+                self._best = np.array([key] * value.shape[1])
+            return self._best
         BiB = True if self.statistic_samples.BiB else False
         keys = np.array(list(self.statistic.keys()))
         data = np.asanyarray([self.statistic[k]
@@ -322,7 +331,14 @@ class Perf(object):
             return list(output.values())[0]
         return output
 
-    def plot(self, **kwargs):
+    def plot(self, value_name:str=None,
+             var_name:str='Performance',
+             alg_legend:str='Algorithm',
+             perf_names:list=None,
+             CI:float=0.05,
+             kind:str='point', linestyle:str='none',
+             col_wrap:int=3, capsize:float=0.2,
+             **kwargs):
         """plot with seaborn
 
         >>> from sklearn.svm import LinearSVC
@@ -341,13 +357,37 @@ class Perf(object):
                         forest=ens.predict(X_val))
         >>> perf.plot()
         """
+        import seaborn as sns
         if self.score_func is not None:
             value_name = 'Score'
         else:
             value_name = 'Error'
-        _ = dict(value_name=value_name)
-        _.update(kwargs)  
-        return plot_performance(self.statistic_samples, **_)
+        df = self.dataframe(value_name=value_name, var_name=var_name,
+                            alg_legend=alg_legend, perf_names=perf_names)
+        if var_name not in df.columns:
+            var_name = None
+            col_wrap = None
+        ci = lambda x: measurements.CI(x, alpha=CI)
+        f_grid = sns.catplot(df, x=value_name, errorbar=ci,
+                             y=alg_legend, col=var_name,
+                             kind=kind, linestyle=linestyle,
+                             col_wrap=col_wrap, capsize=capsize, **kwargs)
+        return f_grid
+
+    
+    def dataframe(self, value_name:str='Score',
+                  var_name:str='Performance',
+                  alg_legend:str='Algorithm',
+                  perf_names:str=None):
+        """Dataframe"""
+        if perf_names is None and isinstance(self.best, np.ndarray):
+            func_name = self.statistic_func.__name__
+            perf_names = [f'{func_name}({i})'
+                          for i, k in enumerate(self.best)]
+        return dataframe(self, value_name=value_name,
+                         var_name=var_name,
+                         alg_legend=alg_legend,
+                         perf_names=perf_names)
 
     @property
     def n_jobs(self):
@@ -561,7 +601,28 @@ class Difference:
         values.sort(key=lambda x: self.sorting_func(x[1]))
         return dict(values)
 
-    def plot(self, **kwargs):
+    def dataframe(self, value_name:str='Score',
+                  var_name:str='Best',
+                  alg_legend:str='Algorithm',
+                  perf_names:str=None):
+        """Dataframe"""
+        if perf_names is None and isinstance(self.best, np.ndarray):
+            perf_names = [f'{alg}({k})'
+                          for k, alg in enumerate(self.best)]
+        return dataframe(self, value_name=value_name,
+                         var_name=var_name,
+                         alg_legend=alg_legend,
+                         perf_names=perf_names)
+
+    def plot(self, value_name:str='Difference',
+             var_name:str='Best',
+             alg_legend:str='Algorithm',
+             perf_names:list=None,
+             CI:float=0.05,
+             kind:str='point', linestyle:str='none',
+             col_wrap:int=3, capsize:float=0.2,
+             set_refline:bool=True,
+             **kwargs):
         """Plot
 
         >>> from sklearn.svm import LinearSVC
@@ -580,5 +641,21 @@ class Difference:
         >>> diff = perf.difference()
         >>> diff.plot()
         """
-
-        return plot_difference(self.statistic_samples, **kwargs)
+        import seaborn as sns
+        df = self.dataframe(value_name=value_name,
+                            var_name=var_name,
+                            alg_legend=alg_legend, perf_names=perf_names)
+        title = var_name                            
+        if var_name not in df.columns:
+            var_name = None
+            col_wrap = None
+        ci = lambda x: measurements.CI(x, alpha=CI)
+        f_grid = sns.catplot(df, x=value_name, errorbar=ci,
+                             y=alg_legend, col=var_name,
+                             kind=kind, linestyle=linestyle,
+                             col_wrap=col_wrap, capsize=capsize, **kwargs)
+        if set_refline:
+            f_grid.refline(x=0)
+        if isinstance(self.best, str):
+            f_grid.facet_axis(0, 0).set_title(f'{title} = {self.best}')
+        return f_grid

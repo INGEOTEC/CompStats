@@ -55,3 +55,28 @@ def metrics_docs(hy_name='y_pred', attr_name='score_func'):
 
         return inner
     return perf_docs
+
+
+def dataframe(instance, value_name:str='Score',
+              var_name:str='Performance',
+              alg_legend:str='Algorithm',
+              perf_names:list=None):
+    """Dataframe"""
+    import pandas as pd
+    if isinstance(instance.best, str):
+        df = pd.DataFrame(dict(instance.statistic_samples.calls.items()))
+        return df.melt(var_name=alg_legend,
+                       value_name=value_name)
+    df = pd.DataFrame()
+    if not isinstance(instance.statistic, dict):
+        iter = instance.statistic_samples.keys()
+    else:
+        iter = instance.statistic
+    for key in iter:
+        data = instance.statistic_samples[key]
+        _df = pd.DataFrame(data,
+                           columns=perf_names).melt(value_name=value_name,
+                                                    var_name=var_name)
+        _df[alg_legend] = key
+        df = pd.concat((df, _df))
+    return df    

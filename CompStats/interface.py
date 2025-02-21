@@ -368,14 +368,10 @@ class Perf(object):
             var_name = None
             col_wrap = None
         ci = lambda x: measurements.CI(x, alpha=CI)
-        f_grid = sns.catplot(df, x=value_name,
-                             errorbar=ci,
-                             y=alg_legend,
-                             col=var_name,
-                             kind=kind,
-                             linestyle=linestyle,
-                             col_wrap=col_wrap,
-                             capsize=capsize)
+        f_grid = sns.catplot(df, x=value_name, errorbar=ci,
+                             y=alg_legend, col=var_name,
+                             kind=kind, linestyle=linestyle,
+                             col_wrap=col_wrap, capsize=capsize, **kwargs)
         return f_grid
 
     
@@ -605,7 +601,26 @@ class Difference:
         values.sort(key=lambda x: self.sorting_func(x[1]))
         return dict(values)
 
-    def plot(self, **kwargs):
+    def dataframe(self, value_name:str='Score',
+                  var_name:str='Best',
+                  alg_legend:str='Algorithm',
+                  perf_names:str=None):
+        """Dataframe"""
+        if perf_names is None and isinstance(self.best, np.ndarray):
+            perf_names = self.best
+        return dataframe(self, value_name=value_name,
+                         var_name=var_name,
+                         alg_legend=alg_legend,
+                         perf_names=perf_names)
+
+    def plot(self, value_name:str='Difference',
+             var_name:str='Best',
+             alg_legend:str='Algorithm',
+             perf_names:list=None,
+             CI:float=0.05,
+             kind:str='point', linestyle:str='none',
+             col_wrap:int=3, capsize:float=0.2,
+             **kwargs):
         """Plot
 
         >>> from sklearn.svm import LinearSVC
@@ -624,5 +639,15 @@ class Difference:
         >>> diff = perf.difference()
         >>> diff.plot()
         """
-
-        return plot_difference(self.statistic_samples, **kwargs)
+        import seaborn as sns
+        df = self.dataframe(value_name=value_name, var_name=var_name,
+                            alg_legend=alg_legend, perf_names=perf_names)
+        if var_name not in df.columns:
+            var_name = None
+            col_wrap = None
+        ci = lambda x: measurements.CI(x, alpha=CI)
+        f_grid = sns.catplot(df, x=value_name, errorbar=ci,
+                             y=alg_legend, col=var_name,
+                             kind=kind, linestyle=linestyle,
+                             col_wrap=col_wrap, capsize=capsize, **kwargs)
+        return f_grid

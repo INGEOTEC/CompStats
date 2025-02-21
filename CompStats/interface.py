@@ -18,8 +18,10 @@ import pandas as pd
 import numpy as np
 from CompStats.bootstrap import StatisticSamples
 from CompStats.utils import progress_bar
+from CompStats import measurements
 from CompStats.measurements import SE
 from CompStats.performance import plot_performance, plot_difference
+from CompStats.utils import dataframe
 
 
 class Perf(object):
@@ -147,10 +149,21 @@ class Perf(object):
         """Prediction statistics with standard error in parenthesis"""
         arg = 'score_func' if self.error_func is None else 'error_func'
         func_name = self.statistic_func.__name__
-        return f"<{self.__class__.__name__}({arg}={func_name})>\n{self}"
-
+        statistic = self.statistic
+        if isinstance(statistic, dict):
+            return f"<{self.__class__.__name__}({arg}={func_name})>\n{self}"
+        elif isinstance(statistic, float):
+            return f"<{self.__class__.__name__}({arg}={func_name}, statistic={statistic:0.4f}, se={self.se:0.4f})>"
+        desc = [f'{k:0.4f}' for k in statistic]
+        desc = ', '.join(desc)
+        desc_se = [f'{k:0.4f}' for k in self.se]
+        desc_se = ', '.join(desc_se)
+        return f"<{self.__class__.__name__}({arg}={func_name}, statistic=[{desc}], se=[{desc_se}])>"
+        
     def __str__(self):
         """Prediction statistics with standard error in parenthesis"""
+        if not isinstance(self.statistic, dict):
+            return self.__repr__()
 
         se = self.se
         output = ["Statistic with its standard error (se)"]
@@ -173,6 +186,7 @@ class Perf(object):
             if k == 0:
                 k = 1
             name = f'alg-{k}'
+        self.best = None
         self.predictions[name] = np.asanyarray(y_pred)
         samples = self._statistic_samples
         calls = samples.calls
@@ -180,7 +194,7 @@ class Perf(object):
             del calls[name]
         return self
 
-    def difference(self, wrt_to: str=None):
+    def difference(self, wrt: str=None):
         """Compute the difference w.r.t any algorithm by default is the best
 
         >>> from sklearn.svm import LinearSVC
@@ -201,37 +215,60 @@ class Perf(object):
         difference p-values w.r.t alg-1
         forest 0.06        
         """
-        if wrt_to is None:
-            wrt_to = self.best[0]
-        base = self.statistic_samples.calls[wrt_to]
+        if wrt is None:
+            wrt = self.best
+        if isinstance(wrt, str):
+            base = self.statistic_samples.calls[wrt]
+        else:
+            base = np.array([self.statistic_samples.calls[key][:, col]
+                            for col, key in enumerate(wrt)]).T       
         sign = 1 if self.statistic_samples.BiB else -1
         diff = dict()
         for k, v in self.statistic_samples.calls.items():
-            if k == wrt_to:
+            if base.ndim == 1 and k == wrt:
                 continue
             diff[k] = sign * (base - v)
         diff_ins = Difference(statistic_samples=clone(self.statistic_samples),
-                              statistic=self.statistic,
-                              best=self.best[0])
+                              statistic=self.statistic)
         diff_ins.sorting_func = self.sorting_func
         diff_ins.statistic_samples.calls = diff
-        diff_ins.statistic_samples.info['best'] = self.best[0]
+        diff_ins.statistic_samples.info['best'] = self.best
+        diff_ins.best = self.best
         return diff_ins
 
     @property
     def best(self):
-        """Best system"""
-
-        try:
+        """System with best performance"""
+        if hasattr(self, '_best') and self._best is not None:
             return self._best
-        except AttributeError:
-            statistic = [(k, v) for k, v in self.statistic.items()]
-            statistic = sorted(statistic,
-                               key=lambda x: self.sorting_func(x[1]),
-                               reverse=self.statistic_samples.BiB)
-            self._best = statistic[0]
+        if not isinstance(self.statistic, dict):
+            key, value = list(self.statistic_samples.calls.items())[0]
+            if value.ndim == 1:
+                self._best = key
+            else:
+                self._best = np.array([key] * value.shape[1])
+            return self._best
+        BiB = True if self.statistic_samples.BiB else False
+        keys = np.array(list(self.statistic.keys()))
+        data = np.asanyarray([self.statistic[k]
+                              for k in keys])        
+        if isinstance(self.statistic[keys[0]], np.ndarray):
+            if BiB:
+                best = data.argmax(axis=0)
+            else:
+                best = data.argmin(axis=0)
+        else:
+            if BiB:
+                best = data.argmax()
+            else:
+                best = data.argmin()
+        self._best = keys[best]
         return self._best
     
+    @best.setter
+    def best(self, value):
+        self._best = value
+
     @property
     def sorting_func(self):
         """Rank systems when multiple performances are used"""
@@ -265,6 +302,8 @@ class Perf(object):
                        for k, v in self.predictions.items()],
                       key=lambda x: self.sorting_func(x[1]), 
                       reverse=self.statistic_samples.BiB)
+        if len(data) == 1:
+            return data[0][1]
         return dict(data)
 
     @property
@@ -287,9 +326,19 @@ class Perf(object):
         {'alg-1': 0.0, 'forest': 0.026945730782184187}
         """
 
-        return SE(self.statistic_samples)
+        output = SE(self.statistic_samples)
+        if len(output) == 1:
+            return list(output.values())[0]
+        return output
 
-    def plot(self, **kwargs):
+    def plot(self, value_name:str=None,
+             var_name:str='Performance',
+             alg_legend:str='Algorithm',
+             perf_names:list=None,
+             CI:float=0.05,
+             kind:str='point', linestyle:str='none',
+             col_wrap:int=3, capsize:float=0.2,
+             **kwargs):
         """plot with seaborn
 
         >>> from sklearn.svm import LinearSVC
@@ -308,13 +357,41 @@ class Perf(object):
                         forest=ens.predict(X_val))
         >>> perf.plot()
         """
+        import seaborn as sns
         if self.score_func is not None:
             value_name = 'Score'
         else:
             value_name = 'Error'
-        _ = dict(value_name=value_name)
-        _.update(kwargs)  
-        return plot_performance(self.statistic_samples, **_)
+        df = self.dataframe(value_name=value_name, var_name=var_name,
+                            alg_legend=alg_legend, perf_names=perf_names)
+        if var_name not in df.columns:
+            var_name = None
+            col_wrap = None
+        ci = lambda x: measurements.CI(x, alpha=CI)
+        f_grid = sns.catplot(df, x=value_name,
+                             errorbar=ci,
+                             y=alg_legend,
+                             col=var_name,
+                             kind=kind,
+                             linestyle=linestyle,
+                             col_wrap=col_wrap,
+                             capsize=capsize)
+        return f_grid
+
+    
+    def dataframe(self, value_name:str='Score',
+                  var_name:str='Performance',
+                  alg_legend:str='Algorithm',
+                  perf_names:str=None):
+        """Dataframe"""
+        if perf_names is None and isinstance(self.best, np.ndarray):
+            func_name = self.statistic_func.__name__
+            perf_names = [f'{func_name}({i})'
+                          for i, k in enumerate(self.best)]
+        return dataframe(self, value_name=value_name,
+                         var_name=var_name,
+                         alg_legend=alg_legend,
+                         perf_names=perf_names)
 
     @property
     def n_jobs(self):
@@ -439,8 +516,8 @@ class Difference:
     """
 
     statistic_samples:StatisticSamples=None
-    best:str=None
     statistic:dict=None
+    best:str=None
 
     @property
     def sorting_func(self):
@@ -453,11 +530,19 @@ class Difference:
 
     def __repr__(self):
         """p-value"""
-        return f"<{self.__class__.__name__}>\n{self}"    
+        return f"<{self.__class__.__name__}>\n{self}"
 
     def __str__(self):
         """p-value"""
-        output = [f"difference p-values w.r.t {self.best}"]
+        if isinstance(self.best, str):
+            best = f' w.r.t {self.best}'
+        else:
+            best = ''
+        output = [f"difference p-values {best}"]
+        best = self.best
+        if isinstance(best, np.ndarray):
+            desc = ', '.join(best)
+            output.append(f'{desc} <= Best')
         for key, value in self.p_value().items():
             if isinstance(value, float):
                 output.append(f'{value:0.4f} <= {key}')
@@ -465,7 +550,19 @@ class Difference:
                 desc = [f'{v:0.4f}' for v in value]
                 desc = ', '.join(desc)
                 desc = f'{desc} <= {key}'
+                output.append(desc)
         return "\n".join(output)
+
+    def _delta_best(self):
+        """Compute multiple delta"""
+        if isinstance(self.best, str):
+            return self.statistic[self.best]
+        keys = np.unique(self.best)
+        statistic = np.array([self.statistic[k]
+                              for k in keys])
+        m = {v: k for k, v in enumerate(keys)}
+        best = np.array([m[x] for x in self.best])
+        return statistic[best, np.arange(best.shape[0])]
 
     def p_value(self, right:bool=True):
         """Compute p_value of the differences
@@ -492,10 +589,10 @@ class Difference:
         """
         values = []
         sign = 1 if self.statistic_samples.BiB else -1
-        ndim = self.statistic[self.best].ndim
+        delta_best = self._delta_best()
         for k, v in self.statistic_samples.calls.items():
-            delta = 2 * sign * (self.statistic[self.best] - self.statistic[k])
-            if ndim == 0:
+            delta = 2 * sign * (delta_best - self.statistic[k])
+            if not isinstance(delta_best, np.ndarray):
                 if right:
                     values.append((k, (v >= delta).mean()))
                 else:

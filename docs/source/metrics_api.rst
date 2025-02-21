@@ -52,15 +52,12 @@ Once the predictions are available, it is time to measure the algorithm's perfor
 <Perf>
 Statistic with its standard error (se)
 statistic (se)
-0.9479 (0.0100) <= alg-1
+0.9332 (0.0113) <= alg-1
 
-The previous code shows the macro-f1 score and, in parenthesis, its standard error. The actual performance value is stored in the :py:func:`~CompStats.interface.Perf.statistic` function, and the standard error in :py:func:`~CompStats.interface.Perf.se`.
+The previous code shows the macro-f1 score and, in parenthesis, its standard error. The actual performance value is stored in the :py:func:`~CompStats.interface.Perf.statistic` function.
 
 >>> score.statistic
-{'alg-1': 0.9479212493204361}
-
->>> score.se
-{'alg-1': np.float64(0.009986766988373919)}
+{'alg-1': 0.9332035615949114}
 
 Continuing with the example, let us assume that one wants to test another classifier on the same problem, in this case, a random forest, as can be seen in the following two lines. The second line predicts the validation set and sets it to the analysis. 
 
@@ -69,8 +66,8 @@ Continuing with the example, let us assume that one wants to test another classi
 <Perf>
 Statistic with its standard error (se)
 statistic (se)
-0.9738 (0.0070) <= Random Forest
-0.9479 (0.0100) <= alg-1
+0.9756 (0.0061) <= Random Forest
+0.9332 (0.0113) <= alg-1
 
 Let us incorporate another prediction, now with the Naive Bayes classifier, as seen below.
 
@@ -79,9 +76,9 @@ Let us incorporate another prediction, now with the Naive Bayes classifier, as s
 <Perf>
 Statistic with its standard error (se)
 statistic (se)
-0.9738 (0.0070) <= Random Forest
-0.9479 (0.0100) <= alg-1
-0.8587 (0.0151) <= Naive Bayes
+0.9756 (0.0061) <= Random Forest
+0.9332 (0.0113) <= alg-1
+0.8198 (0.0144) <= Naive Bayes
 
 The final step is to compare the performance of the three classifiers, which can be done with the :py:func:`~CompStats.interface.Perf.difference` method, as seen next.  
 
@@ -89,8 +86,8 @@ The final step is to compare the performance of the three classifiers, which can
 >>> diff
 <Difference>
 difference p-values w.r.t Random Forest
-Naive Bayes 0.0
-alg-1 0.01
+0.0000 <= alg-1
+0.0000 <= Naive Bayes
 
 The class :py:class:`~CompStats.Difference` has the :py:class:`~CompStats.Difference.plot` method that can be used to depict the difference with respectto the best. 
 

@@ -49,33 +49,36 @@ Once the predictions are available, it is time to measure the algorithm's perfor
 
 >>> score = f1_score(y_val, hy, average='macro')
 >>> score
-<Perf>
-Prediction statistics with standard error
-alg-1 = 0.936 (0.010)
+<Perf(score_func=f1_score)>
+Statistic with its standard error (se)
+statistic (se)
+0.9332 (0.0113) <= alg-1
 
 The previous code shows the macro-f1 score and, in parenthesis, its standard error. The actual performance value is stored in the `statistic` function.
 
->>> score.statistic()
-{'alg-1': 0.9355476018466147}
+>>> score.statistic
+{'alg-1': 0.9332035615949114}
 
 Continuing with the example, let us assume that one wants to test another classifier on the same problem, in this case, a random forest, as can be seen in the following two lines. The second line predicts the validation set and sets it to the analysis. 
 
 >>> ens = RandomForestClassifier().fit(X_train, y_train)
 >>> score(ens.predict(X_val), name='Random Forest')
-<Perf>
-Prediction statistics with standard error
-Random Forest = 0.970 (0.008)
-alg-1 = 0.936 (0.010)
+<Perf(score_func=f1_score)>
+Statistic with its standard error (se)
+statistic (se)
+0.9756 (0.0061) <= Random Forest
+0.9332 (0.0113) <= alg-1
 
 Let us incorporate another prediction, now with the Naive Bayes classifier, as seen below.
 
 >>> nb = GaussianNB().fit(X_train, y_train)
 >>> score(nb.predict(X_val), name='Naive Bayes')
-<Perf>
-Prediction statistics with standard error
-Random Forest = 0.970 (0.008)
-alg-1 = 0.936 (0.010)
-Naive Bayes = 0.821 (0.016)
+<Perf(score_func=f1_score)>
+Statistic with its standard error (se)
+statistic (se)
+0.9756 (0.0061) <= Random Forest
+0.9332 (0.0113) <= alg-1
+0.8198 (0.0144) <= Naive Bayes
 
 The final step is to compare the performance of the three classifiers, which can be done with the `difference` method, as seen next.  
 
@@ -83,8 +86,8 @@ The final step is to compare the performance of the three classifiers, which can
 >>> diff
 <Difference>
 difference p-values w.r.t Random Forest
-alg-1 0.0
-Naive Bayes 0.0
+0.0000 <= alg-1
+0.0000 <= Naive Bayes
 
 The class `Difference` has the `plot` method that can be used to depict the difference with respect to the best. 
 

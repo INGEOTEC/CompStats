@@ -142,6 +142,10 @@ class StatisticSamples:
                 return inner(N)
         except AttributeError:
             return inner(N)
+        
+    def keys(self):
+        """calls keys"""
+        return self.calls.keys()
 
     def __getitem__(self, key):
         return self.calls[key]

@@ -21,6 +21,7 @@ from CompStats.utils import progress_bar
 from CompStats import measurements
 from CompStats.measurements import SE
 from CompStats.performance import plot_performance, plot_difference
+from CompStats.utils import dataframe
 
 
 class Perf(object):
@@ -372,21 +373,12 @@ class Perf(object):
     def dataframe(self, value_name:str='Score',
                   var_name:str='Performance',
                   alg_legend:str='Algorithm',
-                  perf_names:str=None,
-                  **kwargs):
+                  perf_names:str=None):
         """Dataframe"""
-        import pandas as pd
-        df = pd.DataFrame()
-        for key in self.statistic:
-            data = self.statistic_samples[key]
-            if perf_names is None:
-                perf_names = [f'Perf({i + 1})'
-                              for i in range(data.shape[1])]
-            _df = pd.DataFrame(data,
-                               columns=perf_names).melt(value_name=value_name, var_name=var_name)
-            _df[alg_legend] = key
-            df = pd.concat((df, _df))
-        return df
+        return dataframe(self, value_name=value_name,
+                         var_name=var_name,
+                         alg_legend=alg_legend,
+                         perf_names=perf_names)
 
     @property
     def n_jobs(self):

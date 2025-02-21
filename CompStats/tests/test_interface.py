@@ -36,6 +36,7 @@ def test_Perf_dataframe():
     score = f1_score(y_val, ens.predict(X_val),
                      average=None,
                      num_samples=50)
+    df = score.dataframe()
     score(nb.predict(X_val))
     score(svm.predict(X_val))
     df = score.dataframe()
@@ -46,6 +47,7 @@ def test_Perf_dataframe():
     score(nb.predict(X_val))
     score(svm.predict(X_val))
     df = score.dataframe()
+    assert 'Performance' not in df.columns
 
 
 def test_Perf_plot_multi():

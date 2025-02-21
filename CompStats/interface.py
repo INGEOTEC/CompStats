@@ -241,6 +241,13 @@ class Perf(object):
         """System with best performance"""
         if hasattr(self, '_best') and self._best is not None:
             return self._best
+        if not isinstance(self.statistic, dict):
+            key, value = list(self.statistic_samples.calls.items())[0]
+            if value.ndim == 1:
+                self._best = key
+            else:
+                self._best = np.array([key] * value.shape[1])
+            return self._best
         BiB = True if self.statistic_samples.BiB else False
         keys = np.array(list(self.statistic.keys()))
         data = np.asanyarray([self.statistic[k]
@@ -324,7 +331,13 @@ class Perf(object):
             return list(output.values())[0]
         return output
 
-    def plot(self, CI:float=0.05,
+    def plot(self, value_name:str=None,
+             var_name:str='Performance',
+             alg_legend:str='Algorithm',
+             perf_names:list=None,
+             CI:float=0.05,
+             kind:str='point', linestyle:str='none',
+             col_wrap:int=3, capsize:float=0.2,
              **kwargs):
         """plot with seaborn
 
@@ -349,24 +362,20 @@ class Perf(object):
             value_name = 'Score'
         else:
             value_name = 'Error'
-        _ = dict(value_name=value_name)
-        _.update(kwargs)
-        if isinstance(self.best, str):
-            return plot_performance(self.statistic_samples, **_)
-        kw = {}
-        for key in ['var_name', 'alg_legend', 'perf_names']:
-            if key in kwargs:
-                kw[key] = kwargs[key]
-        df = self.dataframe(value_name=value_name, **kw)
+        df = self.dataframe(value_name=value_name, var_name=var_name,
+                            alg_legend=alg_legend, perf_names=perf_names)
+        if var_name not in df.columns:
+            var_name = None
+            col_wrap = None
         ci = lambda x: measurements.CI(x, alpha=CI)
         f_grid = sns.catplot(df, x=value_name,
                              errorbar=ci,
-                             y=kwargs.get('alg_legend', 'Algorithm'),
-                             col=kwargs.get('var_name', 'Performance'),
-                             kind=kwargs.get('kind', 'point'),
-                             linestyle=kwargs.get('linestyle', 'none'),
-                             col_wrap=kwargs.get('col_wrap', 3),
-                             capsize=kwargs.get('capsize', 0.2))
+                             y=alg_legend,
+                             col=var_name,
+                             kind=kind,
+                             linestyle=linestyle,
+                             col_wrap=col_wrap,
+                             capsize=capsize)
         return f_grid
 
     
@@ -375,6 +384,10 @@ class Perf(object):
                   alg_legend:str='Algorithm',
                   perf_names:str=None):
         """Dataframe"""
+        if perf_names is None and isinstance(self.best, np.ndarray):
+            func_name = self.statistic_func.__name__
+            perf_names = [f'{func_name}({i})'
+                          for i, k in enumerate(self.best)]
         return dataframe(self, value_name=value_name,
                          var_name=var_name,
                          alg_legend=alg_legend,

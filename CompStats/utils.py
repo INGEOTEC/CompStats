@@ -60,22 +60,23 @@ def metrics_docs(hy_name='y_pred', attr_name='score_func'):
 def dataframe(instance, value_name:str='Score',
               var_name:str='Performance',
               alg_legend:str='Algorithm',
-              perf_names:str=None,
-              **kwargs):
+              perf_names:list=None):
     """Dataframe"""
     import pandas as pd
     if isinstance(instance.best, str):
-        df = pd.DataFrame(instance.statistic_samples.items())
+        df = pd.DataFrame(dict(instance.statistic_samples.calls.items()))
         return df.melt(var_name=alg_legend,
                        value_name=value_name)
-    df = pd.DataFrame()    
-    for key in instance.statistic:
+    df = pd.DataFrame()
+    if not isinstance(instance.statistic, dict):
+        iter = instance.statistic_samples.keys()
+    else:
+        iter = instance.statistic
+    for key in iter:
         data = instance.statistic_samples[key]
-        if perf_names is None:
-            perf_names = [f'Perf({i + 1})'
-                            for i in range(data.shape[1])]
         _df = pd.DataFrame(data,
-                            columns=perf_names).melt(value_name=value_name, var_name=var_name)
+                           columns=perf_names).melt(value_name=value_name,
+                                                    var_name=var_name)
         _df[alg_legend] = key
         df = pd.concat((df, _df))
     return df    

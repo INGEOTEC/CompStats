@@ -607,7 +607,8 @@ class Difference:
                   perf_names:str=None):
         """Dataframe"""
         if perf_names is None and isinstance(self.best, np.ndarray):
-            perf_names = self.best
+            perf_names = [f'{alg}({k})'
+                          for k, alg in enumerate(self.best)]
         return dataframe(self, value_name=value_name,
                          var_name=var_name,
                          alg_legend=alg_legend,
@@ -620,6 +621,7 @@ class Difference:
              CI:float=0.05,
              kind:str='point', linestyle:str='none',
              col_wrap:int=3, capsize:float=0.2,
+             set_refline:bool=True,
              **kwargs):
         """Plot
 
@@ -640,8 +642,10 @@ class Difference:
         >>> diff.plot()
         """
         import seaborn as sns
-        df = self.dataframe(value_name=value_name, var_name=var_name,
+        df = self.dataframe(value_name=value_name,
+                            var_name=var_name,
                             alg_legend=alg_legend, perf_names=perf_names)
+        title = var_name                            
         if var_name not in df.columns:
             var_name = None
             col_wrap = None
@@ -650,4 +654,8 @@ class Difference:
                              y=alg_legend, col=var_name,
                              kind=kind, linestyle=linestyle,
                              col_wrap=col_wrap, capsize=capsize, **kwargs)
+        if set_refline:
+            f_grid.refline(x=0)
+        if isinstance(self.best, str):
+            f_grid.facet_axis(0, 0).set_title(f'{title} = {self.best}')
         return f_grid

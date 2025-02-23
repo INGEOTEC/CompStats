@@ -618,7 +618,7 @@ class Difference:
         df[sig_legend] = False
         if isinstance(self.best, str):
             for name, p in self.p_value().items():
-                if p >= CI:
+                if p < CI:
                     continue
                 df.loc[df[alg_legend] == name, sig_legend] = True
         else:

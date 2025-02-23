@@ -604,19 +604,40 @@ class Difference:
     def dataframe(self, value_name:str='Score',
                   var_name:str='Best',
                   alg_legend:str='Algorithm',
-                  perf_names:str=None):
+                  sig_legend:str='Significant',
+                  perf_names:str=None,
+                  CI:float=0.05):
         """Dataframe"""
         if perf_names is None and isinstance(self.best, np.ndarray):
             perf_names = [f'{alg}({k})'
                           for k, alg in enumerate(self.best)]
-        return dataframe(self, value_name=value_name,
-                         var_name=var_name,
-                         alg_legend=alg_legend,
-                         perf_names=perf_names)
+        df = dataframe(self, value_name=value_name,
+                       var_name=var_name,
+                       alg_legend=alg_legend,
+                       perf_names=perf_names)
+        df[sig_legend] = False
+        if isinstance(self.best, str):
+            for name, p in self.p_value().items():
+                if p >= CI:
+                    continue
+                df.loc[df[alg_legend] == name, sig_legend] = True
+        else:
+            p_values = self.p_value()
+            systems = list(p_values.keys())
+            p_values = np.array([p_values[k] for k in systems])
+            for name, p_value in zip(perf_names, p_values.T):
+                mask = df[var_name] == name
+                for alg, p in zip(systems, p_value):
+                    if p >= CI:
+                        continue
+                    _ = mask & (df[alg_legend] == alg)
+                    df.loc[_, sig_legend] = True
+        return df
 
     def plot(self, value_name:str='Difference',
              var_name:str='Best',
              alg_legend:str='Algorithm',
+             sig_legend:str='Significant',
              perf_names:list=None,
              CI:float=0.05,
              kind:str='point', linestyle:str='none',
@@ -644,7 +665,10 @@ class Difference:
         import seaborn as sns
         df = self.dataframe(value_name=value_name,
                             var_name=var_name,
-                            alg_legend=alg_legend, perf_names=perf_names)
+                            alg_legend=alg_legend,
+                            sig_legend=sig_legend,
+                            perf_names=perf_names,
+                            CI=CI)
         title = var_name                            
         if var_name not in df.columns:
             var_name = None
@@ -653,7 +677,9 @@ class Difference:
         f_grid = sns.catplot(df, x=value_name, errorbar=ci,
                              y=alg_legend, col=var_name,
                              kind=kind, linestyle=linestyle,
-                             col_wrap=col_wrap, capsize=capsize, **kwargs)
+                             col_wrap=col_wrap, capsize=capsize,
+                             hue=sig_legend,
+                             **kwargs)
         if set_refline:
             f_grid.refline(x=0)
         if isinstance(self.best, str):

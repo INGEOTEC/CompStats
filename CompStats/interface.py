@@ -159,7 +159,7 @@ class Perf(object):
         desc_se = [f'{k:0.4f}' for k in self.se]
         desc_se = ', '.join(desc_se)
         return f"<{self.__class__.__name__}({arg}={func_name}, statistic=[{desc}], se=[{desc_se}])>"
-        
+
     def __str__(self):
         """Prediction statistics with standard error in parenthesis"""
         if not isinstance(self.statistic, dict):
@@ -358,10 +358,11 @@ class Perf(object):
         >>> perf.plot()
         """
         import seaborn as sns
-        if self.score_func is not None:
-            value_name = 'Score'
-        else:
-            value_name = 'Error'
+        if value_name is None:
+            if self.score_func is not None:
+                value_name = 'Score'
+            else:
+                value_name = 'Error'
         df = self.dataframe(value_name=value_name, var_name=var_name,
                             alg_legend=alg_legend, perf_names=perf_names)
         if var_name not in df.columns:

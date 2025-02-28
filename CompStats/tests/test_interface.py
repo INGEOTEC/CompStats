@@ -17,10 +17,28 @@ from sklearn.base import clone
 from sklearn.svm import LinearSVC
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.naive_bayes import GaussianNB
-from sklearn.datasets import load_iris, load_digits
+from sklearn.datasets import load_iris, load_digits, load_breast_cancer
 from sklearn.model_selection import train_test_split
 import pandas as pd
 from CompStats.tests.test_performance import DATA
+
+
+def test_Perf_plot_col_wrap():
+    """Test plot when 2 classes"""
+    from CompStats.metrics import f1_score
+
+    X, y = load_breast_cancer(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestClassifier().fit(X_train, y_train)
+    nb = GaussianNB().fit(X_train, y_train)
+    svm = LinearSVC().fit(X_train, y_train)
+    score = f1_score(y_val, ens.predict(X_val),
+                     average=None,
+                     num_samples=50)
+    score(nb.predict(X_val))
+    score(svm.predict(X_val))
+    score.plot()
 
 
 def test_Difference_dataframe():

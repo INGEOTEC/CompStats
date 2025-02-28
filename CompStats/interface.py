@@ -370,6 +370,10 @@ class Perf(object):
                 value_name = 'Error'
         if not isinstance(self.statistic, dict):
             comparison = False
+        best = self.best
+        if isinstance(best, np.ndarray):
+            if best.shape[0] < col_wrap:
+                col_wrap = best.shape[0]
         df = self.dataframe(value_name=value_name, var_name=var_name,
                             alg_legend=alg_legend, perf_names=perf_names,
                             comparison=comparison, alpha=CI, right=right,

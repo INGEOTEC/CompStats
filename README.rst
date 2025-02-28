@@ -27,7 +27,7 @@ CompStats
 
 Collaborative competitions have gained popularity in the scientific and technological fields. These competitions involve defining tasks, selecting evaluation scores, and devising result verification methods. In the standard scenario, participants receive a training set and are expected to provide a solution for a held-out dataset kept by organizers. An essential challenge for organizers arises when comparing algorithms' performance, assessing multiple participants, and ranking them. Statistical tools are often used for this purpose; however, traditional statistical methods often fail to capture decisive differences between systems' performance. CompStats implements an evaluation methodology for statistically analyzing competition results and competition. CompStats offers several advantages, including off-the-shell comparisons with correction mechanisms and the inclusion of confidence intervals. 
 
-To illustrate the use of `CompStats`, the following snippets show an example. The instructions load the necessary libraries, including the one to obtain the problem (e.g., digits), three different classifiers, and the last line is the score used to measure the performance and compare the algorithm. 
+To illustrate the use of `CompStats`, the following snippets show an example. The instructions load the necessary libraries, including the one to obtain the problem (e.g., digits), four different classifiers, and the last line is the score used to measure the performance and compare the algorithm. 
 
 >>> from sklearn.svm import LinearSVC
 >>> from sklearn.naive_bayes import GaussianNB
@@ -51,10 +51,10 @@ Once the predictions are available, it is time to measure the algorithm's perfor
 >>> score
 <Perf(score_func=f1_score, statistic=0.9435, se=0.0099)>
 
-The previous code shows the macro-f1 score and, in parenthesis, its standard error. The actual performance value is stored in the `statistic` function.
+The previous code shows the macro-f1 score and its standard error. The actual performance value is stored in the attributes `statistic` function, and `se`
 
->>> score.statistic
-0.9434834454375508
+>>> score.statistic, score.se
+(0.9521479775366307, 0.009717884979482313)
 
 Continuing with the example, let us assume that one wants to test another classifier on the same problem, in this case, a random forest, as can be seen in the following two lines. The second line predicts the validation set and sets it to the analysis. 
 
@@ -63,28 +63,34 @@ Continuing with the example, let us assume that one wants to test another classi
 <Perf(score_func=f1_score)>
 Statistic with its standard error (se)
 statistic (se)
-0.9655 (0.0077) <= Random Forest
-0.9435 (0.0099) <= alg-1
+0.9720 (0.0076) <= Random Forest
+0.9521 (0.0097) <= alg-1
 
-Let us incorporate another prediction, now with the Naive Bayes classifier, as seen below.
+Let us incorporate another predictions, now with Naive Bayes classifier, and Histogram Gradient Boosting as seen below.
 
 >>> nb = GaussianNB().fit(X_train, y_train)
 >>> score(nb.predict(X_val), name='Naive Bayes')
 <Perf(score_func=f1_score)>
 Statistic with its standard error (se)
 statistic (se)
-0.9655 (0.0077) <= Random Forest
-0.9435 (0.0099) <= alg-1
-0.8549 (0.0153) <= Naive Bayes
+0.9759 (0.0068) <= Hist. Grad. Boost. Tree
+0.9720 (0.0076) <= Random Forest
+0.9521 (0.0097) <= alg-1
+0.8266 (0.0159) <= Naive Bayes
 
-The final step is to compare the performance of the three classifiers, which can be done with the `difference` method, as seen next.  
+The performance, its confidence interval (5%), and a statistical comparison (5%) between the best performing system with the rest of the algorithms is depicted in the following figure.
+
+>>> score.plot()
+
+The final step is to compare the performance of the four classifiers, which can be done with the `difference` method, as seen next.  
 
 >>> diff = score.difference()
 >>> diff
 <Difference>
-difference p-values  w.r.t Random Forest
+difference p-values  w.r.t Hist. Grad. Boost. Tree
 0.0000 <= Naive Bayes
-0.0120 <= alg-1
+0.0100 <= alg-1
+0.3240 <= Random Forest
 
 The class `Difference` has the `plot` method that can be used to depict the difference with respect to the best. 
 

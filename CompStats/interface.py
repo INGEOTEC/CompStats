@@ -20,7 +20,6 @@ from CompStats.bootstrap import StatisticSamples
 from CompStats.utils import progress_bar
 from CompStats import measurements
 from CompStats.measurements import SE
-from CompStats.performance import plot_performance, plot_difference
 from CompStats.utils import dataframe
 
 
@@ -248,7 +247,7 @@ class Perf(object):
             else:
                 self._best = np.array([key] * value.shape[1])
             return self._best
-        BiB = True if self.statistic_samples.BiB else False
+        BiB = bool(self.statistic_samples.BiB)
         keys = np.array(list(self.statistic.keys()))
         data = np.asanyarray([self.statistic[k]
                               for k in keys])        
@@ -338,6 +337,12 @@ class Perf(object):
              CI:float=0.05,
              kind:str='point', linestyle:str='none',
              col_wrap:int=3, capsize:float=0.2,
+             comparison:bool=True,
+             right:bool=True,
+             comp_legend:str='Comparison',
+             winner_legend:str='Best',
+             tie_legend:str='Equivalent',
+             loser_legend:str='Different',
              **kwargs):
         """plot with seaborn
 
@@ -363,32 +368,79 @@ class Perf(object):
                 value_name = 'Score'
             else:
                 value_name = 'Error'
+        if not isinstance(self.statistic, dict):
+            comparison = False
+        best = self.best
+        if isinstance(best, np.ndarray):
+            if best.shape[0] < col_wrap:
+                col_wrap = best.shape[0]
         df = self.dataframe(value_name=value_name, var_name=var_name,
-                            alg_legend=alg_legend, perf_names=perf_names)
+                            alg_legend=alg_legend, perf_names=perf_names,
+                            comparison=comparison, alpha=CI, right=right,
+                            comp_legend=comp_legend, 
+                            winner_legend=winner_legend,
+                            tie_legend=tie_legend,
+                            loser_legend=loser_legend)
         if var_name not in df.columns:
             var_name = None
             col_wrap = None
         ci = lambda x: measurements.CI(x, alpha=CI)
+        if comparison:
+            kwargs.update(dict(hue=comp_legend))
         f_grid = sns.catplot(df, x=value_name, errorbar=ci,
                              y=alg_legend, col=var_name,
                              kind=kind, linestyle=linestyle,
                              col_wrap=col_wrap, capsize=capsize, **kwargs)
         return f_grid
 
-    
-    def dataframe(self, value_name:str='Score',
+    def dataframe(self, comparison:bool=False,
+                  right:bool=True,
+                  alpha:float=0.05,
+                  value_name:str='Score',
                   var_name:str='Performance',
                   alg_legend:str='Algorithm',
+                  comp_legend:str='Comparison',
+                  winner_legend:str='Best',
+                  tie_legend:str='Equivalent',
+                  loser_legend:str='Different',
                   perf_names:str=None):
         """Dataframe"""
         if perf_names is None and isinstance(self.best, np.ndarray):
             func_name = self.statistic_func.__name__
             perf_names = [f'{func_name}({i})'
                           for i, k in enumerate(self.best)]
-        return dataframe(self, value_name=value_name,
-                         var_name=var_name,
-                         alg_legend=alg_legend,
-                         perf_names=perf_names)
+        df = dataframe(self, value_name=value_name,
+                       var_name=var_name,
+                       alg_legend=alg_legend,
+                       perf_names=perf_names)
+        if not comparison:
+            return df
+        df[comp_legend] = tie_legend
+        diff = self.difference()
+        best = self.best
+        if isinstance(best, str):
+            for name, p in diff.p_value(right=right).items():
+                if p >= alpha:
+                    continue
+                df.loc[df[alg_legend] == name, comp_legend] = loser_legend
+            df.loc[df[alg_legend] == best, comp_legend] = winner_legend
+        else:
+            p_values = diff.p_value(right=right)
+            systems = list(p_values.keys())
+            p_values = np.array([p_values[k] for k in systems])
+            for name, p_value, winner in zip(perf_names,
+                                             p_values.T,
+                                             best):
+                mask = df[var_name] == name
+                for alg, p in zip(systems, p_value):
+                    if p >= alpha and winner != alg:
+                        continue
+                    _ = mask & (df[alg_legend] == alg)
+                    if winner == alg:
+                        df.loc[_, comp_legend] = winner_legend
+                    else:
+                        df.loc[_, comp_legend] = loser_legend
+        return df
 
     @property
     def n_jobs(self):

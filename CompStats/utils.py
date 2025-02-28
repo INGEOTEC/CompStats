@@ -63,15 +63,18 @@ def dataframe(instance, value_name:str='Score',
               perf_names:list=None):
     """Dataframe"""
     import pandas as pd
+    statistic = instance.statistic
+    if not isinstance(statistic, dict):
+        iter = instance.statistic_samples.keys()
+    else:
+        iter = statistic    
     if isinstance(instance.best, str):
-        df = pd.DataFrame(dict(instance.statistic_samples.calls.items()))
+        calls = instance.statistic_samples.calls
+        df = pd.DataFrame({k: calls[k]
+                           for k in iter if k in calls})
         return df.melt(var_name=alg_legend,
                        value_name=value_name)
     df = pd.DataFrame()
-    if not isinstance(instance.statistic, dict):
-        iter = instance.statistic_samples.keys()
-    else:
-        iter = instance.statistic
     for key in iter:
         data = instance.statistic_samples[key]
         _df = pd.DataFrame(data,

@@ -49,15 +49,12 @@ Once the predictions are available, it is time to measure the algorithm's perfor
 
 >>> score = f1_score(y_val, hy, average='macro')
 >>> score
-<Perf(score_func=f1_score)>
-Statistic with its standard error (se)
-statistic (se)
-0.9332 (0.0113) <= alg-1
+<Perf(score_func=f1_score, statistic=0.9435, se=0.0099)>
 
 The previous code shows the macro-f1 score and, in parenthesis, its standard error. The actual performance value is stored in the `statistic` function.
 
 >>> score.statistic
-{'alg-1': 0.9332035615949114}
+0.9434834454375508
 
 Continuing with the example, let us assume that one wants to test another classifier on the same problem, in this case, a random forest, as can be seen in the following two lines. The second line predicts the validation set and sets it to the analysis. 
 
@@ -66,8 +63,8 @@ Continuing with the example, let us assume that one wants to test another classi
 <Perf(score_func=f1_score)>
 Statistic with its standard error (se)
 statistic (se)
-0.9756 (0.0061) <= Random Forest
-0.9332 (0.0113) <= alg-1
+0.9655 (0.0077) <= Random Forest
+0.9435 (0.0099) <= alg-1
 
 Let us incorporate another prediction, now with the Naive Bayes classifier, as seen below.
 
@@ -76,18 +73,18 @@ Let us incorporate another prediction, now with the Naive Bayes classifier, as s
 <Perf(score_func=f1_score)>
 Statistic with its standard error (se)
 statistic (se)
-0.9756 (0.0061) <= Random Forest
-0.9332 (0.0113) <= alg-1
-0.8198 (0.0144) <= Naive Bayes
+0.9655 (0.0077) <= Random Forest
+0.9435 (0.0099) <= alg-1
+0.8549 (0.0153) <= Naive Bayes
 
 The final step is to compare the performance of the three classifiers, which can be done with the `difference` method, as seen next.  
 
 >>> diff = score.difference()
 >>> diff
 <Difference>
-difference p-values w.r.t Random Forest
-0.0000 <= alg-1
+difference p-values  w.r.t Random Forest
 0.0000 <= Naive Bayes
+0.0120 <= alg-1
 
 The class `Difference` has the `plot` method that can be used to depict the difference with respect to the best. 
 

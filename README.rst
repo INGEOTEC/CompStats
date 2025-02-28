@@ -82,6 +82,8 @@ The performance, its confidence interval (5%), and a statistical comparison (5%)
 
 >>> score.plot()
 
+.. image:: https://github.com/INGEOTEC/CompStats/raw/docs/docs/source/digits_perf.png
+
 The final step is to compare the performance of the four classifiers, which can be done with the `difference` method, as seen next.  
 
 >>> diff = score.difference()

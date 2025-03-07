@@ -23,6 +23,13 @@ import pandas as pd
 from CompStats.tests.test_performance import DATA
 
 
+def test_Perf_name():
+    """Test Perf name keyword"""
+    from CompStats.metrics import f1_score
+    score = f1_score([1, 0, 1], [1, 0, 0], name='algo')
+    assert 'algo' in score.predictions
+
+
 def test_Perf_plot_col_wrap():
     """Test plot when 2 classes"""
     from CompStats.metrics import f1_score

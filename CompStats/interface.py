@@ -90,6 +90,7 @@ class Perf(object):
 
     """
     def __init__(self, y_true, *y_pred,
+                 name:str=None,
                  score_func=balanced_accuracy_score,
                  error_func=None,
                  num_samples: int=500,
@@ -100,8 +101,13 @@ class Perf(object):
         self.score_func = score_func
         self.error_func = error_func
         algs = {}
-        for k, v in enumerate(y_pred):
-            algs[f'alg-{k+1}'] = np.asanyarray(v)
+        if name is not None:
+            if isinstance(name, str):
+                name = [name]
+        else:
+            name = [f'alg-{k+1}' for k, _ in enumerate(y_pred)]
+        for key, v in zip(name, y_pred):
+            algs[key] = np.asanyarray(v)
         algs.update(**kwargs)
         self.predictions = algs
         self.y_true = y_true
@@ -519,7 +525,7 @@ class Perf(object):
                 algs[c] = value[c].to_numpy()
             self.predictions.update(algs)
             return
-        self._y_true = value
+        self._y_true = np.asanyarray(value)
 
     @property
     def score_func(self):

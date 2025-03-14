@@ -1,0 +1,105 @@
+--- 
+title: "CompStats"
+format: 
+  dashboard:
+    logo: images/ingeotec.png
+    orientation: columns
+    nav-buttons: [github]
+    theme: cosmo
+execute:
+  freeze: auto    
+---
+
+# Introduction
+
+## Column 
+
+::: {.card title='Introduction'}  
+Collaborative competitions have gained popularity in the scientific and technological fields. These competitions involve defining tasks, selecting evaluation scores, and devising result verification methods. In the standard scenario, participants receive a training set and are expected to provide a solution for a held-out dataset kept by organizers. An essential challenge for organizers arises when comparing algorithms' performance, assessing multiple participants, and ranking them. Statistical tools are often used for this purpose; however, traditional statistical methods often fail to capture decisive differences between systems' performance. CompStats implements an evaluation methodology for statistically analyzing competition results and competition. CompStats offers several advantages, including off-the-shell comparisons with correction mechanisms and the inclusion of confidence intervals. 
+:::
+
+::: {.card title='Installing using conda'}
+
+`CompStats` can be install using the conda package manager with the following instruction.
+
+```{sh} 
+conda install --channel conda-forge CompStats
+``` 
+::: 
+
+::: {.card title='Installing using pip'} 
+A more general approach to installing `CompStats` is through the use of the command pip, as illustrated in the following instruction.
+
+```{sh} 
+pip install CompStats
+```
+::: 
+
+# Quick Start Guide
+
+## Column 
+
+To illustrate the use of `CompStats`, the following snippets show an example. The instructions load the necessary libraries, including the one to obtain the problem (e.g., digits), four different classifiers, and the last line is the score used to measure the performance and compare the algorithm. 
+
+```{python} 
+#| echo: true
+
+from sklearn.svm import LinearSVC
+from sklearn.naive_bayes import GaussianNB
+from sklearn.ensemble import RandomForestClassifier, HistGradientBoostingClassifier
+from sklearn.datasets import load_digits
+from sklearn.model_selection import train_test_split
+from sklearn.base import clone
+from CompStats.metrics import f1_score
+```
+
+The first step is to load the digits problem and split the dataset into training and validation sets. The second step is to estimate the parameters of a linear Support Vector Machine and predict the validation set's classes. The predictions are stored in the variable `hy`.
+
+```{python}
+#| echo: true
+
+X, y = load_digits(return_X_y=True)
+_ = train_test_split(X, y, test_size=0.3)
+X_train, X_val, y_train, y_val = _
+m = LinearSVC().fit(X_train, y_train)
+hy = m.predict(X_val)
+```
+
+## Column 
+
+Once the predictions are available, it is time to measure the algorithm's performance, as seen in the following code. It is essential to note that the API used in `sklearn.metrics` is followed; the difference is that the function returns an instance with different methods that can be used to estimate different performance statistics and compare algorithms. 
+
+```{python}
+#| echo: true
+
+score = f1_score(y_val, hy, average='macro')
+score
+```
+
+The previous code shows the macro-f1 score and its standard error. The actual performance value is stored in the attributes `statistic` function, and `se`
+
+```{python}
+#| echo: true
+
+score.statistic, score.se
+```
+
+Continuing with the example, let us assume that one wants to test another classifier on the same problem, in this case, a random forest, as can be seen in the following two lines. The second line predicts the validation set and sets it to the analysis.
+
+```{python}
+#| echo: true
+
+ens = RandomForestClassifier().fit(X_train, y_train)
+score(ens.predict(X_val), name='Random Forest')
+```
+
+Let us incorporate another predictions, now with Naive Bayes classifier, and Histogram Gradient Boosting as seen below.
+
+```{python}
+#| echo: true
+
+nb = GaussianNB().fit(X_train, y_train)
+score(nb.predict(X_val), name='Naive Bayes')
+hist = HistGradientBoostingClassifier().fit(X_train, y_train)
+score(hist.predict(X_val), name='Hist. Grad. Boost. Tree')
+```

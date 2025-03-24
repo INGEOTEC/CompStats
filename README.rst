@@ -70,6 +70,8 @@ Let us incorporate another predictions, now with Naive Bayes classifier, and His
 
 >>> nb = GaussianNB().fit(X_train, y_train)
 >>> score(nb.predict(X_val), name='Naive Bayes')
+>>> hist = HistGradientBoostingClassifier().fit(X_train, y_train)
+>>> score(hist.predict(X_val), name='Hist. Grad. Boost. Tree')
 <Perf(score_func=f1_score)>
 Statistic with its standard error (se)
 statistic (se)

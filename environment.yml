@@ -9,6 +9,8 @@ dependencies:
   - pytest
   - tqdm
   - sphinx
+  - yaml
+  - jupyter
   - pip:
     - pandas
     - seaborn

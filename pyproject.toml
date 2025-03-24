@@ -6,7 +6,8 @@ dependencies = [
     'numpy',
     'scikit-learn>=1.3.0',
     'pandas',
-    'seaborn>=0.13.0'
+    'seaborn>=0.13.0',
+    'statsmodels'
 ]
 dynamic = ['version']
 
@@ -25,6 +26,9 @@ classifiers = [
 
 [tool.setuptools.dynamic]
 version = {attr = 'CompStats.__version__'}
+
+[tool.setuptools]
+packages = ['CompStats', 'CompStats.tests']
 
 [project.urls]
 Homepage = "https://compstats.readthedocs.io"

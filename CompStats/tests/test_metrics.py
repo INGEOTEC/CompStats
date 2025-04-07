@@ -39,6 +39,21 @@ def test_f1_score():
     assert str(perf) is not None
 
 
+def test_macro_f1_score():
+    """Test f1_score"""
+    from CompStats.metrics import macro_f1
+
+    X, y = load_iris(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestClassifier().fit(X_train, y_train)
+    hy = ens.predict(X_val)
+    perf = macro_f1(y_val, forest=hy, num_samples=50)
+    assert isinstance(perf.statistic, float)
+    _ = metrics.f1_score(y_val, hy, average='macro')
+    assert _ == perf.statistic  
+
+
 def test_accuracy_score():
     """Test f1_score"""
     from CompStats.metrics import accuracy_score
@@ -152,6 +167,23 @@ def test_precision_score():
     assert _ == perf.statistic
 
 
+def test_macro_precision():
+    """Test macro_precision"""
+    from CompStats.metrics import macro_precision
+    import numpy as np
+
+    X, y = load_iris(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3, stratify=y)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestClassifier().fit(X_train, y_train)
+    hy = ens.predict(X_val)
+    perf = macro_precision(y_val,
+                           forest=hy,
+                           num_samples=50)
+    _ = metrics.precision_score(y_val, hy, average='macro')
+    assert _ == perf.statistic
+
+
 def test_recall_score():
     """Test recall_score"""
     from CompStats.metrics import recall_score
@@ -165,6 +197,23 @@ def test_recall_score():
     perf = recall_score(y_val,
                            forest=hy,
                            num_samples=50, average='macro')
+    _ = metrics.recall_score(y_val, hy, average='macro')
+    assert _ == perf.statistic
+
+
+def test_macro_recall():
+    """Test macro_recall"""
+    from CompStats.metrics import macro_recall
+    import numpy as np
+
+    X, y = load_iris(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3, stratify=y)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestClassifier().fit(X_train, y_train)
+    hy = ens.predict(X_val)
+    perf = macro_recall(y_val,
+                        forest=hy,
+                        num_samples=50)
     _ = metrics.recall_score(y_val, hy, average='macro')
     assert _ == perf.statistic
 

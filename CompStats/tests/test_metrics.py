@@ -477,3 +477,20 @@ def test_d2_absolute_error_score():
                                    num_samples=50)
     _ = metrics.d2_absolute_error_score(y_val, hy)
     assert _ == perf.statistic
+
+
+def test_pearsonr():
+    """test pearsonr"""
+    from CompStats.metrics import pearsonr
+    from scipy import stats
+
+    X, y = load_diabetes(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestRegressor().fit(X_train, y_train)
+    hy = ens.predict(X_val)
+    perf = pearsonr(y_val,
+                    forest=hy,
+                    num_samples=50)
+    _ = stats.pearsonr(y_val, hy)
+    assert _.statistic == perf.statistic

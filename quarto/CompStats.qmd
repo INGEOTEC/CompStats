@@ -35,7 +35,7 @@ pip install CompStats
 ```
 ::: 
 
-# Quick Start Guide
+# scikit-learn Users
 
 ## Column 
 
@@ -46,7 +46,8 @@ To illustrate the use of `CompStats`, the following snippets show an example. Th
 
 from sklearn.svm import LinearSVC
 from sklearn.naive_bayes import GaussianNB
-from sklearn.ensemble import RandomForestClassifier, HistGradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.datasets import load_digits
 from sklearn.model_selection import train_test_split
 from sklearn.base import clone
@@ -65,23 +66,15 @@ m = LinearSVC().fit(X_train, y_train)
 hy = m.predict(X_val)
 ```
 
-## Column 
-
 Once the predictions are available, it is time to measure the algorithm's performance, as seen in the following code. It is essential to note that the API used in `sklearn.metrics` is followed; the difference is that the function returns an instance with different methods that can be used to estimate different performance statistics and compare algorithms. 
+
+## Column 
 
 ```{python}
 #| echo: true
 
 score = f1_score(y_val, hy, average='macro')
 score
-```
-
-The previous code shows the macro-f1 score and its standard error. The actual performance value is stored in the attributes `statistic` function, and `se`
-
-```{python}
-#| echo: true
-
-score.statistic, score.se
 ```
 
 Continuing with the example, let us assume that one wants to test another classifier on the same problem, in this case, a random forest, as can be seen in the following two lines. The second line predicts the validation set and sets it to the analysis.
@@ -99,7 +92,8 @@ Let us incorporate another predictions, now with Naive Bayes classifier, and His
 #| echo: true
 
 nb = GaussianNB().fit(X_train, y_train)
-score(nb.predict(X_val), name='Naive Bayes')
+_ = score(nb.predict(X_val), name='Naive Bayes')
 hist = HistGradientBoostingClassifier().fit(X_train, y_train)
-score(hist.predict(X_val), name='Hist. Grad. Boost. Tree')
+_ = score(hist.predict(X_val), name='Hist. Grad. Boost. Tree')
+score.plot()
 ```

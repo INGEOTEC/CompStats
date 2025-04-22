@@ -13,6 +13,7 @@
 # limitations under the License.
 from functools import wraps
 from sklearn import metrics
+from scipy import stats
 from CompStats.interface import Perf
 from CompStats.utils import metrics_docs
 
@@ -302,6 +303,81 @@ def d2_log_loss_score(y_true, *y_proba,
                 **kwargs)
 
 
+def macro_f1(y_true, *y_pred, labels=None,
+             sample_weight=None, zero_division='warn',
+             num_samples: int=500, n_jobs: int=-1, use_tqdm=True,
+             **kwargs):
+    """:py:class:`~CompStats.interface.Perf` with :py:func:`~sklearn.metrics.f1_score` (as :py:attr:`score_func`) with the parameteres needed to compute the macro score. The parameters not described can be found in :py:func:`~sklearn.metrics.macro_f1`
+
+    :param y_true: True measurement or could be a pandas.DataFrame where column label 'y' corresponds to the true measurement. 
+    :type y_true: numpy.ndarray or pandas.DataFrame 
+    :param y_pred: Predictions, the algorithms will be identified with alg-k where k=1 is the first argument included in :py:attr:`y_pred.` 
+    :type y_pred: numpy.ndarray 
+    :param kwargs: Predictions, the algorithms will be identified using the keyword  
+    :type kwargs: numpy.ndarray 
+    :param num_samples: Number of bootstrap samples, default=500. 
+    :type num_samples: int 
+    :param n_jobs: Number of jobs to compute the statistic, default=-1 corresponding to use all threads. 
+    :type n_jobs: int 
+    :param use_tqdm: Whether to use tqdm.tqdm to visualize the progress, default=True 
+    :type use_tqdm: bool     
+    """
+    return f1_score(y_true, *y_pred, labels=labels, average='macro',
+                    sample_weight=sample_weight, zero_division=zero_division,
+                    num_samples=num_samples, n_jobs=n_jobs,
+                    use_tqdm=use_tqdm, **kwargs)
+
+
+def macro_recall(y_true, *y_pred, labels=None,
+                 sample_weight=None, zero_division='warn',
+                 num_samples: int=500, n_jobs: int=-1, use_tqdm=True,
+                 **kwargs):
+    """:py:class:`~CompStats.interface.Perf` with :py:func:`~sklearn.metrics.recall_score` (as :py:attr:`score_func`) with the parameteres needed to compute the macro score. The parameters not described can be found in :py:func:`~sklearn.metrics.macro_recall`
+
+    :param y_true: True measurement or could be a pandas.DataFrame where column label 'y' corresponds to the true measurement. 
+    :type y_true: numpy.ndarray or pandas.DataFrame 
+    :param y_pred: Predictions, the algorithms will be identified with alg-k where k=1 is the first argument included in :py:attr:`y_pred.` 
+    :type y_pred: numpy.ndarray 
+    :param kwargs: Predictions, the algorithms will be identified using the keyword  
+    :type kwargs: numpy.ndarray 
+    :param num_samples: Number of bootstrap samples, default=500. 
+    :type num_samples: int 
+    :param n_jobs: Number of jobs to compute the statistic, default=-1 corresponding to use all threads. 
+    :type n_jobs: int 
+    :param use_tqdm: Whether to use tqdm.tqdm to visualize the progress, default=True 
+    :type use_tqdm: bool     
+    """
+    return recall_score(y_true, *y_pred, labels=labels, average='macro',
+                        sample_weight=sample_weight, zero_division=zero_division,
+                        num_samples=num_samples, n_jobs=n_jobs,
+                        use_tqdm=use_tqdm, **kwargs)
+
+
+def macro_precision(y_true, *y_pred, labels=None,
+                    sample_weight=None, zero_division='warn',
+                    num_samples: int=500, n_jobs: int=-1, use_tqdm=True,
+                    **kwargs):
+    """:py:class:`~CompStats.interface.Perf` with :py:func:`~sklearn.metrics.precision_score` (as :py:attr:`score_func`) with the parameteres needed to compute the macro score. The parameters not described can be found in :py:func:`~sklearn.metrics.macro_precision`
+
+    :param y_true: True measurement or could be a pandas.DataFrame where column label 'y' corresponds to the true measurement. 
+    :type y_true: numpy.ndarray or pandas.DataFrame 
+    :param y_pred: Predictions, the algorithms will be identified with alg-k where k=1 is the first argument included in :py:attr:`y_pred.` 
+    :type y_pred: numpy.ndarray 
+    :param kwargs: Predictions, the algorithms will be identified using the keyword  
+    :type kwargs: numpy.ndarray 
+    :param num_samples: Number of bootstrap samples, default=500. 
+    :type num_samples: int 
+    :param n_jobs: Number of jobs to compute the statistic, default=-1 corresponding to use all threads. 
+    :type n_jobs: int 
+    :param use_tqdm: Whether to use tqdm.tqdm to visualize the progress, default=True 
+    :type use_tqdm: bool     
+    """
+    return precision_score(y_true, *y_pred, labels=labels, average='macro',
+                           sample_weight=sample_weight, zero_division=zero_division,
+                           num_samples=num_samples, n_jobs=n_jobs,
+                           use_tqdm=use_tqdm, **kwargs)
+
+
 ########################################################
 #################### Regression ########################
 ########################################################
@@ -576,7 +652,6 @@ def mean_absolute_percentage_error(y_true,
                 **kwargs)
 
 
-@metrics_docs(hy_name='y_pred', attr_name='score_func')
 def d2_absolute_error_score(y_true,
                             *y_pred,
                             sample_weight=None,
@@ -593,6 +668,40 @@ def d2_absolute_error_score(y_true,
                                                sample_weight=sample_weight,
                                                multioutput=multioutput)
 
+    return Perf(y_true, *y_pred, score_func=inner, error_func=None,
+                num_samples=num_samples, n_jobs=n_jobs,
+                use_tqdm=use_tqdm,
+                **kwargs)
+
+
+def pearsonr(y_true, *y_pred,
+             alternative='two-sided', method=None,
+             num_samples: int=500,
+             n_jobs: int=-1,
+             use_tqdm=True,
+             **kwargs):
+    """:py:class:`~CompStats.interface.Perf` with :py:func:`~scipy.stats.pearsonr` as :py:attr:`score_func.`
+
+    :param y_true: True measurement or could be a pandas.DataFrame where column label 'y' corresponds to the true measurement. 
+    :type y_true: numpy.ndarray or pandas.DataFrame 
+    :param y_pred: Predictions, the algorithms will be identified with alg-k where k=1 is the first argument included in :py:attr:`y_pred.` 
+    :type y_pred: numpy.ndarray 
+    :param kwargs: Predictions, the algorithms will be identified using the keyword  
+    :type kwargs: numpy.ndarray 
+    :param num_samples: Number of bootstrap samples, default=500. 
+    :type num_samples: int 
+    :param n_jobs: Number of jobs to compute the statistic, default=-1 corresponding to use all threads. 
+    :type n_jobs: int 
+    :param use_tqdm: Whether to use tqdm.tqdm to visualize the progress, default=True 
+    :type use_tqdm: bool 
+    """
+
+    @wraps(stats.pearsonr)
+    def inner(y, hy):
+        return stats.pearsonr(y, hy,
+                              alternative=alternative,
+                              method=method).statistic
+    
     return Perf(y_true, *y_pred, score_func=inner, error_func=None,
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,

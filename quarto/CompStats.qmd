@@ -41,8 +41,12 @@ pip install CompStats
 
 To illustrate the use of `CompStats`, the following snippets show an example. The instructions load the necessary libraries, including the one to obtain the problem (e.g., digits), four different classifiers, and the last line is the score used to measure the performance and compare the algorithm. 
 
+Belowe the imports, it is found the code to load the digits problem and split the dataset into training and validation sets.
+
+::: {.card title="Dataset and libraries" .flow} 
 ```{python} 
 #| echo: true
+#| code-fold: true
 
 from sklearn.svm import LinearSVC
 from sklearn.naive_bayes import GaussianNB
@@ -52,42 +56,51 @@ from sklearn.datasets import load_digits
 from sklearn.model_selection import train_test_split
 from sklearn.base import clone
 from CompStats.metrics import f1_score
-```
-
-The first step is to load the digits problem and split the dataset into training and validation sets. The second step is to estimate the parameters of a linear Support Vector Machine and predict the validation set's classes. The predictions are stored in the variable `hy`.
-
-```{python}
-#| echo: true
 
 X, y = load_digits(return_X_y=True)
 _ = train_test_split(X, y, test_size=0.3)
 X_train, X_val, y_train, y_val = _
+```
+:::
+
+The first line estimates the parameters of a linear Support Vector Machine and predict the validation set's classes. The predictions are stored in the variable `hy`.
+
+::: {.card title="Linear SVM" .flow} 
+```{python}
+#| echo: true
+
 m = LinearSVC().fit(X_train, y_train)
 hy = m.predict(X_val)
 ```
+:::
 
 Once the predictions are available, it is time to measure the algorithm's performance, as seen in the following code. It is essential to note that the API used in `sklearn.metrics` is followed; the difference is that the function returns an instance with different methods that can be used to estimate different performance statistics and compare algorithms. 
 
-## Column 
-
+::: {.card title="Score" .flow}
 ```{python}
 #| echo: true
 
 score = f1_score(y_val, hy, average='macro')
 score
 ```
+:::
+
+## Column 
 
 Continuing with the example, let us assume that one wants to test another classifier on the same problem, in this case, a random forest, as can be seen in the following two lines. The second line predicts the validation set and sets it to the analysis.
 
+::: {.card title="Random Forest" .flow}
 ```{python}
 #| echo: true
 
 ens = RandomForestClassifier().fit(X_train, y_train)
 score(ens.predict(X_val), name='Random Forest')
 ```
+:::
 
 Let us incorporate another predictions, now with Naive Bayes classifier, and Histogram Gradient Boosting as seen below.
 
+::: {.card title="Rest of the classifiers" .flow}
 ```{python}
 #| echo: true
 
@@ -97,3 +110,4 @@ hist = HistGradientBoostingClassifier().fit(X_train, y_train)
 _ = score(hist.predict(X_val), name='Hist. Grad. Boost. Tree')
 score.plot()
 ```
+:::

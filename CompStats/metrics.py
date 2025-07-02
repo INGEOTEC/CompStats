@@ -307,7 +307,7 @@ def macro_f1(y_true, *y_pred, labels=None,
              sample_weight=None, zero_division='warn',
              num_samples: int=500, n_jobs: int=-1, use_tqdm=True,
              **kwargs):
-    """:py:class:`~CompStats.interface.Perf` with :py:func:`~sklearn.metrics.f1_score` (as :py:attr:`score_func`) with the parameteres needed to compute the macro score. The parameters not described can be found in :py:func:`~sklearn.metrics.macro_f1`
+    """:py:class:`~CompStats.interface.Perf` with :py:func:`~sklearn.metrics.f1_score` (as :py:attr:`score_func`) with the parameteres needed to compute the macro score. The parameters not described can be found in :py:func:`~sklearn.metrics.f1_score`
 
     :param y_true: True measurement or could be a pandas.DataFrame where column label 'y' corresponds to the true measurement. 
     :type y_true: numpy.ndarray or pandas.DataFrame 
@@ -332,7 +332,7 @@ def macro_recall(y_true, *y_pred, labels=None,
                  sample_weight=None, zero_division='warn',
                  num_samples: int=500, n_jobs: int=-1, use_tqdm=True,
                  **kwargs):
-    """:py:class:`~CompStats.interface.Perf` with :py:func:`~sklearn.metrics.recall_score` (as :py:attr:`score_func`) with the parameteres needed to compute the macro score. The parameters not described can be found in :py:func:`~sklearn.metrics.macro_recall`
+    """:py:class:`~CompStats.interface.Perf` with :py:func:`~sklearn.metrics.recall_score` (as :py:attr:`score_func`) with the parameteres needed to compute the macro score. The parameters not described can be found in :py:func:`~sklearn.metrics.recall_score`
 
     :param y_true: True measurement or could be a pandas.DataFrame where column label 'y' corresponds to the true measurement. 
     :type y_true: numpy.ndarray or pandas.DataFrame 
@@ -357,7 +357,7 @@ def macro_precision(y_true, *y_pred, labels=None,
                     sample_weight=None, zero_division='warn',
                     num_samples: int=500, n_jobs: int=-1, use_tqdm=True,
                     **kwargs):
-    """:py:class:`~CompStats.interface.Perf` with :py:func:`~sklearn.metrics.precision_score` (as :py:attr:`score_func`) with the parameteres needed to compute the macro score. The parameters not described can be found in :py:func:`~sklearn.metrics.macro_precision`
+    """:py:class:`~CompStats.interface.Perf` with :py:func:`~sklearn.metrics.precision_score` (as :py:attr:`score_func`) with the parameteres needed to compute the macro score. The parameters not described can be found in :py:func:`~sklearn.metrics.precision_score`
 
     :param y_true: True measurement or could be a pandas.DataFrame where column label 'y' corresponds to the true measurement. 
     :type y_true: numpy.ndarray or pandas.DataFrame 

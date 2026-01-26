@@ -121,6 +121,7 @@ def test_Perf_plot_multi():
     f_grid = score.plot()
     assert f_grid is not None
 
+
 def test_Perf_statistic_one():
     """Test Perf statistic one alg"""
     from CompStats.metrics import f1_score
@@ -142,6 +143,9 @@ def test_Perf_statistic_one():
     assert isinstance(score.statistic, float)
     assert isinstance(str(score), str)
     assert isinstance(score.se, float)
+    assert isinstance(score.ci, tuple)
+    assert len(score.ci) == 2
+
 
 def test_Perf_best():
     """Test Perf best"""
@@ -191,7 +195,7 @@ def test_difference_best():
     score(svm.predict(X_val), name='svm')
     diff = score.difference()
     assert isinstance(diff.best, str)
-    
+
 
 def test_difference_str__():
     """Test f1_score"""

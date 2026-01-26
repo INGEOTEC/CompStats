@@ -19,7 +19,7 @@ import numpy as np
 from CompStats.bootstrap import StatisticSamples
 from CompStats.utils import progress_bar
 from CompStats import measurements
-from CompStats.measurements import SE
+from CompStats.measurements import SE, CI
 from CompStats.utils import dataframe
 
 
@@ -270,7 +270,7 @@ class Perf(object):
                 best = data.argmin()
         self._best = keys[best]
         return self._best
-    
+
     @best.setter
     def best(self, value):
         self._best = value
@@ -279,7 +279,7 @@ class Perf(object):
     def sorting_func(self):
         """Rank systems when multiple performances are used"""
         return self._sorting_func
-    
+
     @sorting_func.setter
     def sorting_func(self, value):
         self._sorting_func = value
@@ -315,7 +315,7 @@ class Perf(object):
         else:
             self._statistic = dict(data)
         return self._statistic
-    
+
     @statistic.setter
     def statistic(self, value):
         """statistic setter"""
@@ -342,6 +342,30 @@ class Perf(object):
         """
 
         output = SE(self.statistic_samples)
+        if len(output) == 1:
+            return list(output.values())[0]
+        return output
+
+    @property
+    def ci(self):
+        """Confidence interval
+    
+        >>> from sklearn.svm import LinearSVC
+        >>> from sklearn.datasets import load_iris
+        >>> from sklearn.model_selection import train_test_split
+        >>> from CompStats.interface import Perf
+        >>> X, y = load_iris(return_X_y=True)
+        >>> _ = train_test_split(X, y, test_size=0.3)
+        >>> X_train, X_val, y_train, y_val = _
+        >>> m = LinearSVC().fit(X_train, y_train)
+        >>> hy = m.predict(X_val)
+        >>> ens = RandomForestClassifier().fit(X_train, y_train)
+        >>> perf = Perf(y_val, hy, name='LinearSVC')
+        >>> perf.ci
+        (np.float64(0.9333333333333332), np.float64(1.0))
+        """
+
+        output = CI(self.statistic_samples)
         if len(output) == 1:
             return list(output.values())[0]
         return output

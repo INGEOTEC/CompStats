@@ -2,6 +2,7 @@
 name = 'CompStats'
 description = 'CompStats implements an evaluation methodology for statistically analyzing competition results and competition'
 readme = "README.rst"
+license = "Apache-2.0"
 dependencies = [
     'numpy',
     'scikit-learn>=1.3.0',
@@ -17,7 +18,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "Intended Audience :: Information Technology",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",

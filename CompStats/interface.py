@@ -383,6 +383,7 @@ class Perf(object):
              winner_legend:str='Best',
              tie_legend:str='Equivalent',
              loser_legend:str='Different',
+             palette:object=None,
              **kwargs):
         """plot with seaborn
 
@@ -427,13 +428,20 @@ class Perf(object):
         ci = lambda x: measurements.CI(x, alpha=CI)
         if comparison:
             kwargs.update(dict(hue=comp_legend))
+        if palette is None:
+            pal = sns.color_palette("Paired")
+            palette = {winner_legend:pal[1],
+                       tie_legend:pal[3],
+                       loser_legend: pal[5]}
         f_grid = sns.catplot(df, x=value_name, errorbar=ci,
                              y=alg_legend, col=var_name,
                              kind=kind, linestyle=linestyle,
-                             col_wrap=col_wrap, capsize=capsize, **kwargs)
+                             col_wrap=col_wrap, capsize=capsize,
+                             palette=palette,
+                             **kwargs)
         return f_grid
 
-    def dataframe(self, comparison:bool=False,
+    def dataframe(self, comparison:bool=True,
                   right:bool=True,
                   alpha:float=0.05,
                   value_name:str='Score',
@@ -444,7 +452,22 @@ class Perf(object):
                   tie_legend:str='Equivalent',
                   loser_legend:str='Different',
                   perf_names:str=None):
-        """Dataframe"""
+        """Dataframe
+        
+        >>> from sklearn.svm import LinearSVC
+        >>> from sklearn.ensemble import RandomForestClassifier
+        >>> from sklearn.datasets import load_iris
+        >>> from sklearn.model_selection import train_test_split
+        >>> from CompStats.interface import Perf
+        >>> X, y = load_iris(return_X_y=True)
+        >>> _ = train_test_split(X, y, test_size=0.3)
+        >>> X_train, X_val, y_train, y_val = _
+        >>> m = LinearSVC().fit(X_train, y_train)
+        >>> hy = m.predict(X_val)
+        >>> ens = RandomForestClassifier().fit(X_train, y_train)
+        >>> perf = Perf(y_val, hy, forest=ens.predict(X_val))
+        >>> df = perf.dataframe()
+        """
         if perf_names is None and isinstance(self.best, np.ndarray):
             func_name = self.statistic_func.__name__
             perf_names = [f'{func_name}({i})'

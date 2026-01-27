@@ -441,7 +441,7 @@ class Perf(object):
                              **kwargs)
         return f_grid
 
-    def dataframe(self, comparison:bool=True,
+    def dataframe(self, comparison:bool=False,
                   right:bool=True,
                   alpha:float=0.05,
                   value_name:str='Score',
@@ -671,7 +671,7 @@ class Difference:
             return self.statistic[self.best]
         keys = np.unique(self.best)
         statistic = np.array([self.statistic[k]
-                              for k in keys])
+                                for k in keys])
         m = {v: k for k, v in enumerate(keys)}
         best = np.array([m[x] for x in self.best])
         return statistic[best, np.arange(best.shape[0])]

@@ -81,7 +81,7 @@ def test_Perf_dataframe():
     from CompStats.metrics import f1_score
 
     X, y = load_digits(return_X_y=True)
-    _ = train_test_split(X, y, test_size=0.3)
+    _ = train_test_split(X, y, test_size=0.3, random_state=0)
     X_train, X_val, y_train, y_val = _
     ens = RandomForestClassifier().fit(X_train, y_train)
     nb = GaussianNB().fit(X_train, y_train)

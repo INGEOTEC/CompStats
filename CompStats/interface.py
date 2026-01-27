@@ -19,7 +19,7 @@ import numpy as np
 from CompStats.bootstrap import StatisticSamples
 from CompStats.utils import progress_bar
 from CompStats import measurements
-from CompStats.measurements import SE
+from CompStats.measurements import SE, CI
 from CompStats.utils import dataframe
 
 
@@ -270,7 +270,7 @@ class Perf(object):
                 best = data.argmin()
         self._best = keys[best]
         return self._best
-    
+
     @best.setter
     def best(self, value):
         self._best = value
@@ -279,7 +279,7 @@ class Perf(object):
     def sorting_func(self):
         """Rank systems when multiple performances are used"""
         return self._sorting_func
-    
+
     @sorting_func.setter
     def sorting_func(self, value):
         self._sorting_func = value
@@ -315,7 +315,7 @@ class Perf(object):
         else:
             self._statistic = dict(data)
         return self._statistic
-    
+
     @statistic.setter
     def statistic(self, value):
         """statistic setter"""
@@ -346,6 +346,30 @@ class Perf(object):
             return list(output.values())[0]
         return output
 
+    @property
+    def ci(self):
+        """Confidence interval
+    
+        >>> from sklearn.svm import LinearSVC
+        >>> from sklearn.datasets import load_iris
+        >>> from sklearn.model_selection import train_test_split
+        >>> from CompStats.interface import Perf
+        >>> X, y = load_iris(return_X_y=True)
+        >>> _ = train_test_split(X, y, test_size=0.3)
+        >>> X_train, X_val, y_train, y_val = _
+        >>> m = LinearSVC().fit(X_train, y_train)
+        >>> hy = m.predict(X_val)
+        >>> ens = RandomForestClassifier().fit(X_train, y_train)
+        >>> perf = Perf(y_val, hy, name='LinearSVC')
+        >>> perf.ci
+        (np.float64(0.9333333333333332), np.float64(1.0))
+        """
+
+        output = CI(self.statistic_samples)
+        if len(output) == 1:
+            return list(output.values())[0]
+        return output
+
     def plot(self, value_name:str=None,
              var_name:str='Performance',
              alg_legend:str='Algorithm',
@@ -359,6 +383,7 @@ class Perf(object):
              winner_legend:str='Best',
              tie_legend:str='Equivalent',
              loser_legend:str='Different',
+             palette:object=None,
              **kwargs):
         """plot with seaborn
 
@@ -403,10 +428,17 @@ class Perf(object):
         ci = lambda x: measurements.CI(x, alpha=CI)
         if comparison:
             kwargs.update(dict(hue=comp_legend))
+            if palette is None:
+                pal = sns.color_palette("Paired")
+                palette = {winner_legend:pal[1],
+                        tie_legend:pal[3],
+                        loser_legend: pal[5]}
         f_grid = sns.catplot(df, x=value_name, errorbar=ci,
                              y=alg_legend, col=var_name,
                              kind=kind, linestyle=linestyle,
-                             col_wrap=col_wrap, capsize=capsize, **kwargs)
+                             col_wrap=col_wrap, capsize=capsize,
+                             palette=palette,
+                             **kwargs)
         return f_grid
 
     def dataframe(self, comparison:bool=False,
@@ -420,7 +452,22 @@ class Perf(object):
                   tie_legend:str='Equivalent',
                   loser_legend:str='Different',
                   perf_names:str=None):
-        """Dataframe"""
+        """Dataframe
+        
+        >>> from sklearn.svm import LinearSVC
+        >>> from sklearn.ensemble import RandomForestClassifier
+        >>> from sklearn.datasets import load_iris
+        >>> from sklearn.model_selection import train_test_split
+        >>> from CompStats.interface import Perf
+        >>> X, y = load_iris(return_X_y=True)
+        >>> _ = train_test_split(X, y, test_size=0.3)
+        >>> X_train, X_val, y_train, y_val = _
+        >>> m = LinearSVC().fit(X_train, y_train)
+        >>> hy = m.predict(X_val)
+        >>> ens = RandomForestClassifier().fit(X_train, y_train)
+        >>> perf = Perf(y_val, hy, forest=ens.predict(X_val))
+        >>> df = perf.dataframe()
+        """
         if perf_names is None and isinstance(self.best, np.ndarray):
             func_name = self.statistic_func.__name__
             perf_names = [f'{func_name}({i})'
@@ -624,7 +671,7 @@ class Difference:
             return self.statistic[self.best]
         keys = np.unique(self.best)
         statistic = np.array([self.statistic[k]
-                              for k in keys])
+                                for k in keys])
         m = {v: k for k, v in enumerate(keys)}
         best = np.array([m[x] for x in self.best])
         return statistic[best, np.arange(best.shape[0])]

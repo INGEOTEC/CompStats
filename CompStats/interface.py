@@ -428,11 +428,11 @@ class Perf(object):
         ci = lambda x: measurements.CI(x, alpha=CI)
         if comparison:
             kwargs.update(dict(hue=comp_legend))
-        if palette is None:
-            pal = sns.color_palette("Paired")
-            palette = {winner_legend:pal[1],
-                       tie_legend:pal[3],
-                       loser_legend: pal[5]}
+            if palette is None:
+                pal = sns.color_palette("Paired")
+                palette = {winner_legend:pal[1],
+                        tie_legend:pal[3],
+                        loser_legend: pal[5]}
         f_grid = sns.catplot(df, x=value_name, errorbar=ci,
                              y=alg_legend, col=var_name,
                              kind=kind, linestyle=linestyle,

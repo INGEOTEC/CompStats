@@ -494,3 +494,56 @@ def test_pearsonr():
                     num_samples=50)
     _ = stats.pearsonr(y_val, hy)
     assert _.statistic == perf.statistic
+
+
+def test_measure_factories_tag_bib():
+    """Every wrapper's .measure() factory returns a callable tagged with the
+    same direction (BiB) implied by its wrapper's score_func/error_func"""
+    from CompStats import metrics as compstats_metrics
+
+    score_type = ['accuracy_score', 'balanced_accuracy_score',
+                  'top_k_accuracy_score', 'average_precision_score',
+                  'f1_score', 'precision_score', 'recall_score',
+                  'jaccard_score', 'roc_auc_score', 'd2_log_loss_score',
+                  'macro_f1', 'macro_recall', 'macro_precision',
+                  'explained_variance_score', 'r2_score',
+                  'd2_absolute_error_score', 'pearsonr']
+    error_type = ['brier_score_loss', 'log_loss', 'max_error',
+                  'mean_absolute_error', 'mean_squared_error',
+                  'root_mean_squared_error', 'mean_squared_log_error',
+                  'root_mean_squared_log_error', 'median_absolute_error',
+                  'mean_poisson_deviance', 'mean_gamma_deviance',
+                  'mean_absolute_percentage_error']
+    for name in score_type:
+        func = getattr(compstats_metrics, name)
+        assert hasattr(func, 'measure'), f'{name} is missing .measure'
+        assert func.measure().BiB is True, f'{name}.measure().BiB should be True'
+    for name in error_type:
+        func = getattr(compstats_metrics, name)
+        assert hasattr(func, 'measure'), f'{name} is missing .measure'
+        assert func.measure().BiB is False, f'{name}.measure().BiB should be False'
+
+
+def test_measure_compose_multi_metric_perf():
+    """.measure() factories compose into a single, multi-measure Perf"""
+    from CompStats.interface import Perf
+    from CompStats.metrics import f1_score, recall_score, mean_absolute_error
+
+    X, y = load_iris(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3, random_state=0)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestClassifier(random_state=0).fit(X_train, y_train)
+    nb = GaussianNB().fit(X_train, y_train)
+    perf = Perf(y_val, ens.predict(X_val), nb=nb.predict(X_val),
+               score_func=[f1_score.measure(average='macro'),
+                           recall_score.measure(average='macro')],
+               num_samples=20)
+    assert perf.measure_names == ['f1_score', 'recall_score']
+    assert perf.statistic['alg-1'].shape == (2,)
+
+    # error-type measure composed together with a score-type one
+    perf2 = Perf(y_val, ens.predict(X_val), nb=nb.predict(X_val),
+                score_func=f1_score.measure(average='macro'),
+                error_func=mean_absolute_error.measure(),
+                num_samples=20)
+    assert list(perf2.statistic_samples.BiB) == [True, False]

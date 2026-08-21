@@ -319,6 +319,98 @@ def test_Perf_input_dataframe():
     assert 'INGEOTEC' in perf.statistic
 
 
+def test_Perf_multi_measure_score_only():
+    """Test Perf combining two score-type measures via metrics.py's .measure() factories"""
+    from CompStats.interface import Perf
+    from CompStats.metrics import f1_score, recall_score
+
+    X, y = load_digits(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3, random_state=0)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestClassifier(random_state=0).fit(X_train, y_train)
+    nb = GaussianNB().fit(X_train, y_train)
+    perf = Perf(y_val, ens.predict(X_val), nb=nb.predict(X_val),
+               score_func=[f1_score.measure(average='macro'),
+                           recall_score.measure(average='macro')],
+               num_samples=20)
+    assert perf.measure_names == ['f1_score', 'recall_score']
+    assert isinstance(perf.statistic['alg-1'], np.ndarray)
+    assert perf.statistic['alg-1'].shape == (2,)
+    assert np.all(perf.statistic_samples.BiB == np.array([True, True]))
+    df = perf.dataframe()
+    assert set(df['Performance']) == {'f1_score', 'recall_score'}
+
+
+def test_Perf_multi_measure_mixed_bib():
+    """Test Perf/Difference with mixed score-type and error-type measures
+
+    Uses constant prediction arrays so the bootstrap statistic has zero
+    variance, making ``difference().p_value()`` exactly predictable; this
+    isolates the per-column BiB sign logic (interface.py's difference()/
+    p_value()/best) from sampling noise.
+    """
+    from CompStats.interface import Perf
+
+    def score_stat(y, hy):
+        return hy.mean()
+
+    def error_stat(y, hy):
+        return hy.mean()
+
+    y_true = np.arange(10)
+    hyA = np.full(10, 5.0)
+    hyB = np.full(10, 2.0)
+    perf = Perf(y_true, A=hyA, B=hyB,
+               score_func=score_stat, error_func=error_stat,
+               num_samples=5)
+    assert perf.measure_names == ['score_stat', 'error_stat']
+    assert np.all(perf.statistic_samples.BiB == np.array([True, False]))
+    # A has the higher value (wins the score-type column),
+    # B has the lower value (wins the error-type column)
+    assert list(perf.best) == ['A', 'B']
+    diff = perf.difference()
+    p_values = diff.p_value()
+    assert np.allclose(p_values['A'], [1.0, 0.0])
+    assert np.allclose(p_values['B'], [0.0, 1.0])
+
+
+def test_Perf_measure_tag_overrides_list_position():
+    """A callable's own .BiB (set by a .measure() factory) wins over the
+    default direction implied by score_func/error_func placement"""
+    from CompStats.interface import Perf
+    from CompStats.metrics import f1_score
+
+    y_true = np.array([0, 0, 0, 0, 1, 1, 1, 1, 0, 1])
+    hy = np.array([0, 0, 0, 0, 1, 1, 1, 1, 0, 1])
+    tagged = f1_score.measure(average='macro')
+    assert tagged.BiB is True
+    perf = Perf(y_true, alg=hy, score_func=None,
+               error_func=tagged, num_samples=5)
+    assert bool(perf.statistic_samples.BiB) is True
+
+
+def test_Perf_multi_measure_clone():
+    """Test that cloning a multi-measure Perf preserves measures and samples"""
+    from sklearn.base import clone
+    from CompStats.interface import Perf
+    from CompStats.metrics import f1_score, recall_score
+
+    X, y = load_iris(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3, random_state=0)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestClassifier(random_state=0).fit(X_train, y_train)
+    nb = GaussianNB().fit(X_train, y_train)
+    perf = Perf(y_val, forest=ens.predict(X_val), nb=nb.predict(X_val),
+               score_func=[f1_score.measure(average='macro'),
+                           recall_score.measure(average='macro')],
+               num_samples=20)
+    samples = perf.statistic_samples._samples
+    perf2 = clone(perf)
+    assert perf2.measure_names == ['f1_score', 'recall_score']
+    assert np.all(samples == perf2.statistic_samples._samples)
+    assert np.allclose(perf.statistic['forest'], perf2.statistic['forest'])
+
+
 def test_Perf_call():
     """Test Perf call"""
     from CompStats.interface import Perf

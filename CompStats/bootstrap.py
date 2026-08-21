@@ -27,6 +27,8 @@ class StatisticSamples:
     :type num_samples: int
     :param n_jobs: Number of jobs to run in parallel, default=1.
     :type n_jobs: int
+    :param BiB: Bigger is Better; a single bool for a scalar/vector statistic, or one bool per column when :py:attr:`statistic` returns the concatenation of several measures (see :py:class:`~CompStats.interface.Perf`'s multi-measure support).
+    :type BiB: bool or numpy.ndarray[bool]
 
 
     >>> from CompStats import StatisticSamples

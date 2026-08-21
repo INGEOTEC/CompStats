@@ -28,10 +28,12 @@ class Perf(object):
 
     :param y_true: True measurement or could be a pandas.DataFrame where column label 'y' corresponds to the true measurement.
     :type y_true: numpy.ndarray or pandas.DataFrame
-    :param score_func: Function to measure the performance, it is assumed that the best algorithm has the highest value.
-    :type score_func: Function where the first argument is :math:`y` and the second is :math:`\\hat{y}.`
-    :param error_func: Function to measure the performance where the best algorithm has the lowest value.
-    :type error_func: Function where the first argument is :math:`y` and the second is :math:`\\hat{y}.` 
+    :param score_func: Function (or list of functions) to measure the performance, it is assumed that the best algorithm has the highest value. :py:attr:`score_func` and :py:attr:`error_func` can be given simultaneously to combine score-type and error-type measures into a single, multi-measure :py:class:`Perf.`
+    :type score_func: Function, or list of functions, where the first argument is :math:`y` and the second is :math:`\\hat{y}.`
+    :param error_func: Function (or list of functions) to measure the performance where the best algorithm has the lowest value.
+    :type error_func: Function, or list of functions, where the first argument is :math:`y` and the second is :math:`\\hat{y}.`
+    :param measure_names: Display name for each measure, only relevant when more than one measure is given; defaults to each function's ``__name__``.
+    :type measure_names: list
     :param y_pred: Predictions, the algorithms will be identified with alg-k where k=1 is the first argument included in :py:attr:`args.`
     :type y_pred: numpy.ndarray
     :param kwargs: Predictions, the algorithms will be identified using the keyword
@@ -88,18 +90,32 @@ class Perf(object):
     0.0222 (0.0237) <= alg-1
     0.0222 (0.0215) <= forest
 
+    Two or more measures can be combined into a single :py:class:`Perf` instance
+    (e.g. macro-F1 together with macro-recall) by passing a list of functions
+    to :py:attr:`score_func`/:py:attr:`error_func` -- see :py:mod:`CompStats.metrics`'s
+    ``.measure`` factories (e.g. :py:func:`~CompStats.metrics.f1_score.measure`). Every
+    measure is evaluated on the same bootstrap resamples, so comparisons across
+    algorithms remain paired for each measure.
+
+    >>> from CompStats.metrics import f1_score, recall_score
+    >>> perf = Perf(y_val, hy, forest=ens.predict(X_val),
+    ...             score_func=[f1_score.measure(average='macro'),
+    ...                         recall_score.measure(average='macro')])
     """
     def __init__(self, y_true, *y_pred,
                  name:str=None,
                  score_func=balanced_accuracy_score,
                  error_func=None,
+                 measure_names:list=None,
                  num_samples: int=500,
                  n_jobs: int=-1,
                  use_tqdm=True,
                  **kwargs):
-        assert (score_func is None) ^ (error_func is None)
-        self.score_func = score_func
-        self.error_func = error_func
+        assert (len(self._as_list(score_func))
+                + len(self._as_list(error_func))) >= 1
+        self._score_func = score_func
+        self._error_func = error_func
+        self.measure_names = measure_names
         algs = {}
         if name is not None:
             if isinstance(name, str):
@@ -117,10 +133,37 @@ class Perf(object):
         self.sorting_func = np.linalg.norm
         self._init()
 
+    @staticmethod
+    def _as_list(value):
+        """Normalize a score_func/error_func argument into a list of callables"""
+        if value is None:
+            return []
+        if isinstance(value, (list, tuple)):
+            return list(value)
+        return [value]
+
+    @property
+    def _measures(self):
+        """List of (callable, BiB) pairs, one per measure being evaluated
+
+        Each callable's own :py:attr:`BiB` attribute (set by, e.g., a
+        :py:meth:`metrics.py <CompStats.metrics>` wrapper's ``.measure`` factory)
+        takes precedence over the default direction implied by which
+        argument (:py:attr:`score_func` or :py:attr:`error_func`) it came from.
+        """
+        def tagged(funcs, default_bib):
+            return [(f, bool(getattr(f, 'BiB', default_bib)))
+                    for f in self._as_list(funcs)]
+        return tagged(self.score_func, True) + tagged(self.error_func, False)
+
     def _init(self):
         """Compute the bootstrap statistic"""
 
-        bib = True if self.score_func is not None else False
+        measures = self._measures
+        if len(measures) == 1:
+            bib = measures[0][1]
+        else:
+            bib = np.array([b for _, b in measures])
         if hasattr(self, '_statistic_samples'):
             _ = self.statistic_samples
             _.BiB = bib
@@ -138,6 +181,7 @@ class Perf(object):
         return dict(y_true=self.y_true,
                     score_func=self.score_func,
                     error_func=self.error_func,
+                    measure_names=self._measure_names,
                     num_samples=self.num_samples,
                     n_jobs=self.n_jobs)
 
@@ -152,7 +196,12 @@ class Perf(object):
 
     def __repr__(self):
         """Prediction statistics with standard error in parenthesis"""
-        arg = 'score_func' if self.error_func is None else 'error_func'
+        if self.error_func is None:
+            arg = 'score_func'
+        elif self.score_func is None:
+            arg = 'error_func'
+        else:
+            arg = 'score_func/error_func'
         func_name = self.statistic_func.__name__
         statistic = self.statistic
         if isinstance(statistic, dict):
@@ -227,8 +276,9 @@ class Perf(object):
             base = self.statistic_samples.calls[wrt]
         else:
             base = np.array([self.statistic_samples.calls[key][:, col]
-                            for col, key in enumerate(wrt)]).T       
-        sign = 1 if self.statistic_samples.BiB else -1
+                            for col, key in enumerate(wrt)]).T
+        BiB = self.statistic_samples.BiB
+        sign = np.where(BiB, 1, -1) if isinstance(BiB, np.ndarray) else (1 if BiB else -1)
         diff = dict()
         for k, v in self.statistic_samples.calls.items():
             if base.ndim == 1 and k == wrt:
@@ -254,20 +304,19 @@ class Perf(object):
             else:
                 self._best = np.array([key] * value.shape[1])
             return self._best
-        BiB = bool(self.statistic_samples.BiB)
+        BiB = self.statistic_samples.BiB
         keys = np.array(list(self.statistic.keys()))
         data = np.asanyarray([self.statistic[k]
-                              for k in keys])        
+                              for k in keys])
         if isinstance(self.statistic[keys[0]], np.ndarray):
-            if BiB:
-                best = data.argmax(axis=0)
+            argmax_idx = data.argmax(axis=0)
+            argmin_idx = data.argmin(axis=0)
+            if isinstance(BiB, np.ndarray):
+                best = np.where(BiB, argmax_idx, argmin_idx)
             else:
-                best = data.argmin(axis=0)
+                best = argmax_idx if BiB else argmin_idx
         else:
-            if BiB:
-                best = data.argmax()
-            else:
-                best = data.argmin()
+            best = data.argmax() if bool(BiB) else data.argmin()
         self._best = keys[best]
         return self._best
 
@@ -405,7 +454,9 @@ class Perf(object):
         """
         import seaborn as sns
         if value_name is None:
-            if self.score_func is not None:
+            if len(self._measures) > 1:
+                value_name = 'Value'
+            elif self.score_func is not None:
                 value_name = 'Score'
             else:
                 value_name = 'Error'
@@ -469,9 +520,11 @@ class Perf(object):
         >>> df = perf.dataframe()
         """
         if perf_names is None and isinstance(self.best, np.ndarray):
-            func_name = self.statistic_func.__name__
-            perf_names = [f'{func_name}({i})'
-                          for i, k in enumerate(self.best)]
+            perf_names = self.measure_names
+            if perf_names is None:
+                func_name = self.statistic_func.__name__
+                perf_names = [f'{func_name}({i})'
+                              for i, k in enumerate(self.best)]
         df = dataframe(self, value_name=value_name,
                        var_name=var_name,
                        alg_legend=alg_legend,
@@ -516,10 +569,44 @@ class Perf(object):
 
     @property
     def statistic_func(self):
-        """Statistic function"""
-        if self.score_func is not None:
-            return self.score_func
-        return self.error_func
+        """Statistic function
+
+        A single :py:attr:`score_func`/:py:attr:`error_func` callable is
+        returned as-is; when more than one measure is given (either as a
+        list, or by mixing :py:attr:`score_func` and :py:attr:`error_func`),
+        a composite callable is returned that concatenates every measure's
+        output into a single vector, evaluated on the same bootstrap samples.
+        """
+        measures = self._measures
+        if len(measures) == 1:
+            return measures[0][0]
+        funcs = [f for f, _ in measures]
+        names = self.measure_names
+
+        def composite(y, hy):
+            return np.concatenate([np.atleast_1d(f(y, hy)) for f in funcs])
+        composite.__name__ = '+'.join(names)
+        return composite
+
+    @property
+    def measure_names(self):
+        """Display name for each measure, used when combining more than one
+
+        Defaults to each measure's function ``__name__`` (available because
+        every :py:mod:`CompStats.metrics` wrapper's inner function is
+        ``functools.wraps``-decorated with the corresponding sklearn metric).
+        """
+        if self._measure_names is not None:
+            return self._measure_names
+        measures = self._measures
+        if len(measures) <= 1:
+            return None
+        return [getattr(f, '__name__', f'measure-{i}')
+                for i, (f, _) in enumerate(measures)]
+
+    @measure_names.setter
+    def measure_names(self, value):
+        self._measure_names = value
 
     @property
     def statistic_samples(self):
@@ -700,7 +787,8 @@ class Difference:
         {'forest': np.float64(0.3)}
         """
         values = []
-        sign = 1 if self.statistic_samples.BiB else -1
+        BiB = self.statistic_samples.BiB
+        sign = np.where(BiB, 1, -1) if isinstance(BiB, np.ndarray) else (1 if BiB else -1)
         delta_best = self._delta_best()
         for k, v in self.statistic_samples.calls.items():
             delta = 2 * sign * (delta_best - self.statistic[k])

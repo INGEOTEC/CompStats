@@ -53,7 +53,7 @@ class StatisticSamples:
         self.statistic = statistic
         self.num_samples = num_samples
         self.n_jobs = n_jobs
-        self.BiB = BiB  # Guardar el parámetro BiB        
+        self.BiB = BiB  # Store the BiB parameter
         self._samples = None
         self._calls = {}
         self._info = {}
@@ -72,7 +72,7 @@ class StatisticSamples:
         return dict(statistic=self.statistic,
                     num_samples=self.num_samples,
                     n_jobs=self.n_jobs,
-                    BiB=self.BiB)  # Añadir BiB a los parámetros
+                    BiB=self.BiB)  # Add BiB to the parameters
 
     def __sklearn_clone__(self):
         klass = self.__class__

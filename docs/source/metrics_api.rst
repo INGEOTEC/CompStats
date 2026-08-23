@@ -96,11 +96,61 @@ difference p-values  w.r.t Hist. Grad. Boost. Tree
 0.0100 <= alg-1
 0.3240 <= Random Forest
 
-The class :py:class:`~CompStats.Difference` has the :py:class:`~CompStats.Difference.plot` method that can be used to depict the difference with respectto the best. 
+The class :py:class:`~CompStats.Difference` has the :py:class:`~CompStats.Difference.plot` method that can be used to depict the difference with respectto the best.
 
 >>> diff.plot()
 
 .. image:: digits_difference.png
+
+Multi-measure Perf
+--------------------
+
+A single competition can also be evaluated with more than one measure at once (e.g., macro-F1 together with macro-recall) by passing a list of functions to :py:attr:`score_func`/:py:attr:`error_func`. :py:attr:`score_func` and :py:attr:`error_func` can even be combined to mix score-type and error-type measures, with different Bigger-is-Better (BiB) directions, into a single :py:class:`~CompStats.interface.Perf` instance. Every measure is evaluated on the same bootstrap resamples, so comparisons across algorithms remain paired for each measure.
+
+Every :py:mod:`CompStats.metrics` wrapper exposes a ``.measure`` factory (e.g. :py:func:`~CompStats.metrics.f1_score.measure`) that builds the tagged callable used internally as :py:attr:`score_func`/:py:attr:`error_func`; call it directly to compose several measures, as shown next.
+
+>>> from CompStats.interface import Perf
+>>> from CompStats.metrics import f1_score, recall_score
+>>> mperf = Perf(y_val, hy, forest=ens.predict(X_val),
+...              score_func=[f1_score.measure(average='macro'),
+...                          recall_score.measure(average='macro')],
+...              measure_names=['macro-F1', 'macro-Recall'])
+>>> mperf
+<Perf(score_func=macro-F1+macro-Recall)>
+Statistic with its standard error (se)
+statistic (se)
+0.9783 (0.0061), 0.9786 (0.0060) <= forest
+0.9440 (0.0098), 0.9442 (0.0098) <= alg-1
+
+:py:attr:`measure_names` is optional; when omitted, each measure is labeled with its function's ``__name__`` (e.g. ``f1_score``, ``recall_score``). The properties :py:func:`~CompStats.interface.Perf.statistic`, :py:func:`~CompStats.interface.Perf.se`, and :py:func:`~CompStats.interface.Perf.ci` return one value per measure for every system.
+
+>>> mperf.statistic
+{'forest': array([0.97828319, 0.97855524]), 'alg-1': array([0.94399193, 0.94424915])}
+>>> mperf.se
+{'forest': array([0.00605715, 0.00595743]), 'alg-1': array([0.0098302 , 0.00978099])}
+>>> mperf.ci
+{'alg-1': (array([0.92393337, 0.92473771]), array([0.96193002, 0.96198806])), 'forest': (array([0.96618741, 0.9666813 ]), array([0.98902657, 0.98936809]))}
+
+:py:func:`~CompStats.interface.Perf.plot` facets the resulting figure by measure, and :py:func:`~CompStats.interface.Perf.difference` reports one p-value per measure for each system compared to the best.
+
+>>> mperf.plot()
+>>> mperf.difference()
+<Difference>
+difference p-values
+forest, forest <= Best
+0.0000, 0.0000 <= alg-1
+1.0000, 1.0000 <= forest
+
+The convenience wrappers :py:func:`~CompStats.metrics.macro_f1`, :py:func:`~CompStats.metrics.macro_recall`, and :py:func:`~CompStats.metrics.macro_precision` are ready-made, multi-measure-friendly shortcuts for macro-averaged F1, recall, and precision; each also exposes its own ``.measure`` factory (e.g. :py:func:`~CompStats.metrics.macro_f1.measure`), so they can be combined the same way as any other :py:mod:`CompStats.metrics` wrapper.
+
+>>> from CompStats.metrics import macro_f1, macro_recall
+>>> Perf(y_val, hy, forest=ens.predict(X_val),
+...      score_func=[macro_f1.measure(), macro_recall.measure()])
+<Perf(score_func=f1_score+recall_score)>
+Statistic with its standard error (se)
+statistic (se)
+0.9783 (0.0061), 0.9786 (0.0060) <= forest
+0.9440 (0.0101), 0.9442 (0.0101) <= alg-1
 
 .. automodule:: CompStats.metrics
    :members:

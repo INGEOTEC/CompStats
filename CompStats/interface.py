@@ -59,13 +59,14 @@ class Perf(object):
     >>> X_train, X_val, y_train, y_val = _
     >>> m = LinearSVC().fit(X_train, y_train)
     >>> hy = m.predict(X_val)
+    >>> perf = Perf(y_val, hy, name='LinearSVC')
     >>> ens = RandomForestClassifier().fit(X_train, y_train)
-    >>> perf = Perf(y_val, hy, forest=ens.predict(X_val))
+    >>> perf(ens.predict(X_val), name='forest')
     >>> perf
     <Perf>
     Statistic with its standard error (se)
     statistic (se)
-    0.9792 (0.0221) <= alg-1
+    0.9792 (0.0221) <= LinearSVC
     0.9744 (0.0246) <= forest
 
     If an algorithm's prediction is missing, this can be included by calling the instance, as can be seen in the following instruction. Note that the algorithm's name can also be given with the keyword :py:attr:`name.`

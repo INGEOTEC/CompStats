@@ -219,7 +219,7 @@ def test_difference_str__():
                         num_samples=50, average=average)
         diff = perf.difference()
         print(diff)
-    
+
 
 def test_Perf():
     """Test perf"""
@@ -274,7 +274,8 @@ def test_Perf_clone():
     perf = Perf(y_val, forest=ens.predict(X_val), num_samples=50)
     samples = perf.statistic_samples._samples
     perf2 = clone(perf)
-    perf2.error_func = lambda y, hy: (y != hy).mean()
+    perf2.func = lambda y, hy: (y != hy).mean()
+    perf2.BiB = False
     assert 'forest' in perf2.statistic_samples.calls
     assert np.all(samples == perf2.statistic_samples._samples)
 
@@ -330,9 +331,9 @@ def test_Perf_multi_measure_score_only():
     ens = RandomForestClassifier(random_state=0).fit(X_train, y_train)
     nb = GaussianNB().fit(X_train, y_train)
     perf = Perf(y_val, ens.predict(X_val), nb=nb.predict(X_val),
-               score_func=[f1_score.measure(average='macro'),
-                           recall_score.measure(average='macro')],
-               num_samples=20)
+                func=[f1_score.measure(average='macro'),
+                      recall_score.measure(average='macro')],
+                num_samples=20)
     assert perf.measure_names == ['f1_score', 'recall_score']
     assert isinstance(perf.statistic['alg-1'], np.ndarray)
     assert perf.statistic['alg-1'].shape == (2,)
@@ -361,8 +362,8 @@ def test_Perf_multi_measure_mixed_bib():
     hyA = np.full(10, 5.0)
     hyB = np.full(10, 2.0)
     perf = Perf(y_true, A=hyA, B=hyB,
-               score_func=score_stat, error_func=error_stat,
-               num_samples=5)
+                func=[score_stat, error_stat], BiB=[True, False],
+                num_samples=5)
     assert perf.measure_names == ['score_stat', 'error_stat']
     assert np.all(perf.statistic_samples.BiB == np.array([True, False]))
     # A has the higher value (wins the score-type column),
@@ -374,9 +375,9 @@ def test_Perf_multi_measure_mixed_bib():
     assert np.allclose(p_values['B'], [0.0, 1.0])
 
 
-def test_Perf_measure_tag_overrides_list_position():
+def test_Perf_measure_tag_overrides_default_bib():
     """A callable's own .BiB (set by a .measure() factory) wins over the
-    default direction implied by score_func/error_func placement"""
+    constructor's BiB default when the two disagree"""
     from CompStats.interface import Perf
     from CompStats.metrics import f1_score
 
@@ -384,9 +385,50 @@ def test_Perf_measure_tag_overrides_list_position():
     hy = np.array([0, 0, 0, 0, 1, 1, 1, 1, 0, 1])
     tagged = f1_score.measure(average='macro')
     assert tagged.BiB is True
-    perf = Perf(y_true, alg=hy, score_func=None,
-               error_func=tagged, num_samples=5)
+    perf = Perf(y_true, alg=hy, func=tagged, BiB=False, num_samples=5)
     assert bool(perf.statistic_samples.BiB) is True
+
+
+def test_Perf_statistic_sort_order_follows_tagged_bib():
+    """Perf.statistic's sort order must follow the measure's tagged .BiB,
+    not the constructor's BiB default (issue #36 regression: this used to
+    be derived from ``score_func is not None`` and ignored the tag)"""
+    from CompStats.interface import Perf
+    from CompStats.metrics import mean_absolute_error
+
+    y_true = np.zeros(10)
+    perf = Perf(y_true, low=np.zeros(10), high=np.ones(10),
+                func=mean_absolute_error.measure(), num_samples=5)
+    # mean_absolute_error.measure() is tagged BiB=False (error-type) even
+    # though the constructor's own BiB default is True; the smaller-error
+    # 'low' prediction must rank first
+    assert list(perf.statistic.keys()) == ['low', 'high']
+
+
+def test_Perf_repr_label_uses_func():
+    """Perf.__repr__ labels the measure as 'func=', regardless of its
+    tagged direction (issue #36: score_func/error_func no longer exist)"""
+    from CompStats.interface import Perf
+    from CompStats.metrics import mean_absolute_error
+
+    y_true = np.zeros(10)
+    perf = Perf(y_true, low=np.zeros(10), high=np.ones(10),
+                func=mean_absolute_error.measure(), num_samples=5)
+    assert 'func=mean_absolute_error' in repr(perf)
+
+
+def test_Perf_plot_value_name_follows_tagged_bib():
+    """Perf.plot's default value_name label ('Score' vs 'Error') must follow
+    the measure's tagged .BiB, not the constructor's BiB default (issue #36
+    regression: this used to be derived from ``score_func is not None``)"""
+    from CompStats.interface import Perf
+    from CompStats.metrics import mean_absolute_error
+
+    y_true = np.zeros(10)
+    perf = Perf(y_true, low=np.zeros(10), high=np.ones(10),
+                func=mean_absolute_error.measure(), num_samples=5)
+    f_grid = perf.plot()
+    assert 'Error' in f_grid.data.columns
 
 
 def test_Perf_multi_measure_clone():
@@ -401,9 +443,9 @@ def test_Perf_multi_measure_clone():
     ens = RandomForestClassifier(random_state=0).fit(X_train, y_train)
     nb = GaussianNB().fit(X_train, y_train)
     perf = Perf(y_val, forest=ens.predict(X_val), nb=nb.predict(X_val),
-               score_func=[f1_score.measure(average='macro'),
-                           recall_score.measure(average='macro')],
-               num_samples=20)
+                func=[f1_score.measure(average='macro'),
+                      recall_score.measure(average='macro')],
+                num_samples=20)
     samples = perf.statistic_samples._samples
     perf2 = clone(perf)
     assert perf2.measure_names == ['f1_score', 'recall_score']
@@ -429,3 +471,99 @@ def test_Perf_call():
     perf(hy, name='alg-2')
     assert 'alg-2' not in perf._statistic_samples.calls
     assert 'alg-1' in perf._statistic_samples.calls
+
+
+def test_Difference_p_value_correction_single_measure():
+    """Test Difference.p_value multiple-comparison correction (single measure)"""
+    from statsmodels.stats.multitest import multipletests
+    from CompStats.metrics import f1_score
+
+    X, y = load_digits(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3, random_state=0)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestClassifier(random_state=0).fit(X_train, y_train)
+    nb = GaussianNB().fit(X_train, y_train)
+    svm = LinearSVC().fit(X_train, y_train)
+    score = f1_score(y_val, ens.predict(X_val), average='macro',
+                     num_samples=50)
+    score(nb.predict(X_val))
+    score(svm.predict(X_val))
+    diff = score.difference()
+    raw = diff.p_value()
+    keys = list(raw.keys())
+    expected = multipletests(list(raw.values()), method='bonferroni')[1]
+    corrected = diff.p_value(correction='bonferroni')
+    assert list(corrected.keys()) == keys
+    assert np.allclose(list(corrected.values()), expected)
+
+
+def test_Difference_p_value_correction_multi_measure():
+    """Test Difference.p_value multiple-comparison correction is applied per measure"""
+    from statsmodels.stats.multitest import multipletests
+    from CompStats.interface import Perf
+    from CompStats.metrics import f1_score, recall_score
+
+    X, y = load_digits(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3, random_state=0)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestClassifier(random_state=0).fit(X_train, y_train)
+    nb = GaussianNB().fit(X_train, y_train)
+    svm = LinearSVC().fit(X_train, y_train)
+    perf = Perf(y_val, ens.predict(X_val), nb=nb.predict(X_val),
+                svm=svm.predict(X_val),
+                func=[f1_score.measure(average='macro'),
+                      recall_score.measure(average='macro')],
+                num_samples=20)
+    diff = perf.difference()
+    raw = diff.p_value()
+    corrected = diff.p_value(correction='bonferroni')
+    keys = list(raw.keys())
+    for col in range(2):
+        expected = multipletests([raw[k][col] for k in keys],
+                                 method='bonferroni')[1]
+        actual = [corrected[k][col] for k in keys]
+        assert np.allclose(actual, expected)
+    for k in keys:
+        assert np.all(corrected[k] >= raw[k] - 1e-12)
+
+
+def test_Difference_dataframe_correction_changes_significant_flag():
+    """Test that correcting p-values only makes Significant more conservative"""
+    from CompStats.metrics import f1_score
+
+    X, y = load_digits(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3, random_state=0)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestClassifier(random_state=0).fit(X_train, y_train)
+    nb = GaussianNB().fit(X_train, y_train)
+    svm = LinearSVC().fit(X_train, y_train)
+    score = f1_score(y_val, ens.predict(X_val), average='macro',
+                     num_samples=50)
+    score(nb.predict(X_val))
+    score(svm.predict(X_val))
+    diff = score.difference()
+    n_significant = diff.dataframe()['Significant'].sum()
+    n_significant_corrected = diff.dataframe(
+        correction='bonferroni')['Significant'].sum()
+    assert n_significant_corrected <= n_significant
+
+
+def test_Perf_dataframe_correction_changes_comparison_legend():
+    """Test that Perf.dataframe's Comparison legend reflects corrected p-values"""
+    from CompStats.metrics import f1_score
+
+    X, y = load_digits(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3, random_state=0)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestClassifier(random_state=0).fit(X_train, y_train)
+    nb = GaussianNB().fit(X_train, y_train)
+    svm = LinearSVC().fit(X_train, y_train)
+    score = f1_score(y_val, ens.predict(X_val), average='macro',
+                     num_samples=50)
+    score(nb.predict(X_val))
+    score(svm.predict(X_val))
+    uncorrected = score.dataframe(comparison=True)
+    corrected = score.dataframe(comparison=True, correction='bonferroni')
+    n_different = (uncorrected['Comparison'] == 'Different').sum()
+    n_different_corrected = (corrected['Comparison'] == 'Different').sum()
+    assert n_different_corrected <= n_different

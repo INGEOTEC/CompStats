@@ -22,7 +22,6 @@ from CompStats import difference_multiple, plot_scatter_matrix, all_differences_
 from CompStats import plot_difference2, plot_difference_multiple
 
 
-
 DATA = os.path.join(os.path.dirname(__file__), 'data.csv')
 
 
@@ -33,7 +32,7 @@ def test_performance():
     assert 'BoW' in perf.calls
     assert 'y' not in perf.calls
     assert perf.n_jobs == -1
-    
+
 
 def test_plot_performance():
     """Test plot_performance"""
@@ -71,7 +70,7 @@ def test_performance_multiple_metrics():
         {"func": f1_score, "args": {"average": "macro"}, 'BiB': True},
         {"func": precision_score, "args": {"average": "macro"}, 'BiB': True},
         {"func": mean_absolute_error, 'BiB': False}
-        ]
+    ]
     perf = performance_multiple_metrics(df, "y", metrics)
     plot_performance_multiple(perf)
     assert 'accuracy_score' in perf['samples']
@@ -87,7 +86,7 @@ def test_difference_multiple():
         {"func": f1_score, "args": {"average": "macro"}, 'BiB': True},
         {"func": precision_score, "args": {"average": "macro"}, 'BiB': True},
         {"func": mean_absolute_error, 'BiB': False}
-        ]
+    ]
     perf = performance_multiple_metrics(df, "y", metrics)
     diff = difference_multiple(perf)
     plot_difference_multiple(diff)
@@ -104,7 +103,7 @@ def test_difference_summary():
         {"func": f1_score, "args": {"average": "macro"}, 'BiB': True},
         {"func": precision_score, "args": {"average": "macro"}, 'BiB': True},
         {"func": mean_absolute_error, 'BiB': False}
-        ]
+    ]
     perf = performance_multiple_metrics(df, "y", metrics)
     diff = difference_multiple(perf)
     all_dif = all_differences_multiple(diff)

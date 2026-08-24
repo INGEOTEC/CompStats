@@ -35,18 +35,18 @@ def _accuracy_score_measure(normalize=True, sample_weight=None):
     return inner
 
 
-@metrics_docs(hy_name='y_pred', attr_name='score_func')
+@metrics_docs(hy_name='y_pred', bib=True)
 def accuracy_score(y_true, *y_pred,
                    normalize=True, sample_weight=None,
-                   num_samples: int=500,
-                   n_jobs: int=-1,
+                   num_samples: int = 500,
+                   n_jobs: int = -1,
                    use_tqdm=True,
                    **kwargs):
     """accuracy_score"""
 
     return Perf(y_true, *y_pred,
-                score_func=_accuracy_score_measure(normalize=normalize,
-                                                   sample_weight=sample_weight),
+                func=_accuracy_score_measure(normalize=normalize,
+                                             sample_weight=sample_weight),
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)
@@ -67,18 +67,18 @@ def _balanced_accuracy_score_measure(sample_weight=None, adjusted=False):
     return inner
 
 
-@metrics_docs(hy_name='y_pred', attr_name='score_func')
+@metrics_docs(hy_name='y_pred', bib=True)
 def balanced_accuracy_score(y_true, *y_pred,
                             sample_weight=None, adjusted=False,
-                            num_samples: int=500,
-                            n_jobs: int=-1,
+                            num_samples: int = 500,
+                            n_jobs: int = -1,
                             use_tqdm=True,
                             **kwargs):
     """balanced_accuracy_score"""
 
     return Perf(y_true, *y_pred,
-                score_func=_balanced_accuracy_score_measure(sample_weight=sample_weight,
-                                                            adjusted=adjusted),
+                func=_balanced_accuracy_score_measure(sample_weight=sample_weight,
+                                                      adjusted=adjusted),
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)
@@ -99,20 +99,20 @@ def _top_k_accuracy_score_measure(k=2, normalize=True, sample_weight=None, label
     return inner
 
 
-@metrics_docs(hy_name='y_score', attr_name='score_func')
+@metrics_docs(hy_name='y_score', bib=True)
 def top_k_accuracy_score(y_true, *y_score, k=2,
                          normalize=True, sample_weight=None,
                          labels=None,
-                         num_samples: int=500,
-                         n_jobs: int=-1,
+                         num_samples: int = 500,
+                         n_jobs: int = -1,
                          use_tqdm=True,
                          **kwargs):
     """top_k_accuracy_score"""
 
     return Perf(y_true, *y_score,
-                score_func=_top_k_accuracy_score_measure(k=k, normalize=normalize,
-                                                         sample_weight=sample_weight,
-                                                         labels=labels),
+                func=_top_k_accuracy_score_measure(k=k, normalize=normalize,
+                                                   sample_weight=sample_weight,
+                                                   labels=labels),
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)
@@ -133,19 +133,19 @@ def _average_precision_score_measure(average='macro', sample_weight=None):
     return inner
 
 
-@metrics_docs(hy_name='y_score', attr_name='score_func')
+@metrics_docs(hy_name='y_score', bib=True)
 def average_precision_score(y_true, *y_score,
                             average='macro',
                             sample_weight=None,
-                            num_samples: int=500,
-                            n_jobs: int=-1,
+                            num_samples: int = 500,
+                            n_jobs: int = -1,
                             use_tqdm=True,
                             **kwargs):
     """average_precision_score"""
 
     return Perf(y_true, *y_score,
-                score_func=_average_precision_score_measure(average=average,
-                                                            sample_weight=sample_weight),
+                func=_average_precision_score_measure(average=average,
+                                                      sample_weight=sample_weight),
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)
@@ -166,20 +166,20 @@ def _brier_score_loss_measure(sample_weight=None, pos_label=None):
     return inner
 
 
-@metrics_docs(hy_name='y_proba', attr_name='error_func')
+@metrics_docs(hy_name='y_proba', bib=False)
 def brier_score_loss(y_true, *y_proba,
                      sample_weight=None,
                      pos_label=None,
-                     num_samples: int=500,
-                     n_jobs: int=-1,
+                     num_samples: int = 500,
+                     n_jobs: int = -1,
                      use_tqdm=True,
                      **kwargs
                      ):
     """brier_score_loss"""
 
-    return Perf(y_true, *y_proba, score_func=None,
-                error_func=_brier_score_loss_measure(sample_weight=sample_weight,
-                                                     pos_label=pos_label),
+    return Perf(y_true, *y_proba,
+                func=_brier_score_loss_measure(sample_weight=sample_weight,
+                                               pos_label=pos_label),
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)
@@ -203,19 +203,19 @@ def _f1_score_measure(labels=None, pos_label=1, average='binary',
     return inner
 
 
-@metrics_docs(hy_name='y_pred', attr_name='score_func')
+@metrics_docs(hy_name='y_pred', bib=True)
 def f1_score(y_true, *y_pred, labels=None, pos_label=1,
              average='binary', sample_weight=None,
-             zero_division='warn', num_samples: int=500,
-             n_jobs: int=-1, use_tqdm=True,
+             zero_division='warn', num_samples: int = 500,
+             n_jobs: int = -1, use_tqdm=True,
              **kwargs):
     """f1_score"""
 
     return Perf(y_true, *y_pred,
-                score_func=_f1_score_measure(labels=labels, pos_label=pos_label,
-                                             average=average,
-                                             sample_weight=sample_weight,
-                                             zero_division=zero_division),
+                func=_f1_score_measure(labels=labels, pos_label=pos_label,
+                                       average=average,
+                                       sample_weight=sample_weight,
+                                       zero_division=zero_division),
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)
@@ -236,21 +236,21 @@ def _log_loss_measure(normalize=True, sample_weight=None, labels=None):
     return inner
 
 
-@metrics_docs(hy_name='y_pred', attr_name='error_func')
+@metrics_docs(hy_name='y_pred', bib=False)
 def log_loss(y_true, *y_pred,
              normalize=True,
              sample_weight=None,
              labels=None,
-             num_samples: int=500,
-             n_jobs: int=-1,
+             num_samples: int = 500,
+             n_jobs: int = -1,
              use_tqdm=True,
              **kwargs):
     """log_loss"""
 
-    return Perf(y_true, *y_pred, score_func=None,
-                error_func=_log_loss_measure(normalize=normalize,
-                                             sample_weight=sample_weight,
-                                             labels=labels),
+    return Perf(y_true, *y_pred,
+                func=_log_loss_measure(normalize=normalize,
+                                       sample_weight=sample_weight,
+                                       labels=labels),
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)
@@ -275,7 +275,7 @@ def _precision_score_measure(labels=None, pos_label=1, average='binary',
     return inner
 
 
-@metrics_docs(hy_name='y_pred', attr_name='score_func')
+@metrics_docs(hy_name='y_pred', bib=True)
 def precision_score(y_true,
                     *y_pred,
                     labels=None,
@@ -283,17 +283,17 @@ def precision_score(y_true,
                     average='binary',
                     sample_weight=None,
                     zero_division='warn',
-                    num_samples: int=500,
-                    n_jobs: int=-1,
+                    num_samples: int = 500,
+                    n_jobs: int = -1,
                     use_tqdm=True,
                     **kwargs):
     """precision_score"""
 
     return Perf(y_true, *y_pred,
-                score_func=_precision_score_measure(labels=labels, pos_label=pos_label,
-                                                    average=average,
-                                                    sample_weight=sample_weight,
-                                                    zero_division=zero_division),
+                func=_precision_score_measure(labels=labels, pos_label=pos_label,
+                                              average=average,
+                                              sample_weight=sample_weight,
+                                              zero_division=zero_division),
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)
@@ -318,7 +318,7 @@ def _recall_score_measure(labels=None, pos_label=1, average='binary',
     return inner
 
 
-@metrics_docs(hy_name='y_pred', attr_name='score_func')
+@metrics_docs(hy_name='y_pred', bib=True)
 def recall_score(y_true,
                  *y_pred,
                  labels=None,
@@ -326,17 +326,17 @@ def recall_score(y_true,
                  average='binary',
                  sample_weight=None,
                  zero_division='warn',
-                 num_samples: int=500,
-                 n_jobs: int=-1,
+                 num_samples: int = 500,
+                 n_jobs: int = -1,
                  use_tqdm=True,
                  **kwargs):
     """recall_score"""
 
     return Perf(y_true, *y_pred,
-                score_func=_recall_score_measure(labels=labels, pos_label=pos_label,
-                                                 average=average,
-                                                 sample_weight=sample_weight,
-                                                 zero_division=zero_division),
+                func=_recall_score_measure(labels=labels, pos_label=pos_label,
+                                           average=average,
+                                           sample_weight=sample_weight,
+                                           zero_division=zero_division),
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)
@@ -361,7 +361,7 @@ def _jaccard_score_measure(labels=None, pos_label=1, average='binary',
     return inner
 
 
-@metrics_docs(hy_name='y_pred', attr_name='score_func')
+@metrics_docs(hy_name='y_pred', bib=True)
 def jaccard_score(y_true,
                   *y_pred,
                   labels=None,
@@ -369,17 +369,17 @@ def jaccard_score(y_true,
                   average='binary',
                   sample_weight=None,
                   zero_division='warn',
-                  num_samples: int=500,
-                  n_jobs: int=-1,
+                  num_samples: int = 500,
+                  n_jobs: int = -1,
                   use_tqdm=True,
                   **kwargs):
     """jaccard_score"""
 
     return Perf(y_true, *y_pred,
-                score_func=_jaccard_score_measure(labels=labels, pos_label=pos_label,
-                                                  average=average,
-                                                  sample_weight=sample_weight,
-                                                  zero_division=zero_division),
+                func=_jaccard_score_measure(labels=labels, pos_label=pos_label,
+                                            average=average,
+                                            sample_weight=sample_weight,
+                                            zero_division=zero_division),
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)
@@ -404,7 +404,7 @@ def _roc_auc_score_measure(average='macro', sample_weight=None, max_fpr=None,
     return inner
 
 
-@metrics_docs(hy_name='y_score', attr_name='score_func')
+@metrics_docs(hy_name='y_score', bib=True)
 def roc_auc_score(y_true,
                   *y_score,
                   average='macro',
@@ -412,18 +412,18 @@ def roc_auc_score(y_true,
                   max_fpr=None,
                   multi_class='raise',
                   labels=None,
-                  num_samples: int=500,
-                  n_jobs: int=-1,
+                  num_samples: int = 500,
+                  n_jobs: int = -1,
                   use_tqdm=True,
                   **kwargs):
     """roc_auc_score"""
 
     return Perf(y_true, *y_score,
-                score_func=_roc_auc_score_measure(average=average,
-                                                  sample_weight=sample_weight,
-                                                  max_fpr=max_fpr,
-                                                  multi_class=multi_class,
-                                                  labels=labels),
+                func=_roc_auc_score_measure(average=average,
+                                            sample_weight=sample_weight,
+                                            max_fpr=max_fpr,
+                                            multi_class=multi_class,
+                                            labels=labels),
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)
@@ -438,26 +438,25 @@ def _d2_log_loss_score_measure(sample_weight=None, labels=None):
     @wraps(metrics.d2_log_loss_score)
     def inner(y, hy):
         return metrics.d2_log_loss_score(y, hy,
-                                        sample_weight=sample_weight,
-                                        labels=labels)
+                                         sample_weight=sample_weight,
+                                         labels=labels)
     inner.BiB = True
     return inner
 
 
-@metrics_docs(hy_name='y_proba', attr_name='score_func')
+@metrics_docs(hy_name='y_proba', bib=True)
 def d2_log_loss_score(y_true, *y_proba,
                       sample_weight=None,
                       labels=None,
-                      num_samples: int=500,
-                      n_jobs: int=-1,
+                      num_samples: int = 500,
+                      n_jobs: int = -1,
                       use_tqdm=True,
                       **kwargs):
     """d2_log_loss_score"""
 
     return Perf(y_true, *y_proba,
-                score_func=_d2_log_loss_score_measure(sample_weight=sample_weight,
-                                                      labels=labels),
-                error_func=None,
+                func=_d2_log_loss_score_measure(sample_weight=sample_weight,
+                                                labels=labels),
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)
@@ -476,9 +475,9 @@ def _macro_f1_measure(labels=None, sample_weight=None, zero_division='warn'):
 
 def macro_f1(y_true, *y_pred, labels=None,
              sample_weight=None, zero_division='warn',
-             num_samples: int=500, n_jobs: int=-1, use_tqdm=True,
+             num_samples: int = 500, n_jobs: int = -1, use_tqdm=True,
              **kwargs):
-    """:py:class:`~CompStats.interface.Perf` with :py:func:`~sklearn.metrics.f1_score` (as :py:attr:`score_func`) with the parameteres needed to compute the macro score. The parameters not described can be found in :py:func:`~sklearn.metrics.f1_score`
+    """:py:class:`~CompStats.interface.Perf` with :py:func:`~sklearn.metrics.f1_score` (as :py:attr:`func`) with the parameteres needed to compute the macro score. The parameters not described can be found in :py:func:`~sklearn.metrics.f1_score`
 
     :param y_true: True measurement or could be a pandas.DataFrame where column label 'y' corresponds to the true measurement.
     :type y_true: numpy.ndarray or pandas.DataFrame
@@ -512,9 +511,9 @@ def _macro_recall_measure(labels=None, sample_weight=None, zero_division='warn')
 
 def macro_recall(y_true, *y_pred, labels=None,
                  sample_weight=None, zero_division='warn',
-                 num_samples: int=500, n_jobs: int=-1, use_tqdm=True,
+                 num_samples: int = 500, n_jobs: int = -1, use_tqdm=True,
                  **kwargs):
-    """:py:class:`~CompStats.interface.Perf` with :py:func:`~sklearn.metrics.recall_score` (as :py:attr:`score_func`) with the parameteres needed to compute the macro score. The parameters not described can be found in :py:func:`~sklearn.metrics.recall_score`
+    """:py:class:`~CompStats.interface.Perf` with :py:func:`~sklearn.metrics.recall_score` (as :py:attr:`func`) with the parameteres needed to compute the macro score. The parameters not described can be found in :py:func:`~sklearn.metrics.recall_score`
 
     :param y_true: True measurement or could be a pandas.DataFrame where column label 'y' corresponds to the true measurement.
     :type y_true: numpy.ndarray or pandas.DataFrame
@@ -548,9 +547,9 @@ def _macro_precision_measure(labels=None, sample_weight=None, zero_division='war
 
 def macro_precision(y_true, *y_pred, labels=None,
                     sample_weight=None, zero_division='warn',
-                    num_samples: int=500, n_jobs: int=-1, use_tqdm=True,
+                    num_samples: int = 500, n_jobs: int = -1, use_tqdm=True,
                     **kwargs):
-    """:py:class:`~CompStats.interface.Perf` with :py:func:`~sklearn.metrics.precision_score` (as :py:attr:`score_func`) with the parameteres needed to compute the macro score. The parameters not described can be found in :py:func:`~sklearn.metrics.precision_score`
+    """:py:class:`~CompStats.interface.Perf` with :py:func:`~sklearn.metrics.precision_score` (as :py:attr:`func`) with the parameteres needed to compute the macro score. The parameters not described can be found in :py:func:`~sklearn.metrics.precision_score`
 
     :param y_true: True measurement or could be a pandas.DataFrame where column label 'y' corresponds to the true measurement.
     :type y_true: numpy.ndarray or pandas.DataFrame
@@ -593,22 +592,22 @@ def _explained_variance_score_measure(sample_weight=None, multioutput='uniform_a
     return inner
 
 
-@metrics_docs(hy_name='y_pred', attr_name='score_func')
+@metrics_docs(hy_name='y_pred', bib=True)
 def explained_variance_score(y_true,
                              *y_pred,
                              sample_weight=None,
                              multioutput='uniform_average',
                              force_finite=True,
-                             num_samples: int=500,
-                             n_jobs: int=-1,
+                             num_samples: int = 500,
+                             n_jobs: int = -1,
                              use_tqdm=True,
                              **kwargs):
     """explained_variance_score"""
 
     return Perf(y_true, *y_pred,
-                score_func=_explained_variance_score_measure(sample_weight=sample_weight,
-                                                              multioutput=multioutput,
-                                                              force_finite=force_finite),
+                func=_explained_variance_score_measure(sample_weight=sample_weight,
+                                                       multioutput=multioutput,
+                                                       force_finite=force_finite),
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)
@@ -627,16 +626,16 @@ def _max_error_measure():
     return inner
 
 
-@metrics_docs(hy_name='y_pred', attr_name='error_func')
+@metrics_docs(hy_name='y_pred', bib=False)
 def max_error(y_true, *y_pred,
-              num_samples: int=500,
-              n_jobs: int=-1,
+              num_samples: int = 500,
+              n_jobs: int = -1,
               use_tqdm=True,
               **kwargs):
     """max_error"""
 
-    return Perf(y_true, *y_pred, score_func=None,
-                error_func=_max_error_measure(),
+    return Perf(y_true, *y_pred,
+                func=_max_error_measure(),
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)
@@ -657,20 +656,20 @@ def _mean_absolute_error_measure(sample_weight=None, multioutput='uniform_averag
     return inner
 
 
-@metrics_docs(hy_name='y_pred', attr_name='error_func')
+@metrics_docs(hy_name='y_pred', bib=False)
 def mean_absolute_error(y_true,
                         *y_pred,
                         sample_weight=None,
                         multioutput='uniform_average',
-                        num_samples: int=500,
-                        n_jobs: int=-1,
+                        num_samples: int = 500,
+                        n_jobs: int = -1,
                         use_tqdm=True,
                         **kwargs):
     """mean_absolute_error"""
 
-    return Perf(y_true, *y_pred, score_func=None,
-                error_func=_mean_absolute_error_measure(sample_weight=sample_weight,
-                                                        multioutput=multioutput),
+    return Perf(y_true, *y_pred,
+                func=_mean_absolute_error_measure(sample_weight=sample_weight,
+                                                  multioutput=multioutput),
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)
@@ -691,20 +690,20 @@ def _mean_squared_error_measure(sample_weight=None, multioutput='uniform_average
     return inner
 
 
-@metrics_docs(hy_name='y_pred', attr_name='error_func')
+@metrics_docs(hy_name='y_pred', bib=False)
 def mean_squared_error(y_true,
                        *y_pred,
                        sample_weight=None,
                        multioutput='uniform_average',
-                       num_samples: int=500,
-                       n_jobs: int=-1,
+                       num_samples: int = 500,
+                       n_jobs: int = -1,
                        use_tqdm=True,
                        **kwargs):
     """mean_squared_error"""
 
-    return Perf(y_true, *y_pred, score_func=None,
-                error_func=_mean_squared_error_measure(sample_weight=sample_weight,
-                                                       multioutput=multioutput),
+    return Perf(y_true, *y_pred,
+                func=_mean_squared_error_measure(sample_weight=sample_weight,
+                                                 multioutput=multioutput),
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)
@@ -725,20 +724,20 @@ def _root_mean_squared_error_measure(sample_weight=None, multioutput='uniform_av
     return inner
 
 
-@metrics_docs(hy_name='y_pred', attr_name='error_func')
+@metrics_docs(hy_name='y_pred', bib=False)
 def root_mean_squared_error(y_true,
                             *y_pred,
                             sample_weight=None,
                             multioutput='uniform_average',
-                            num_samples: int=500,
-                            n_jobs: int=-1,
+                            num_samples: int = 500,
+                            n_jobs: int = -1,
                             use_tqdm=True,
                             **kwargs):
     """root_mean_squared_error"""
 
-    return Perf(y_true, *y_pred, score_func=None,
-                error_func=_root_mean_squared_error_measure(sample_weight=sample_weight,
-                                                            multioutput=multioutput),
+    return Perf(y_true, *y_pred,
+                func=_root_mean_squared_error_measure(sample_weight=sample_weight,
+                                                      multioutput=multioutput),
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)
@@ -759,20 +758,20 @@ def _mean_squared_log_error_measure(sample_weight=None, multioutput='uniform_ave
     return inner
 
 
-@metrics_docs(hy_name='y_pred', attr_name='error_func')
+@metrics_docs(hy_name='y_pred', bib=False)
 def mean_squared_log_error(y_true,
                            *y_pred,
                            sample_weight=None,
                            multioutput='uniform_average',
-                           num_samples: int=500,
-                           n_jobs: int=-1,
+                           num_samples: int = 500,
+                           n_jobs: int = -1,
                            use_tqdm=True,
                            **kwargs):
     """mean_squared_log_error"""
 
-    return Perf(y_true, *y_pred, score_func=None,
-                error_func=_mean_squared_log_error_measure(sample_weight=sample_weight,
-                                                           multioutput=multioutput),
+    return Perf(y_true, *y_pred,
+                func=_mean_squared_log_error_measure(sample_weight=sample_weight,
+                                                     multioutput=multioutput),
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)
@@ -793,20 +792,20 @@ def _root_mean_squared_log_error_measure(sample_weight=None, multioutput='unifor
     return inner
 
 
-@metrics_docs(hy_name='y_pred', attr_name='error_func')
+@metrics_docs(hy_name='y_pred', bib=False)
 def root_mean_squared_log_error(y_true,
                                 *y_pred,
                                 sample_weight=None,
                                 multioutput='uniform_average',
-                                num_samples: int=500,
-                                n_jobs: int=-1,
+                                num_samples: int = 500,
+                                n_jobs: int = -1,
                                 use_tqdm=True,
                                 **kwargs):
     """root_mean_squared_log_error"""
 
-    return Perf(y_true, *y_pred, score_func=None,
-                error_func=_root_mean_squared_log_error_measure(sample_weight=sample_weight,
-                                                                multioutput=multioutput),
+    return Perf(y_true, *y_pred,
+                func=_root_mean_squared_log_error_measure(sample_weight=sample_weight,
+                                                          multioutput=multioutput),
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)
@@ -827,20 +826,20 @@ def _median_absolute_error_measure(sample_weight=None, multioutput='uniform_aver
     return inner
 
 
-@metrics_docs(hy_name='y_pred', attr_name='error_func')
+@metrics_docs(hy_name='y_pred', bib=False)
 def median_absolute_error(y_true,
                           *y_pred,
                           sample_weight=None,
                           multioutput='uniform_average',
-                          num_samples: int=500,
-                          n_jobs: int=-1,
+                          num_samples: int = 500,
+                          n_jobs: int = -1,
                           use_tqdm=True,
                           **kwargs):
     """median_absolute_error"""
 
-    return Perf(y_true, *y_pred, score_func=None,
-                error_func=_median_absolute_error_measure(sample_weight=sample_weight,
-                                                          multioutput=multioutput),
+    return Perf(y_true, *y_pred,
+                func=_median_absolute_error_measure(sample_weight=sample_weight,
+                                                    multioutput=multioutput),
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)
@@ -862,23 +861,22 @@ def _r2_score_measure(sample_weight=None, multioutput='uniform_average', force_f
     return inner
 
 
-@metrics_docs(hy_name='y_pred', attr_name='score_func')
+@metrics_docs(hy_name='y_pred', bib=True)
 def r2_score(y_true,
              *y_pred,
              sample_weight=None,
              multioutput='uniform_average',
              force_finite=True,
-             num_samples: int=500,
-             n_jobs: int=-1,
+             num_samples: int = 500,
+             n_jobs: int = -1,
              use_tqdm=True,
              **kwargs):
     """r2_score"""
 
     return Perf(y_true, *y_pred,
-                score_func=_r2_score_measure(sample_weight=sample_weight,
-                                             multioutput=multioutput,
-                                             force_finite=force_finite),
-                error_func=None,
+                func=_r2_score_measure(sample_weight=sample_weight,
+                                       multioutput=multioutput,
+                                       force_finite=force_finite),
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)
@@ -898,18 +896,18 @@ def _mean_poisson_deviance_measure(sample_weight=None):
     return inner
 
 
-@metrics_docs(hy_name='y_pred', attr_name='error_func')
+@metrics_docs(hy_name='y_pred', bib=False)
 def mean_poisson_deviance(y_true,
                           *y_pred,
                           sample_weight=None,
-                          num_samples: int=500,
-                          n_jobs: int=-1,
+                          num_samples: int = 500,
+                          n_jobs: int = -1,
                           use_tqdm=True,
                           **kwargs):
     """mean_poisson_deviance"""
 
-    return Perf(y_true, *y_pred, score_func=None,
-                error_func=_mean_poisson_deviance_measure(sample_weight=sample_weight),
+    return Perf(y_true, *y_pred,
+                func=_mean_poisson_deviance_measure(sample_weight=sample_weight),
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)
@@ -929,18 +927,18 @@ def _mean_gamma_deviance_measure(sample_weight=None):
     return inner
 
 
-@metrics_docs(hy_name='y_pred', attr_name='error_func')
+@metrics_docs(hy_name='y_pred', bib=False)
 def mean_gamma_deviance(y_true,
                         *y_pred,
                         sample_weight=None,
-                        num_samples: int=500,
-                        n_jobs: int=-1,
+                        num_samples: int = 500,
+                        n_jobs: int = -1,
                         use_tqdm=True,
                         **kwargs):
     """mean_gamma_deviance"""
 
-    return Perf(y_true, *y_pred, score_func=None,
-                error_func=_mean_gamma_deviance_measure(sample_weight=sample_weight),
+    return Perf(y_true, *y_pred,
+                func=_mean_gamma_deviance_measure(sample_weight=sample_weight),
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)
@@ -961,20 +959,20 @@ def _mean_absolute_percentage_error_measure(sample_weight=None, multioutput='uni
     return inner
 
 
-@metrics_docs(hy_name='y_pred', attr_name='error_func')
+@metrics_docs(hy_name='y_pred', bib=False)
 def mean_absolute_percentage_error(y_true,
                                    *y_pred,
                                    sample_weight=None,
                                    multioutput='uniform_average',
-                                   num_samples: int=500,
-                                   n_jobs: int=-1,
+                                   num_samples: int = 500,
+                                   n_jobs: int = -1,
                                    use_tqdm=True,
                                    **kwargs):
     """mean_absolute_percentage_error"""
 
-    return Perf(y_true, *y_pred, score_func=None,
-                error_func=_mean_absolute_percentage_error_measure(sample_weight=sample_weight,
-                                                                    multioutput=multioutput),
+    return Perf(y_true, *y_pred,
+                func=_mean_absolute_percentage_error_measure(sample_weight=sample_weight,
+                                                             multioutput=multioutput),
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)
@@ -999,16 +997,15 @@ def d2_absolute_error_score(y_true,
                             *y_pred,
                             sample_weight=None,
                             multioutput='uniform_average',
-                            num_samples: int=500,
-                            n_jobs: int=-1,
+                            num_samples: int = 500,
+                            n_jobs: int = -1,
                             use_tqdm=True,
                             **kwargs):
     """d2_absolute_error_score"""
 
     return Perf(y_true, *y_pred,
-                score_func=_d2_absolute_error_score_measure(sample_weight=sample_weight,
-                                                             multioutput=multioutput),
-                error_func=None,
+                func=_d2_absolute_error_score_measure(sample_weight=sample_weight,
+                                                      multioutput=multioutput),
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)
@@ -1031,11 +1028,11 @@ def _pearsonr_measure(alternative='two-sided', method=None):
 
 def pearsonr(y_true, *y_pred,
              alternative='two-sided', method=None,
-             num_samples: int=500,
-             n_jobs: int=-1,
+             num_samples: int = 500,
+             n_jobs: int = -1,
              use_tqdm=True,
              **kwargs):
-    """:py:class:`~CompStats.interface.Perf` with :py:func:`~scipy.stats.pearsonr` as :py:attr:`score_func.`
+    """:py:class:`~CompStats.interface.Perf` with :py:func:`~scipy.stats.pearsonr` as :py:attr:`func.`
 
     :param y_true: True measurement or could be a pandas.DataFrame where column label 'y' corresponds to the true measurement.
     :type y_true: numpy.ndarray or pandas.DataFrame
@@ -1052,8 +1049,7 @@ def pearsonr(y_true, *y_pred,
     """
 
     return Perf(y_true, *y_pred,
-                score_func=_pearsonr_measure(alternative=alternative, method=method),
-                error_func=None,
+                func=_pearsonr_measure(alternative=alternative, method=method),
                 num_samples=num_samples, n_jobs=n_jobs,
                 use_tqdm=use_tqdm,
                 **kwargs)

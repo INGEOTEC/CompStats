@@ -39,6 +39,44 @@ def test_f1_score():
     assert str(perf) is not None
 
 
+def test_f1_score_difference_p_value_correction():
+    """Test Difference.p_value(correction=...) through the f1_score wrapper"""
+    import numpy as np
+    from statsmodels.stats.multitest import multipletests
+    from CompStats.metrics import f1_score
+
+    X, y = load_iris(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3, random_state=0)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestClassifier(random_state=0).fit(X_train, y_train)
+    nb = GaussianNB().fit(X_train, y_train)
+    perf = f1_score(y_val, forest=ens.predict(X_val),
+                    nb=nb.predict(X_val), average='macro',
+                    num_samples=50)
+    diff = perf.difference()
+    raw = diff.p_value()
+    expected = multipletests(list(raw.values()), method='bonferroni')[1]
+    corrected = diff.p_value(correction='bonferroni')
+    assert list(corrected.keys()) == list(raw.keys())
+    assert np.allclose(list(corrected.values()), expected)
+
+
+def test_f1_score_plot_correction():
+    """Test Perf.plot(correction=...) runs through the f1_score wrapper"""
+    from CompStats.metrics import f1_score
+
+    X, y = load_iris(return_X_y=True)
+    _ = train_test_split(X, y, test_size=0.3, random_state=0)
+    X_train, X_val, y_train, y_val = _
+    ens = RandomForestClassifier(random_state=0).fit(X_train, y_train)
+    nb = GaussianNB().fit(X_train, y_train)
+    perf = f1_score(y_val, forest=ens.predict(X_val),
+                    nb=nb.predict(X_val), average='macro',
+                    num_samples=50)
+    f_grid = perf.plot(correction='bonferroni')
+    assert f_grid is not None
+
+
 def test_macro_f1_score():
     """Test f1_score"""
     from CompStats.metrics import macro_f1
@@ -51,7 +89,7 @@ def test_macro_f1_score():
     perf = macro_f1(y_val, forest=hy, num_samples=50)
     assert isinstance(perf.statistic, float)
     _ = metrics.f1_score(y_val, hy, average='macro')
-    assert _ == perf.statistic  
+    assert _ == perf.statistic
 
 
 def test_accuracy_score():
@@ -110,8 +148,8 @@ def test_average_precision_score():
     ens = RandomForestClassifier().fit(X_train, y_train)
     hy = ens.predict_proba(X_val)
     perf = average_precision_score(y_val,
-                                forest=hy,
-                                num_samples=50)
+                                   forest=hy,
+                                   num_samples=50)
     _ = metrics.average_precision_score(y_val, hy)
     assert _ == perf.statistic
 
@@ -195,8 +233,8 @@ def test_recall_score():
     ens = RandomForestClassifier().fit(X_train, y_train)
     hy = ens.predict(X_val)
     perf = recall_score(y_val,
-                           forest=hy,
-                           num_samples=50, average='macro')
+                        forest=hy,
+                        num_samples=50, average='macro')
     _ = metrics.recall_score(y_val, hy, average='macro')
     assert _ == perf.statistic
 
@@ -264,8 +302,8 @@ def test_d2_log_loss_score():
     ens = RandomForestClassifier().fit(X_train, y_train)
     hy = ens.predict_proba(X_val)
     perf = d2_log_loss_score(y_val,
-                         forest=hy,
-                         num_samples=50)
+                             forest=hy,
+                             num_samples=50)
     _ = metrics.d2_log_loss_score(y_val, hy)
     assert _ == perf.statistic
 
@@ -328,8 +366,8 @@ def test_mean_squared_error():
     ens = RandomForestRegressor().fit(X_train, y_train)
     hy = ens.predict(X_val)
     perf = mean_squared_error(y_val,
-                               forest=hy,
-                               num_samples=50)
+                              forest=hy,
+                              num_samples=50)
     _ = metrics.mean_squared_error(y_val, hy)
     assert _ == perf.statistic
 
@@ -360,8 +398,8 @@ def test_mean_squared_log_error():
     ens = RandomForestRegressor().fit(X_train, y_train)
     hy = ens.predict(X_val)
     perf = mean_squared_log_error(y_val,
-                                   forest=hy,
-                                   num_samples=50)
+                                  forest=hy,
+                                  num_samples=50)
     _ = metrics.mean_squared_log_error(y_val, hy)
     assert _ == perf.statistic
 
@@ -392,8 +430,8 @@ def test_median_absolute_error():
     ens = RandomForestRegressor().fit(X_train, y_train)
     hy = ens.predict(X_val)
     perf = median_absolute_error(y_val,
-                                       forest=hy,
-                                       num_samples=50)
+                                 forest=hy,
+                                 num_samples=50)
     _ = metrics.median_absolute_error(y_val, hy)
     assert _ == perf.statistic
 
@@ -441,10 +479,10 @@ def test_mean_gamma_deviance():
     ens = RandomForestRegressor().fit(X_train, y_train)
     hy = ens.predict(X_val)
     perf = mean_gamma_deviance(y_val,
-                                 forest=hy,
-                                 num_samples=50)
+                               forest=hy,
+                               num_samples=50)
     _ = metrics.mean_gamma_deviance(y_val, hy)
-    assert _ == perf.statistic      
+    assert _ == perf.statistic
 
 
 def test_mean_absolute_percentage_error():
@@ -498,7 +536,7 @@ def test_pearsonr():
 
 def test_measure_factories_tag_bib():
     """Every wrapper's .measure() factory returns a callable tagged with the
-    same direction (BiB) implied by its wrapper's score_func/error_func"""
+    same direction (BiB) the wrapper itself passes as func"""
     from CompStats import metrics as compstats_metrics
 
     score_type = ['accuracy_score', 'balanced_accuracy_score',
@@ -535,15 +573,15 @@ def test_measure_compose_multi_metric_perf():
     ens = RandomForestClassifier(random_state=0).fit(X_train, y_train)
     nb = GaussianNB().fit(X_train, y_train)
     perf = Perf(y_val, ens.predict(X_val), nb=nb.predict(X_val),
-               score_func=[f1_score.measure(average='macro'),
-                           recall_score.measure(average='macro')],
-               num_samples=20)
+                func=[f1_score.measure(average='macro'),
+                      recall_score.measure(average='macro')],
+                num_samples=20)
     assert perf.measure_names == ['f1_score', 'recall_score']
     assert perf.statistic['alg-1'].shape == (2,)
 
     # error-type measure composed together with a score-type one
     perf2 = Perf(y_val, ens.predict(X_val), nb=nb.predict(X_val),
-                score_func=f1_score.measure(average='macro'),
-                error_func=mean_absolute_error.measure(),
-                num_samples=20)
+                 func=[f1_score.measure(average='macro'),
+                       mean_absolute_error.measure()],
+                 num_samples=20)
     assert list(perf2.statistic_samples.BiB) == [True, False]

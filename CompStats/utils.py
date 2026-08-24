@@ -19,7 +19,7 @@ except ImportError:
     USE_TQDM = False
 
 
-def progress_bar(arg, use_tqdm: bool=True, **kwargs):
+def progress_bar(arg, use_tqdm: bool = True, **kwargs):
     """Wrap `arg` in a :py:class:`tqdm.tqdm` progress bar.
 
     Returns `arg` unchanged when tqdm is not installed or :py:attr:`use_tqdm` is
@@ -37,7 +37,7 @@ def progress_bar(arg, use_tqdm: bool=True, **kwargs):
     return tqdm(arg, **kwargs)
 
 
-def metrics_docs(hy_name='y_pred', attr_name='score_func'):
+def metrics_docs(hy_name='y_pred', bib: bool = True):
     """Decorator that injects the shared :py:class:`~CompStats.interface.Perf`
     docstring into a :py:mod:`CompStats.metrics` wrapper (e.g.
     :py:func:`~CompStats.metrics.f1_score`).
@@ -46,15 +46,18 @@ def metrics_docs(hy_name='y_pred', attr_name='score_func'):
         docstring (e.g. ``y_pred`` or ``y_score``, matching the wrapped
         :py:mod:`sklearn.metrics` function's own parameter name).
     :type hy_name: str
-    :param attr_name: Which :py:class:`~CompStats.interface.Perf` argument the
-        wrapped function's measure is passed as, ``score_func`` or ``error_func``.
-    :type attr_name: str
+    :param bib: Whether the wrapped function's measure is score-type (bigger
+        is better) or error-type (smaller is better); used only to describe
+        the measure's direction in the generated docstring, matching the
+        ``.BiB`` tag set on the wrapper's ``.measure`` factory.
+    :type bib: bool
     """
 
     def perf_docs(func):
         """Decorator to Perf to write :py:class:`~sklearn.metrics` documentation"""
 
-        func.__doc__ = f""":py:class:`~CompStats.interface.Perf` with :py:func:`~sklearn.metrics.{func.__name__}` as :py:attr:`{attr_name}.` The parameters not described can be found in :py:func:`~sklearn.metrics.{func.__name__}`.
+        direction = 'score-type (bigger is better)' if bib else 'error-type (smaller is better)'
+        func.__doc__ = f""":py:class:`~CompStats.interface.Perf` with :py:func:`~sklearn.metrics.{func.__name__}` as a {direction} :py:attr:`func.` The parameters not described can be found in :py:func:`~sklearn.metrics.{func.__name__}`.
 
     :param y_true: True measurement or could be a pandas.DataFrame where column label 'y' corresponds to the true measurement.
     :type y_true: numpy.ndarray or pandas.DataFrame
@@ -69,7 +72,7 @@ def metrics_docs(hy_name='y_pred', attr_name='score_func'):
     :param use_tqdm: Whether to use tqdm.tqdm to visualize the progress, default=True
     :type use_tqdm: bool
 
-    :py:func:`~CompStats.metrics.{func.__name__}.measure` builds the tagged callable used internally as :py:attr:`{attr_name}`; call it directly (e.g. ``{func.__name__}.measure(...)``) to combine this metric with others into a single, multi-measure :py:class:`~CompStats.interface.Perf` -- see :py:class:`~CompStats.interface.Perf`'s class docstring for a worked example.
+    :py:func:`~CompStats.metrics.{func.__name__}.measure` builds the tagged callable used internally as :py:attr:`func`; call it directly (e.g. ``{func.__name__}.measure(...)``) to combine this metric with others into a single, multi-measure :py:class:`~CompStats.interface.Perf` -- see :py:class:`~CompStats.interface.Perf`'s class docstring for a worked example.
 
     """ + func.__doc__
 
@@ -81,10 +84,10 @@ def metrics_docs(hy_name='y_pred', attr_name='score_func'):
     return perf_docs
 
 
-def dataframe(instance, value_name:str='Score',
-              var_name:str='Performance',
-              alg_legend:str='Algorithm',
-              perf_names:list=None):
+def dataframe(instance, value_name: str = 'Score',
+              var_name: str = 'Performance',
+              alg_legend: str = 'Algorithm',
+              perf_names: list = None):
     """Melt a :py:class:`~CompStats.interface.Perf` or
     :py:class:`~CompStats.interface.Difference` instance's bootstrap samples into
     a long-format :py:class:`pandas.DataFrame`, ready for seaborn's ``catplot``
@@ -111,7 +114,7 @@ def dataframe(instance, value_name:str='Score',
     if not isinstance(statistic, dict):
         iter = instance.statistic_samples.keys()
     else:
-        iter = statistic    
+        iter = statistic
     if isinstance(instance.best, str):
         calls = instance.statistic_samples.calls
         df = pd.DataFrame({k: calls[k]
@@ -126,4 +129,4 @@ def dataframe(instance, value_name:str='Score',
                                                     var_name=var_name)
         _df[alg_legend] = key
         df = pd.concat((df, _df))
-    return df    
+    return df

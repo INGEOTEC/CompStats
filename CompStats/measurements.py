@@ -20,12 +20,12 @@ def CI(samples: np.ndarray, alpha=0.05):
     """Compute the Confidence Interval of a statistic using bootstrap.
     :param samples: Bootstrap samples
     :type samples: np.ndarray
-    :param alpha: :math:`[\\frac{\\alpha}{2}, 1 - \\frac{\\alpha}{2}]`. 
+    :param alpha: :math:`[\\frac{\\alpha}{2}, 1 - \\frac{\\alpha}{2}]`.
     :type alpha: float
 
     >>> from CompStats import StatisticSamples, CI
     >>> from sklearn.metrics import accuracy_score
-    >>> import numpy as np    
+    >>> import numpy as np
     >>> labels = np.r_[[0, 0, 0, 0, 0, 1, 1, 1, 1, 1]]
     >>> pred   = np.r_[[0, 0, 1, 0, 0, 1, 1, 1, 0, 1]]
     >>> bootstrap = StatisticSamples(statistic=accuracy_score)
@@ -42,10 +42,10 @@ def CI(samples: np.ndarray, alpha=0.05):
 
 def SE(samples: np.ndarray):
     """Compute the Standard Error of a statistic using bootstrap.
-    
+
     >>> from CompStats import StatisticSamples, SE
     >>> from sklearn.metrics import accuracy_score
-    >>> import numpy as np    
+    >>> import numpy as np
     >>> labels = np.r_[[0, 0, 0, 0, 0, 1, 1, 1, 1, 1]]
     >>> pred   = np.r_[[0, 0, 1, 0, 0, 1, 1, 1, 0, 1]]
     >>> bootstrap = StatisticSamples(statistic=accuracy_score)
@@ -56,7 +56,7 @@ def SE(samples: np.ndarray):
         return {k: SE(v) for k, v in samples.calls.items()}
     return np.std(samples, axis=0)
 
-    
+
 def difference_p_value(samples: np.ndarray, BiB: bool = True):
     """Compute the difference p-value"""
     if isinstance(samples, StatisticSamples):

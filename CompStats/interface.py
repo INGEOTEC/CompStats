@@ -14,6 +14,7 @@
 from dataclasses import dataclass
 from sklearn.metrics import balanced_accuracy_score
 from sklearn.base import clone
+from statsmodels.stats.multitest import multipletests
 import pandas as pd
 import numpy as np
 from CompStats.bootstrap import StatisticSamples
@@ -28,10 +29,10 @@ class Perf(object):
 
     :param y_true: True measurement or could be a pandas.DataFrame where column label 'y' corresponds to the true measurement.
     :type y_true: numpy.ndarray or pandas.DataFrame
-    :param score_func: Function (or list of functions) to measure the performance, it is assumed that the best algorithm has the highest value. :py:attr:`score_func` and :py:attr:`error_func` can be given simultaneously to combine score-type and error-type measures into a single, multi-measure :py:class:`Perf.`
-    :type score_func: Function, or list of functions, where the first argument is :math:`y` and the second is :math:`\\hat{y}.`
-    :param error_func: Function (or list of functions) to measure the performance where the best algorithm has the lowest value.
-    :type error_func: Function, or list of functions, where the first argument is :math:`y` and the second is :math:`\\hat{y}.`
+    :param func: Function (or list of functions) to measure the performance. Whether the best algorithm has the highest or the lowest value is given by :py:attr:`BiB` -- either the constructor's default, or, when a callable already carries its own :py:attr:`BiB` attribute (e.g. built by a :py:mod:`CompStats.metrics` wrapper's ``.measure`` factory), that tag takes precedence. A list of functions combines them into a single, multi-measure :py:class:`Perf.`
+    :type func: Function, or list of functions, where the first argument is :math:`y` and the second is :math:`\\hat{y}.`
+    :param BiB: Bigger is Better; the default direction used for any measure in :py:attr:`func` that doesn't already carry its own :py:attr:`BiB` attribute. A single bool applies to every measure; a list applies element-wise, one entry per measure in :py:attr:`func`.
+    :type BiB: bool or list of bool
     :param measure_names: Display name for each measure, only relevant when more than one measure is given; defaults to each function's ``__name__``.
     :type measure_names: list
     :param y_pred: Predictions, the algorithms will be identified with alg-k where k=1 is the first argument included in :py:attr:`args.`
@@ -58,15 +59,16 @@ class Perf(object):
     >>> X_train, X_val, y_train, y_val = _
     >>> m = LinearSVC().fit(X_train, y_train)
     >>> hy = m.predict(X_val)
+    >>> perf = Perf(y_val, hy, name='LinearSVC')
     >>> ens = RandomForestClassifier().fit(X_train, y_train)
-    >>> perf = Perf(y_val, hy, forest=ens.predict(X_val))
+    >>> perf(ens.predict(X_val), name='forest')
     >>> perf
     <Perf>
     Statistic with its standard error (se)
     statistic (se)
-    0.9792 (0.0221) <= alg-1
+    0.9792 (0.0221) <= LinearSVC
     0.9744 (0.0246) <= forest
-    
+
     If an algorithm's prediction is missing, this can be included by calling the instance, as can be seen in the following instruction. Note that the algorithm's name can also be given with the keyword :py:attr:`name.`
 
     >>> lr = LogisticRegression().fit(X_train, y_train)
@@ -77,11 +79,12 @@ class Perf(object):
     1.0000 (0.0000) <= Log. Reg.
     0.9792 (0.0221) <= alg-1
     0.9744 (0.0246) <= forest
-    
+
     The performance function used to compare the algorithms can be changed, and the same bootstrap samples would be used if the instance were cloned. Consequently, the values are computed using the same samples, as can be seen in the following example.
 
     >>> perf_error = clone(perf)
-    >>> perf_error.error_func = lambda y, hy: (y != hy).mean()
+    >>> perf_error.func = lambda y, hy: (y != hy).mean()
+    >>> perf_error.BiB = False
     >>> perf_error
     <Perf>
     Statistic with its standard error (se)
@@ -90,38 +93,62 @@ class Perf(object):
     0.0222 (0.0237) <= alg-1
     0.0222 (0.0215) <= forest
 
+    When several algorithms are compared, :py:meth:`difference`'s p-values can be
+    adjusted for multiple comparisons by passing a
+    :py:func:`statsmodels.stats.multitest.multipletests` method name (e.g.
+    ``'bonferroni'``, ``'holm'``, ``'fdr_bh'``) as :py:attr:`correction` --
+    both to :py:meth:`Difference.p_value` directly and, so that plots reflect
+    the same adjusted significance, to :py:meth:`plot`/:py:meth:`dataframe`.
+
+    >>> diff = perf.difference()
+    >>> diff.p_value()
+    {'alg-1': np.float64(0.3), 'forest': np.float64(0.2)}
+    >>> diff.p_value(correction='bonferroni')
+    {'alg-1': np.float64(0.6), 'forest': np.float64(0.4)}
+    >>> perf.plot(correction='bonferroni')
+
     Two or more measures can be combined into a single :py:class:`Perf` instance
     (e.g. macro-F1 together with macro-recall) by passing a list of functions
-    to :py:attr:`score_func`/:py:attr:`error_func` -- see :py:mod:`CompStats.metrics`'s
+    to :py:attr:`func` -- see :py:mod:`CompStats.metrics`'s
     ``.measure`` factories (e.g. :py:func:`~CompStats.metrics.f1_score.measure`). Every
     measure is evaluated on the same bootstrap resamples, so comparisons across
     algorithms remain paired for each measure.
 
     >>> from CompStats.metrics import f1_score, recall_score
     >>> perf = Perf(y_val, hy, forest=ens.predict(X_val),
-    ...             score_func=[f1_score.measure(average='macro'),
-    ...                         recall_score.measure(average='macro')])
+    ...             func=[f1_score.measure(average='macro'),
+    ...                   recall_score.measure(average='macro')])
+
+    With multiple measures, :py:attr:`correction` is applied independently
+    per measure (i.e. per column), so one metric's correction never mixes
+    with another's.
+
+    >>> diff = perf.difference()
+    >>> diff.p_value()
+    {'alg-1': array([1. , 0.3]), 'forest': array([0.2, 1. ])}
+    >>> diff.p_value(correction='bonferroni')
+    {'alg-1': array([1. , 0.6]), 'forest': array([0.4, 1. ])}
     """
+
     def __init__(self, y_true, *y_pred,
-                 name:str=None,
-                 score_func=balanced_accuracy_score,
-                 error_func=None,
-                 measure_names:list=None,
-                 num_samples: int=500,
-                 n_jobs: int=-1,
+                 name: str = None,
+                 func=balanced_accuracy_score,
+                 BiB: bool = True,
+                 measure_names: list = None,
+                 num_samples: int = 500,
+                 n_jobs: int = -1,
                  use_tqdm=True,
                  **kwargs):
-        assert (len(self._as_list(score_func))
-                + len(self._as_list(error_func))) >= 1
-        self._score_func = score_func
-        self._error_func = error_func
+        assert len(self._as_list(func)) >= 1
+        self._func = func
+        self._BiB = BiB
         self.measure_names = measure_names
         algs = {}
         if name is not None:
             if isinstance(name, str):
                 name = [name]
         else:
-            name = [f'alg-{k+1}' for k, _ in enumerate(y_pred)]
+            name = [f'alg-{k + 1}' for k, _ in enumerate(y_pred)]
         for key, v in zip(name, y_pred):
             algs[key] = np.asanyarray(v)
         algs.update(**kwargs)
@@ -135,7 +162,7 @@ class Perf(object):
 
     @staticmethod
     def _as_list(value):
-        """Normalize a score_func/error_func argument into a list of callables"""
+        """Normalize a func argument into a list of callables"""
         if value is None:
             return []
         if isinstance(value, (list, tuple)):
@@ -148,22 +175,29 @@ class Perf(object):
 
         Each callable's own :py:attr:`BiB` attribute (set by, e.g., a
         :py:meth:`metrics.py <CompStats.metrics>` wrapper's ``.measure`` factory)
-        takes precedence over the default direction implied by which
-        argument (:py:attr:`score_func` or :py:attr:`error_func`) it came from.
+        takes precedence over :py:attr:`BiB`, the constructor's default direction.
         """
-        def tagged(funcs, default_bib):
-            return [(f, bool(getattr(f, 'BiB', default_bib)))
-                    for f in self._as_list(funcs)]
-        return tagged(self.score_func, True) + tagged(self.error_func, False)
+        funcs = self._as_list(self.func)
+        default = self.BiB
+        if isinstance(default, (list, tuple, np.ndarray)):
+            defaults = list(default)
+        else:
+            defaults = [default] * len(funcs)
+        return [(f, bool(getattr(f, 'BiB', d)))
+                for f, d in zip(funcs, defaults)]
+
+    @property
+    def _bib(self):
+        """Scalar or per-measure array combining every measure's tagged BiB"""
+        measures = self._measures
+        if len(measures) == 1:
+            return measures[0][1]
+        return np.array([b for _, b in measures])
 
     def _init(self):
         """Compute the bootstrap statistic"""
 
-        measures = self._measures
-        if len(measures) == 1:
-            bib = measures[0][1]
-        else:
-            bib = np.array([b for _, b in measures])
+        bib = self._bib
         if hasattr(self, '_statistic_samples'):
             _ = self.statistic_samples
             _.BiB = bib
@@ -179,8 +213,8 @@ class Perf(object):
         """Parameters"""
 
         return dict(y_true=self.y_true,
-                    score_func=self.score_func,
-                    error_func=self.error_func,
+                    func=self.func,
+                    BiB=self.BiB,
                     measure_names=self._measure_names,
                     num_samples=self.num_samples,
                     n_jobs=self.n_jobs)
@@ -196,23 +230,17 @@ class Perf(object):
 
     def __repr__(self):
         """Prediction statistics with standard error in parenthesis"""
-        if self.error_func is None:
-            arg = 'score_func'
-        elif self.score_func is None:
-            arg = 'error_func'
-        else:
-            arg = 'score_func/error_func'
         func_name = self.statistic_func.__name__
         statistic = self.statistic
         if isinstance(statistic, dict):
-            return f"<{self.__class__.__name__}({arg}={func_name})>\n{self}"
+            return f"<{self.__class__.__name__}(func={func_name})>\n{self}"
         elif isinstance(statistic, float):
-            return f"<{self.__class__.__name__}({arg}={func_name}, statistic={statistic:0.4f}, se={self.se:0.4f})>"
+            return f"<{self.__class__.__name__}(func={func_name}, statistic={statistic:0.4f}, se={self.se:0.4f})>"
         desc = [f'{k:0.4f}' for k in statistic]
         desc = ', '.join(desc)
         desc_se = [f'{k:0.4f}' for k in self.se]
         desc_se = ', '.join(desc_se)
-        return f"<{self.__class__.__name__}({arg}={func_name}, statistic=[{desc}], se=[{desc_se}])>"
+        return f"<{self.__class__.__name__}(func={func_name}, statistic=[{desc}], se=[{desc_se}])>"
 
     def __str__(self):
         """Prediction statistics with standard error in parenthesis"""
@@ -249,7 +277,7 @@ class Perf(object):
             del calls[name]
         return self
 
-    def difference(self, wrt: str=None):
+    def difference(self, wrt: str = None):
         """Compute the difference w.r.t any algorithm by default is the best
 
         >>> from sklearn.svm import LinearSVC
@@ -268,7 +296,7 @@ class Perf(object):
         >>> perf.difference()
         <Difference>
         difference p-values w.r.t alg-1
-        forest 0.06        
+        forest 0.06
         """
         if wrt is None:
             wrt = self.best
@@ -350,11 +378,12 @@ class Perf(object):
         >>> ens = RandomForestClassifier().fit(X_train, y_train)
         >>> perf = Perf(y_val, hy, forest=ens.predict(X_val))
         >>> perf.statistic
-        {'alg-1': 1.0, 'forest': 0.9500891265597148}     
+        {'alg-1': 1.0, 'forest': 0.9500891265597148}
         """
         if hasattr(self, '_statistic') and self._statistic is not None:
             return self._statistic
-        BiB = True if self.score_func is not None else False
+        bib = self._bib
+        BiB = bool(np.all(bib)) if isinstance(bib, np.ndarray) else bib
         data = sorted([(k, self.statistic_func(self.y_true, v))
                        for k, v in self.predictions.items()],
                       key=lambda x: self.sorting_func(x[1]),
@@ -373,7 +402,7 @@ class Perf(object):
     @property
     def se(self):
         """Standard Error
-    
+
         >>> from sklearn.svm import LinearSVC
         >>> from sklearn.ensemble import RandomForestClassifier
         >>> from sklearn.datasets import load_iris
@@ -398,7 +427,7 @@ class Perf(object):
     @property
     def ci(self):
         """Confidence interval
-    
+
         >>> from sklearn.svm import LinearSVC
         >>> from sklearn.datasets import load_iris
         >>> from sklearn.model_selection import train_test_split
@@ -419,20 +448,21 @@ class Perf(object):
             return list(output.values())[0]
         return output
 
-    def plot(self, value_name:str=None,
-             var_name:str='Performance',
-             alg_legend:str='Algorithm',
-             perf_names:list=None,
-             CI:float=0.05,
-             kind:str='point', linestyle:str='none',
-             col_wrap:int=3, capsize:float=0.2,
-             comparison:bool=True,
-             right:bool=True,
-             comp_legend:str='Comparison',
-             winner_legend:str='Best',
-             tie_legend:str='Equivalent',
-             loser_legend:str='Different',
-             palette:object=None,
+    def plot(self, value_name: str = None,
+             var_name: str = 'Performance',
+             alg_legend: str = 'Algorithm',
+             perf_names: list = None,
+             CI: float = 0.05,
+             kind: str = 'point', linestyle: str = 'none',
+             col_wrap: int = 3, capsize: float = 0.2,
+             comparison: bool = True,
+             right: bool = True,
+             correction: str = None,
+             comp_legend: str = 'Comparison',
+             winner_legend: str = 'Best',
+             tie_legend: str = 'Equivalent',
+             loser_legend: str = 'Different',
+             palette: object = None,
              **kwargs):
         """plot with seaborn
 
@@ -447,16 +477,17 @@ class Perf(object):
         >>> m = LinearSVC().fit(X_train, y_train)
         >>> hy = m.predict(X_val)
         >>> ens = RandomForestClassifier().fit(X_train, y_train)
-        >>> perf = Perf(y_val, hy, score_func=None,
-                        error_func=lambda y, hy: (y != hy).mean(),
+        >>> perf = Perf(y_val, hy,
+                        func=lambda y, hy: (y != hy).mean(), BiB=False,
                         forest=ens.predict(X_val))
         >>> perf.plot()
         """
         import seaborn as sns
         if value_name is None:
-            if len(self._measures) > 1:
+            measures = self._measures
+            if len(measures) > 1:
                 value_name = 'Value'
-            elif self.score_func is not None:
+            elif measures[0][1]:
                 value_name = 'Score'
             else:
                 value_name = 'Error'
@@ -469,7 +500,8 @@ class Perf(object):
         df = self.dataframe(value_name=value_name, var_name=var_name,
                             alg_legend=alg_legend, perf_names=perf_names,
                             comparison=comparison, alpha=CI, right=right,
-                            comp_legend=comp_legend, 
+                            correction=correction,
+                            comp_legend=comp_legend,
                             winner_legend=winner_legend,
                             tie_legend=tie_legend,
                             loser_legend=loser_legend)
@@ -481,9 +513,9 @@ class Perf(object):
             kwargs.update(dict(hue=comp_legend))
             if palette is None:
                 pal = sns.color_palette("Paired")
-                palette = {winner_legend:pal[1],
-                        tie_legend:pal[3],
-                        loser_legend: pal[5]}
+                palette = {winner_legend: pal[1],
+                           tie_legend: pal[3],
+                           loser_legend: pal[5]}
         f_grid = sns.catplot(df, x=value_name, errorbar=ci,
                              y=alg_legend, col=var_name,
                              kind=kind, linestyle=linestyle,
@@ -492,19 +524,20 @@ class Perf(object):
                              **kwargs)
         return f_grid
 
-    def dataframe(self, comparison:bool=False,
-                  right:bool=True,
-                  alpha:float=0.05,
-                  value_name:str='Score',
-                  var_name:str='Performance',
-                  alg_legend:str='Algorithm',
-                  comp_legend:str='Comparison',
-                  winner_legend:str='Best',
-                  tie_legend:str='Equivalent',
-                  loser_legend:str='Different',
-                  perf_names:str=None):
+    def dataframe(self, comparison: bool = False,
+                  right: bool = True,
+                  alpha: float = 0.05,
+                  correction: str = None,
+                  value_name: str = 'Score',
+                  var_name: str = 'Performance',
+                  alg_legend: str = 'Algorithm',
+                  comp_legend: str = 'Comparison',
+                  winner_legend: str = 'Best',
+                  tie_legend: str = 'Equivalent',
+                  loser_legend: str = 'Different',
+                  perf_names: str = None):
         """Dataframe
-        
+
         >>> from sklearn.svm import LinearSVC
         >>> from sklearn.ensemble import RandomForestClassifier
         >>> from sklearn.datasets import load_iris
@@ -535,13 +568,13 @@ class Perf(object):
         diff = self.difference()
         best = self.best
         if isinstance(best, str):
-            for name, p in diff.p_value(right=right).items():
+            for name, p in diff.p_value(right=right, correction=correction).items():
                 if p >= alpha:
                     continue
                 df.loc[df[alg_legend] == name, comp_legend] = loser_legend
             df.loc[df[alg_legend] == best, comp_legend] = winner_legend
         else:
-            p_values = diff.p_value(right=right)
+            p_values = diff.p_value(right=right, correction=correction)
             systems = list(p_values.keys())
             p_values = np.array([p_values[k] for k in systems])
             for name, p_value, winner in zip(perf_names,
@@ -571,11 +604,10 @@ class Perf(object):
     def statistic_func(self):
         """Statistic function
 
-        A single :py:attr:`score_func`/:py:attr:`error_func` callable is
-        returned as-is; when more than one measure is given (either as a
-        list, or by mixing :py:attr:`score_func` and :py:attr:`error_func`),
-        a composite callable is returned that concatenates every measure's
-        output into a single vector, evaluated on the same bootstrap samples.
+        A single :py:attr:`func` callable is returned as-is; when more than
+        one measure is given (a list passed to :py:attr:`func`), a composite
+        callable is returned that concatenates every measure's output into a
+        single vector, evaluated on the same bootstrap samples.
         """
         measures = self._measures
         if len(measures) == 1:
@@ -662,38 +694,33 @@ class Perf(object):
         self._y_true = np.asanyarray(value)
 
     @property
-    def score_func(self):
-        """Score function"""
-        return self._score_func
+    def func(self):
+        """Function (or list of functions) used to measure the performance"""
+        return self._func
 
-    @score_func.setter
-    def score_func(self, value):
-        self._score_func = value
-        if value is not None:
-            self.error_func = None
-            if hasattr(self, '_statistic_samples'):
-                self._statistic_samples.statistic = value
-                self._statistic_samples.BiB = True
+    @func.setter
+    def func(self, value):
+        self._func = value
+        if hasattr(self, '_statistic_samples'):
+            self._statistic_samples.statistic = self.statistic_func
+            self._statistic_samples.BiB = self._bib
 
     @property
-    def error_func(self):
-        """Error function"""
-        return self._error_func
+    def BiB(self):
+        """Bigger is Better; default direction for measures without their own :py:attr:`BiB` tag"""
+        return self._BiB
 
-    @error_func.setter
-    def error_func(self, value):
-        self._error_func = value
-        if value is not None:
-            self.score_func = None
-            if hasattr(self, '_statistic_samples'):
-                self._statistic_samples.statistic = value
-                self._statistic_samples.BiB = False
+    @BiB.setter
+    def BiB(self, value):
+        self._BiB = value
+        if hasattr(self, '_statistic_samples'):
+            self._statistic_samples.BiB = self._bib
 
 
 @dataclass
 class Difference:
     """Difference
-    
+
     >>> from sklearn.svm import LinearSVC
     >>> from sklearn.ensemble import RandomForestClassifier
     >>> from sklearn.datasets import load_iris
@@ -714,18 +741,18 @@ class Difference:
     0.0780 <= forest
     """
 
-    statistic_samples:StatisticSamples=None
-    statistic:dict=None
-    best:str=None
+    statistic_samples: StatisticSamples = None
+    statistic: dict = None
+    best: str = None
 
     @property
     def sorting_func(self):
         """Rank systems when multiple performances are used"""
         return self._sorting_func
-    
+
     @sorting_func.setter
     def sorting_func(self, value):
-        self._sorting_func = value    
+        self._sorting_func = value
 
     def __repr__(self):
         """p-value"""
@@ -758,19 +785,22 @@ class Difference:
             return self.statistic[self.best]
         keys = np.unique(self.best)
         statistic = np.array([self.statistic[k]
-                                for k in keys])
+                              for k in keys])
         m = {v: k for k, v in enumerate(keys)}
         best = np.array([m[x] for x in self.best])
         return statistic[best, np.arange(best.shape[0])]
 
-    def p_value(self, right:bool=True):
+    def p_value(self, right: bool = True, correction: str = None):
         """Compute p_value of the differences
 
         :param right: Estimate the p-value using :math:`\\text{sample} \\geq 2\\delta`
-        :type right: bool  
-        
+        :type right: bool
+        :param correction: Method to adjust for multiple comparisons, passed to :py:func:`statsmodels.stats.multitest.multipletests` (e.g. ``'bonferroni'``, ``'holm'``, ``'fdr_bh'``); ``None`` (default) leaves the p-values uncorrected. With a single measure, the family of comparisons is every other system against :py:attr:`best`; with multiple measures, each measure is corrected as its own family (i.e. per column) so metrics do not contaminate each other's correction.
+        :type correction: str
+
         >>> from sklearn.svm import LinearSVC
         >>> from sklearn.ensemble import RandomForestClassifier
+        >>> from sklearn.naive_bayes import GaussianNB
         >>> from sklearn.datasets import load_iris
         >>> from sklearn.model_selection import train_test_split
         >>> from sklearn.base import clone
@@ -780,11 +810,16 @@ class Difference:
         >>> X_train, X_val, y_train, y_val = _
         >>> m = LinearSVC().fit(X_train, y_train)
         >>> hy = m.predict(X_val)
+        >>> perf = Perf(y_val, hy, name='LinearSVC')
         >>> ens = RandomForestClassifier().fit(X_train, y_train)
-        >>> perf = Perf(y_val, hy, forest=ens.predict(X_val))
+        >>> perf(ens.predict(X_val), name='forest')
+        >>> nb = GaussianNB().fit(X_train, y_train)
+        >>> perf(nb.predict(X_val), name='bayes')
         >>> diff = perf.difference()
         >>> diff.p_value()
-        {'forest': np.float64(0.3)}
+        {'forest': np.float64(0.3), 'bayes': np.float64(0.2)}
+        >>> diff.p_value(correction='bonferroni')
+        {'forest': np.float64(0.6), 'bayes': np.float64(0.4)}
         """
         values = []
         BiB = self.statistic_samples.BiB
@@ -803,15 +838,26 @@ class Difference:
                 else:
                     values.append((k, (v <= 0).mean(axis=0)))
         values.sort(key=lambda x: self.sorting_func(x[1]))
-        return dict(values)
+        if correction is None:
+            return dict(values)
+        keys = [k for k, _ in values]
+        raw = np.array([v for _, v in values])
+        if raw.ndim == 1:
+            corrected = multipletests(raw, method=correction)[1]
+        else:
+            corrected = np.column_stack(
+                [multipletests(raw[:, col], method=correction)[1]
+                 for col in range(raw.shape[1])])
+        return dict(zip(keys, corrected))
 
-    def dataframe(self, value_name:str='Score',
-                  var_name:str='Best',
-                  alg_legend:str='Algorithm',
-                  sig_legend:str='Significant',
-                  perf_names:str=None,
-                  right:bool=True,
-                  alpha:float=0.05):
+    def dataframe(self, value_name: str = 'Score',
+                  var_name: str = 'Best',
+                  alg_legend: str = 'Algorithm',
+                  sig_legend: str = 'Significant',
+                  perf_names: str = None,
+                  right: bool = True,
+                  alpha: float = 0.05,
+                  correction: str = None):
         """Dataframe"""
         if perf_names is None and isinstance(self.best, np.ndarray):
             perf_names = [f'{alg}({k})'
@@ -822,12 +868,12 @@ class Difference:
                        perf_names=perf_names)
         df[sig_legend] = False
         if isinstance(self.best, str):
-            for name, p in self.p_value(right=right).items():
+            for name, p in self.p_value(right=right, correction=correction).items():
                 if p >= alpha:
                     continue
                 df.loc[df[alg_legend] == name, sig_legend] = True
         else:
-            p_values = self.p_value(right=right)
+            p_values = self.p_value(right=right, correction=correction)
             systems = list(p_values.keys())
             p_values = np.array([p_values[k] for k in systems])
             for name, p_value in zip(perf_names, p_values.T):
@@ -839,16 +885,17 @@ class Difference:
                     df.loc[_, sig_legend] = True
         return df
 
-    def plot(self, value_name:str='Difference',
-             var_name:str='Best',
-             alg_legend:str='Algorithm',
-             sig_legend:str='Significant',
-             perf_names:list=None,
-             alpha:float=0.05,
-             right:bool=True,
-             kind:str='point', linestyle:str='none',
-             col_wrap:int=3, capsize:float=0.2,
-             set_refline:bool=True,
+    def plot(self, value_name: str = 'Difference',
+             var_name: str = 'Best',
+             alg_legend: str = 'Algorithm',
+             sig_legend: str = 'Significant',
+             perf_names: list = None,
+             alpha: float = 0.05,
+             right: bool = True,
+             correction: str = None,
+             kind: str = 'point', linestyle: str = 'none',
+             col_wrap: int = 3, capsize: float = 0.2,
+             set_refline: bool = True,
              **kwargs):
         """Plot
 
@@ -874,12 +921,13 @@ class Difference:
                             alg_legend=alg_legend,
                             sig_legend=sig_legend,
                             perf_names=perf_names,
-                            alpha=alpha, right=right)
-        title = var_name         
+                            alpha=alpha, right=right,
+                            correction=correction)
+        title = var_name
         if var_name not in df.columns:
             var_name = None
             col_wrap = None
-        ci = lambda x: measurements.CI(x, alpha=2*alpha)
+        ci = lambda x: measurements.CI(x, alpha=2 * alpha)
         f_grid = sns.catplot(df, x=value_name, errorbar=ci,
                              y=alg_legend, col=var_name,
                              kind=kind, linestyle=linestyle,

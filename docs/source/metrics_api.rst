@@ -49,7 +49,7 @@ Once the predictions are available, it is time to measure the algorithm's perfor
 
 >>> score = f1_score(y_val, hy, average='macro')
 >>> score
-<Perf(score_func=f1_score, statistic=0.9521, se=0.0097)>
+<Perf(func=f1_score, statistic=0.9521, se=0.0097)>
 
 The previous code shows the macro-f1 score and, in parenthesis, its standard error. The actual performance value is stored in the attributes :py:func:`~CompStats.interface.Perf.statistic` and :py:func:`~CompStats.interface.Perf.se`
 
@@ -60,7 +60,7 @@ Continuing with the example, let us assume that one wants to test another classi
 
 >>> ens = RandomForestClassifier().fit(X_train, y_train)
 >>> score(ens.predict(X_val), name='Random Forest')
-<Perf(score_func=f1_score)>
+<Perf(func=f1_score)>
 Statistic with its standard error (se)
 statistic (se)
 0.9720 (0.0076) <= Random Forest
@@ -72,7 +72,7 @@ Let us incorporate another predictions, now with Naive Bayes classifier, and His
 >>> score(nb.predict(X_val), name='Naive Bayes')
 >>> hist = HistGradientBoostingClassifier().fit(X_train, y_train)
 >>> score(hist.predict(X_val), name='Hist. Grad. Boost. Tree')
-<Perf(score_func=f1_score)>
+<Perf(func=f1_score)>
 Statistic with its standard error (se)
 statistic (se)
 0.9759 (0.0068) <= Hist. Grad. Boost. Tree
@@ -105,18 +105,18 @@ The class :py:class:`~CompStats.Difference` has the :py:class:`~CompStats.Differ
 Multi-measure Perf
 --------------------
 
-A single competition can also be evaluated with more than one measure at once (e.g., macro-F1 together with macro-recall) by passing a list of functions to :py:attr:`score_func`/:py:attr:`error_func`. :py:attr:`score_func` and :py:attr:`error_func` can even be combined to mix score-type and error-type measures, with different Bigger-is-Better (BiB) directions, into a single :py:class:`~CompStats.interface.Perf` instance. Every measure is evaluated on the same bootstrap resamples, so comparisons across algorithms remain paired for each measure.
+A single competition can also be evaluated with more than one measure at once (e.g., macro-F1 together with macro-recall) by passing a list of functions to :py:attr:`func`. Score-type and error-type measures, with different Bigger-is-Better (BiB) directions, can even be combined this way into a single :py:class:`~CompStats.interface.Perf` instance, as long as each callable is tagged with its own :py:attr:`BiB` (or a matching list is passed to :py:attr:`BiB`). Every measure is evaluated on the same bootstrap resamples, so comparisons across algorithms remain paired for each measure.
 
-Every :py:mod:`CompStats.metrics` wrapper exposes a ``.measure`` factory (e.g. :py:func:`~CompStats.metrics.f1_score.measure`) that builds the tagged callable used internally as :py:attr:`score_func`/:py:attr:`error_func`; call it directly to compose several measures, as shown next.
+Every :py:mod:`CompStats.metrics` wrapper exposes a ``.measure`` factory (e.g. :py:func:`~CompStats.metrics.f1_score.measure`) that builds the tagged callable used internally as :py:attr:`func`; call it directly to compose several measures, as shown next.
 
 >>> from CompStats.interface import Perf
 >>> from CompStats.metrics import f1_score, recall_score
 >>> mperf = Perf(y_val, hy, forest=ens.predict(X_val),
-...              score_func=[f1_score.measure(average='macro'),
-...                          recall_score.measure(average='macro')],
+...              func=[f1_score.measure(average='macro'),
+...                    recall_score.measure(average='macro')],
 ...              measure_names=['macro-F1', 'macro-Recall'])
 >>> mperf
-<Perf(score_func=macro-F1+macro-Recall)>
+<Perf(func=macro-F1+macro-Recall)>
 Statistic with its standard error (se)
 statistic (se)
 0.9783 (0.0061), 0.9786 (0.0060) <= forest
@@ -145,8 +145,8 @@ The convenience wrappers :py:func:`~CompStats.metrics.macro_f1`, :py:func:`~Comp
 
 >>> from CompStats.metrics import macro_f1, macro_recall
 >>> Perf(y_val, hy, forest=ens.predict(X_val),
-...      score_func=[macro_f1.measure(), macro_recall.measure()])
-<Perf(score_func=f1_score+recall_score)>
+...      func=[macro_f1.measure(), macro_recall.measure()])
+<Perf(func=f1_score+recall_score)>
 Statistic with its standard error (se)
 statistic (se)
 0.9783 (0.0061), 0.9786 (0.0060) <= forest

@@ -49,7 +49,7 @@ Once the predictions are available, it is time to measure the algorithm's perfor
 
 >>> score = f1_score(y_val, hy, average='macro')
 >>> score
-<Perf(score_func=f1_score, statistic=0.9435, se=0.0099)>
+<Perf(func=f1_score, statistic=0.9435, se=0.0099)>
 
 The previous code shows the macro-f1 score and its standard error. The actual performance value is stored in the attributes `statistic` function, and `se`
 
@@ -60,7 +60,7 @@ Continuing with the example, let us assume that one wants to test another classi
 
 >>> ens = RandomForestClassifier().fit(X_train, y_train)
 >>> score(ens.predict(X_val), name='Random Forest')
-<Perf(score_func=f1_score)>
+<Perf(func=f1_score)>
 Statistic with its standard error (se)
 statistic (se)
 0.9720 (0.0076) <= Random Forest
@@ -72,7 +72,7 @@ Let us incorporate another predictions, now with Naive Bayes classifier, and His
 >>> score(nb.predict(X_val), name='Naive Bayes')
 >>> hist = HistGradientBoostingClassifier().fit(X_train, y_train)
 >>> score(hist.predict(X_val), name='Hist. Grad. Boost. Tree')
-<Perf(score_func=f1_score)>
+<Perf(func=f1_score)>
 Statistic with its standard error (se)
 statistic (se)
 0.9759 (0.0068) <= Hist. Grad. Boost. Tree

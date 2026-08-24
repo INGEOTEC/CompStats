@@ -26,12 +26,12 @@ from statsmodels.stats.multitest import multipletests
 
 
 def performance(data: pd.DataFrame,
-                gold: str='y',
-                score: Callable[[np.ndarray, np.ndarray], float]=accuracy_score,
-                num_samples: int=500,
-                n_jobs: int=-1,
-                BiB: bool=True,
-                statistic_samples: StatisticSamples=None) -> StatisticSamples:
+                gold: str = 'y',
+                score: Callable[[np.ndarray, np.ndarray], float] = accuracy_score,
+                num_samples: int = 500,
+                n_jobs: int = -1,
+                BiB: bool = True,
+                statistic_samples: StatisticSamples = None) -> StatisticSamples:
     """Calculate bootstrap samples of a performance score for a given dataset.
 
     Parameters:
@@ -63,11 +63,11 @@ def performance(data: pd.DataFrame,
         if column == gold:
             continue
         statistic_samples(y, data[column], name=column)
-        
+
     return statistic_samples
 
 
-def difference(statistic_samples: StatisticSamples): #, best_index: int=-1):
+def difference(statistic_samples: StatisticSamples):  # , best_index: int=-1):
     """
     Computes the difference in performance between the best performing algorithm and others using bootstrap samples.
 
@@ -144,24 +144,24 @@ def all_differences(statistic_samples: StatisticSamples):
     # Calculamos el rendimiento medio y ordenamos los algoritmos basándonos en este
     perf = [(k, v, np.mean(v)) for k, v in items]
     perf.sort(key=lambda x: x[2], reverse=statistic_samples.BiB)  # Orden por rendimiento medio
-    
+
     diffs = {}  # Diccionario para guardar las diferencias
-    
+
     # Iteramos sobre todos los pares posibles de algoritmos ordenados
     for i in range(len(perf)):
         for j in range(i + 1, len(perf)):
             name_i, perf_i, _ = perf[i]
             name_j, perf_j, _ = perf[j]
-            
+
             # Diferencia de i a j
             diff_key_i_to_j = f"{name_i} - {name_j}"
             diffs[diff_key_i_to_j] = np.array(perf_i) - np.array(perf_j)
     output = clone(statistic_samples)
     output.calls = diffs
     return output
-    
 
-def plot_performance(statistic_samples: StatisticSamples, CI: float=0.05,
+
+def plot_performance(statistic_samples: StatisticSamples, CI: float = 0.05,
                      var_name='Algorithm', value_name='Score',
                      capsize=0.2, linestyle='none', kind='point',
                      sharex=False, **kwargs):
@@ -193,7 +193,7 @@ def plot_performance(statistic_samples: StatisticSamples, CI: float=0.05,
     2. Converts the data into a long format DataFrame.
     3. Computes the confidence intervals if CI is provided as a float.
     4. Plots the performance data with confidence intervals using seaborn's catplot.
-    
+
     >>> from CompStats import performance, plot_performance
     >>> from CompStats.tests.test_performance import DATA
     >>> from sklearn.metrics import f1_score
@@ -208,7 +208,7 @@ def plot_performance(statistic_samples: StatisticSamples, CI: float=0.05,
         lista_ordenada = sorted(statistic_samples.calls.items(), key=lambda x: np.mean(x[1]), reverse=statistic_samples.BiB)
         diccionario_ordenado = {nombre: muestras for nombre, muestras in lista_ordenada}
         df2 = pd.DataFrame(diccionario_ordenado).melt(var_name=var_name,
-                                                         value_name=value_name)
+                                                      value_name=value_name)
     else:
         df2 = statistic_samples
     if isinstance(CI, float):
@@ -219,7 +219,7 @@ def plot_performance(statistic_samples: StatisticSamples, CI: float=0.05,
     return f_grid
 
 
-def plot_difference(statistic_samples: StatisticSamples, CI: float=0.05,
+def plot_difference(statistic_samples: StatisticSamples, CI: float = 0.05,
                     var_name='Comparison', value_name='Difference',
                     set_refline=True, set_title=True,
                     hue='Significant', palette=None,
@@ -246,7 +246,7 @@ def plot_difference(statistic_samples: StatisticSamples, CI: float=0.05,
     2. Adds a 'Significant' column to indicate whether the confidence interval includes zero.
     3. Plots the differences with confidence intervals using the plot_performance function.
     4. Optionally sets a reference line at x=0 and a title indicating the best performing algorithm.
-    
+
     >>> from CompStats import performance, difference, plot_difference
     >>> from CompStats.tests.test_performance import DATA
     >>> from sklearn.metrics import f1_score
@@ -261,7 +261,7 @@ def plot_difference(statistic_samples: StatisticSamples, CI: float=0.05,
         lista_ordenada = sorted(statistic_samples.calls.items(), key=lambda x: np.mean(x[1]), reverse=statistic_samples.BiB)
         diccionario_ordenado = {nombre: muestras for nombre, muestras in lista_ordenada}
         df2 = pd.DataFrame(diccionario_ordenado).melt(var_name=var_name,
-                                                         value_name=value_name)
+                                                      value_name=value_name)
     if hue is not None:
         df2[hue] = True
     at_least_one = False
@@ -273,7 +273,7 @@ def plot_difference(statistic_samples: StatisticSamples, CI: float=0.05,
     if at_least_one and palette is None:
         palette = ['r', 'b']
     else:
-        palette = ['b']        
+        palette = ['b']
     f_grid = plot_performance(df2, CI=CI, var_name=var_name,
                               value_name=value_name, hue=hue,
                               palette=palette,
@@ -285,7 +285,8 @@ def plot_difference(statistic_samples: StatisticSamples, CI: float=0.05,
         f_grid.facet_axis(0, 0).set_title(f'Best: {best}')
     return f_grid
 
-def performance_multiple_metrics(data: pd.DataFrame, gold: str, 
+
+def performance_multiple_metrics(data: pd.DataFrame, gold: str,
                                  scores: List[dict],
                                  num_samples: int = 500, n_jobs: int = -1):
     """
@@ -334,7 +335,7 @@ def performance_multiple_metrics(data: pd.DataFrame, gold: str,
     >>> results = performance_multiple_metrics(df, gold='target', scores=scores, num_samples=1000)
     """
     results, performance_dict, perfo, dist, ccv, cppi, compg, cBiB = {}, {}, {}, {}, {}, {}, {}, {}
-    n,m = data.shape
+    n, m = data.shape
     # definimos las funciones para las metricas
     cv = lambda x: np.std(x, ddof=1) / np.mean(x) * 100
     dista = lambda x: np.abs(np.max(x) - np.median(x))
@@ -355,26 +356,27 @@ def performance_multiple_metrics(data: pd.DataFrame, gold: str,
             if column == gold:
                 continue
             results[metric_name][column] = statistic_samples(data[gold], data[column])
-            perfo[metric_name][column]  = statistic(data[gold], data[column])
+            perfo[metric_name][column] = statistic(data[gold], data[column])
         ccv[metric_name] = cv(np.array(list(perfo[metric_name].values())))
         dist[metric_name] = dista(np.array(list(perfo[metric_name].values())))
         cppi[metric_name] = ppi(np.array(list(perfo[metric_name].values())))
         cBiB[metric_name] = score_BiB
-    compg = {'n' : n,
-             'm' : m-1,
-             'cv' : ccv,
-             'dist' : dist,
-             'PPI' : cppi}
-    performance_dict = {'samples' : results,
-                        'performance' : perfo,
-                        'compg' : compg,
+    compg = {'n': n,
+             'm': m - 1,
+             'cv': ccv,
+             'dist': dist,
+             'PPI': cppi}
+    performance_dict = {'samples': results,
+                        'performance': perfo,
+                        'compg': compg,
                         'BiB': cBiB}
-    return performance_dict 
+    return performance_dict
 
-def plot_performance2(results: dict, CI: float=0.05,
-                     var_name='Algorithm', value_name='Score',
-                     capsize=0.2, linestyle='none', kind='point',
-                     sharex=False, **kwargs):
+
+def plot_performance2(results: dict, CI: float = 0.05,
+                      var_name='Algorithm', value_name='Score',
+                      capsize=0.2, linestyle='none', kind='point',
+                      sharex=False, **kwargs):
     """
     Plot the performance with confidence intervals. This function is used by plot_difference_multiple
 
@@ -397,12 +399,12 @@ def plot_performance2(results: dict, CI: float=0.05,
     2. Converts the sorted data into a long format DataFrame.
     3. Computes the confidence intervals if CI is provided as a float.
     4. Uses seaborn's catplot to create and display the performance plot with confidence intervals.
-    """    
+    """
     if isinstance(results, dict):
         lista_ordenada = sorted(results.items(), key=lambda x: np.mean(x[1]), reverse=True)
         diccionario_ordenado = {nombre: muestras for nombre, muestras in lista_ordenada}
         df2 = pd.DataFrame(diccionario_ordenado).melt(var_name=var_name,
-                                                         value_name=value_name)
+                                                      value_name=value_name)
 
     if isinstance(CI, float):
         ci = lambda x: measurements.CI(x, alpha=CI)
@@ -412,9 +414,7 @@ def plot_performance2(results: dict, CI: float=0.05,
     return f_grid
 
 
-
-
-def difference_multiple(results_dict, CI: float=0.05,):
+def difference_multiple(results_dict, CI: float = 0.05,):
     """
     Calculate performance differences for multiple metrics, excluding the comparison of the best
     with itself. Additionally, identify the best performing algorithm for each metric.
@@ -462,33 +462,32 @@ def difference_multiple(results_dict, CI: float=0.05,):
         else:
             best_alg = min(scores_arrays, key=lambda alg: np.mean(scores_arrays[alg]))
         best_scores = scores_arrays[best_alg]
-        
+
         # Calculate differences to the best performing algorithm, excluding the best from comparing with itself
         differences = {alg: best_scores - scores for alg, scores in scores_arrays.items() if alg != best_alg}
 
         # Calculate Confidence interval for differences to the bet performing algorithm.
         CI_differences = {alg: measurements.CI(np.array(scores), alpha=CI) for alg, scores in differences.items()}
-        p_value_differences = {alg: measurements.difference_p_value(np.array(scores), BiB= results_dict['BiB'][metric]) for alg, scores in differences.items()}
-
+        p_value_differences = {alg: measurements.difference_p_value(np.array(scores), BiB=results_dict['BiB'][metric]) for alg, scores in differences.items()}
 
         # Store the differences and the best algorithm under the current metric
-        winner[metric] = {'best': best_alg, 'diff': differences,'CI':CI_differences,
-                                    'p_value': p_value_differences,
-                                    'none': sum(valor > alpha for valor in p_value_differences.values()),
-                                    'bonferroni': sum(multipletests(list(p_value_differences.values()), method='bonferroni')[1] > alpha), 
-                                    'holm': sum(multipletests(list(p_value_differences.values()), method='holm')[1] > alpha),
-                                    'HB': sum(multipletests(list(p_value_differences.values()), method='fdr_bh')[1] > alpha) }
+        winner[metric] = {'best': best_alg, 'diff': differences, 'CI': CI_differences,
+                          'p_value': p_value_differences,
+                          'none': sum(valor > alpha for valor in p_value_differences.values()),
+                          'bonferroni': sum(multipletests(list(p_value_differences.values()), method='bonferroni')[1] > alpha),
+                          'holm': sum(multipletests(list(p_value_differences.values()), method='holm')[1] > alpha),
+                          'HB': sum(multipletests(list(p_value_differences.values()), method='fdr_bh')[1] > alpha)}
     differences_dict['winner'] = winner
     return differences_dict
 
 
 def plot_difference2(diff_dictionary: dict, CI: float = 0.05,
-                    var_name='Comparison', value_name='Difference',
-                    set_refline=True, set_title=True,
-                    hue='Significant', palette=None, BiB: bool=True,
-                    **kwargs):
+                     var_name='Comparison', value_name='Difference',
+                     set_refline=True, set_title=True,
+                     hue='Significant', palette=None, BiB: bool = True,
+                     **kwargs):
     """Plot the difference in performance with its confidence intervals
-    
+
     >>> from CompStats import performance, difference, plot_difference
     >>> from CompStats.tests.test_performance import DATA
     >>> from sklearn.metrics import f1_score
@@ -503,7 +502,7 @@ def plot_difference2(diff_dictionary: dict, CI: float = 0.05,
         lista_ordenada = sorted(diff_dictionary['diff'].items(), key=lambda x: np.mean(x[1]), reverse=BiB)
         diccionario_ordenado = {nombre: muestras for nombre, muestras in lista_ordenada}
         df2 = pd.DataFrame(diccionario_ordenado).melt(var_name=var_name,
-                                                         value_name=value_name)
+                                                      value_name=value_name)
     if hue is not None:
         df2[hue] = True
     at_least_one = False
@@ -518,7 +517,7 @@ def plot_difference2(diff_dictionary: dict, CI: float = 0.05,
         palette = ['b']
     f_grid = plot_performance(df2, CI=CI, var_name=var_name,
                               value_name=value_name, hue=hue,
-                              palette=palette, 
+                              palette=palette,
                               **kwargs)
     if set_refline:
         f_grid.refline(x=0)
@@ -527,13 +526,14 @@ def plot_difference2(diff_dictionary: dict, CI: float = 0.05,
         f_grid.facet_axis(0, 0).set_title(f'Best: {best}')
     return f_grid
 
-def plot_performance_multiple(results_dict: dict, CI: float = 0.05, capsize: float = 0.2, 
+
+def plot_performance_multiple(results_dict: dict, CI: float = 0.05, capsize: float = 0.2,
                               linestyle: str = 'none', kind: str = 'point', **kwargs):
     """
     Create multiple performance plots, one for each performance metric in the results dictionary.
 
     Parameters:
-    results_dict (dict): A dictionary where keys are metric names and values are dictionaries 
+    results_dict (dict): A dictionary where keys are metric names and values are dictionaries
                          with algorithm names as keys and lists of performance scores as values.
     CI (float, optional): Confidence interval level for error bars. Defaults to 0.05.
     capsize (float, optional): Cap size for error bars. Defaults to 0.2.
@@ -554,17 +554,17 @@ def plot_performance_multiple(results_dict: dict, CI: float = 0.05, capsize: flo
     >>> from CompStats import plot_performance_multiple
     >>> results = {
     >>>     'accuracy': {
-    >>>         'alg1': [0.1, 0.2, 0.15], 
+    >>>         'alg1': [0.1, 0.2, 0.15],
     >>>         'alg2': [0.05, 0.1, 0.07]
     >>>     },
     >>>     'f1_score': {
-    >>>         'alg1': [0.3, 0.25, 0.2], 
+    >>>         'alg1': [0.3, 0.25, 0.2],
     >>>         'alg2': [0.2, 0.15, 0.1]
     >>>     }
     >>> }
     >>> plot_performance_multiple(results, CI=0.05)
     """
-    
+
     for metric_name, metric_results in results_dict['samples'].items():
         BiB = results_dict['BiB'].get(metric_name, True)
         # Convert results to long format DataFrame
@@ -572,19 +572,19 @@ def plot_performance_multiple(results_dict: dict, CI: float = 0.05, capsize: flo
             lista_ordenada = sorted(metric_results.items(), key=lambda x: np.mean(x[1]), reverse=BiB)
             diccionario_ordenado = {nombre: muestras for nombre, muestras in lista_ordenada}
             df2 = pd.DataFrame(diccionario_ordenado).melt(var_name='Algorithm',
-                                                             value_name='Score')
-         
+                                                          value_name='Score')
+
         # Define the confidence interval function
         if isinstance(CI, float):
             ci = lambda x: measurements.CI(x, alpha=CI)
-        
+
         # Create the plot
-        g = sns.catplot(df2, x='Score', y='Algorithm', capsize=capsize, linestyle=linestyle, 
+        g = sns.catplot(df2, x='Score', y='Algorithm', capsize=capsize, linestyle=linestyle,
                         kind=kind, errorbar=ci, **kwargs)
-        
+
         # Set the title of the plot
         g.figure.suptitle(metric_name)
-        
+
         # Display the plot
         plt.show()
 
@@ -592,30 +592,28 @@ def plot_performance_multiple(results_dict: dict, CI: float = 0.05, capsize: flo
 def plot_difference_multiple(results_dict, CI=0.05, capsize=0.2, linestyle='none', kind='point', **kwargs):
     """
     Create multiple performance plots, one for each performance metric in the results dictionary.
-    
+
     :param results_dict: A dictionary where keys are metric names and values are dictionaries with algorithm names as keys and lists of scores as values.
     :param CI: Confidence interval level for error bars.
     :param capsize: Cap size for error bars.
     :param linestyle: Line style for the plot.
     :param kind: Type of the plot, e.g., 'point', 'bar'.
     :param kwargs: Additional keyword arguments for seaborn.catplot.
-    """   
+    """
     for metric_name, metric_results in results_dict['winner'].items():
         BiB = results_dict['BiB'].get(metric_name, True)
-        # Usa catplot para crear y mostrar el gráfico        
+        # Usa catplot para crear y mostrar el gráfico
         g = plot_difference2(metric_results, BiB=BiB, CI=CI)
-        g.figure.suptitle(metric_name)  
+        g.figure.suptitle(metric_name)
         # plt.show()
- 
 
 
-
-### este por el momento no.
+# este por el momento no.
 def plot_scatter_matrix(perf):
     """
     Generate a scatter plot matrix comparing the performance of the same algorithm
     across different metrics contained in the 'perf' dictionary.
-    
+
     :param perf: A dictionary where keys are metric names and values are dictionaries with algorithm names as keys
                  and lists of performance scores as values.
     """
@@ -624,21 +622,20 @@ def plot_scatter_matrix(perf):
         {"Metric": metric, "Algorithm": alg, "Score": score, "Indice": i}
         for metric, alg_scores in perf['samples'].items()
         for alg, scores in alg_scores.items()
-        for i, (score)  in enumerate(scores)
-        ])
-    df_wide = df_long.pivot(index=['Algorithm','Indice'],columns='Metric',values='Score')
+        for i, (score) in enumerate(scores)
+    ])
+    df_wide = df_long.pivot(index=['Algorithm', 'Indice'], columns='Metric', values='Score')
     df_wide = df_wide.reset_index(level=[0])
-    sns.pairplot(df_wide, diag_kind='kde',hue="Algorithm", corner=True)
+    sns.pairplot(df_wide, diag_kind='kde', hue="Algorithm", corner=True)
     plt.suptitle('Scatter Plot Matrix of Algorithms Performance Across Different Metrics', y=1.02)
     plt.show()
 
 
-
-def all_differences_multiple(results_dict, alpha: float=0.05):
+def all_differences_multiple(results_dict, alpha: float = 0.05):
     """
     Calculate performance differences for unique pairs of algorithms for multiple metrics.
     Also, calculates the confidence interval for the differences.
-    
+
     :param results_dict: A dictionary where keys are metric names and values are dictionaries.
                          Each sub-dictionary has algorithm names as keys and lists of performance scores as values.
     :return: A dictionary where each metric name maps to another dictionary.
@@ -649,33 +646,31 @@ def all_differences_multiple(results_dict, alpha: float=0.05):
     all = {}
     for metric, results in results_dict['samples'].items():
         # Convert scores to arrays for vectorized operations
-        scores_arrays = {alg: np.array(scores) for alg, scores in results.items()}      
+        scores_arrays = {alg: np.array(scores) for alg, scores in results.items()}
         scores_arrays = dict(sorted(scores_arrays.items(), key=lambda item: np.mean(item[1]), reverse=results_dict['BiB'][metric]))
 
-        
         differences = {}
         p_value_differences = {}
-        
+
         algorithms = list(scores_arrays.keys())
         # Calculate differences for unique pairs of algorithms
         for i, alg_a in enumerate(algorithms):
-            for alg_b in algorithms[i+1:]:  # Start from the next algorithm to avoid duplicate comparisons
+            for alg_b in algorithms[i + 1:]:  # Start from the next algorithm to avoid duplicate comparisons
                 # Calculate the difference between alg_a and alg_b
                 diff = scores_arrays[alg_a] - scores_arrays[alg_b]
                 differences[f"{alg_a} vs {alg_b}"] = diff
-                
+
                 # Placeholder for confidence interval calculation
                 # Replace the string with an actual call to your CI calculation function
                 p_value_differences[f"{alg_a} vs {alg_b}"] = measurements.difference_p_value(diff, BiB=results_dict['BiB'][metric])
                 # For example:
                 # CI_differences[f"{alg_a} vs {alg_b}"] = measurements.CI(diff, alpha=CI)
-                
+
         # Store the differences under the current metric
-        all[metric] = {'diff': differences, 'p_value': p_value_differences, 
-                                    'none': sum(valor > alpha for valor in p_value_differences.values()),
-                                    'bonferroni': sum(multipletests(list(p_value_differences.values()), method='bonferroni')[1] > alpha), 
-                                    'holm': sum(multipletests(list(p_value_differences.values()), method='holm')[1] > alpha),
-                                    'HB': sum(multipletests(list(p_value_differences.values()), method='fdr_bh')[1] > alpha)  }
+        all[metric] = {'diff': differences, 'p_value': p_value_differences,
+                       'none': sum(valor > alpha for valor in p_value_differences.values()),
+                       'bonferroni': sum(multipletests(list(p_value_differences.values()), method='bonferroni')[1] > alpha),
+                       'holm': sum(multipletests(list(p_value_differences.values()), method='holm')[1] > alpha),
+                       'HB': sum(multipletests(list(p_value_differences.values()), method='fdr_bh')[1] > alpha)}
     differences_dict['all'] = all
     return differences_dict
-

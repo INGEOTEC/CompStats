@@ -90,11 +90,14 @@ statistic → derived comparisons/plots.
   without recomputing bootstrap samples).
 
 - **`interface.py` — `Perf` and `Difference`**: the main user-facing entry point (re-exported at
-  package root). `Perf(y_true, *y_pred, name=..., score_func=..., error_func=..., **kwargs)` wraps
-  one or more systems' predictions against shared ground truth. Exactly one of `score_func` /
-  `error_func` must be set (asserted via XOR) — `score_func` implies bigger-is-better (`BiB=True`),
-  `error_func` implies smaller-is-better (`BiB=False`). Internally holds a `StatisticSamples` keyed
-  by system name; new predictions can be added later via `perf(y_pred, name=...)` (`__call__`).
+  package root). `Perf(y_true, *y_pred, name=..., func=..., BiB=True, **kwargs)` wraps one or more
+  systems' predictions against shared ground truth. `func` is a single callable or a list of
+  callables (a multi-measure `Perf`); direction (bigger-is-better vs smaller-is-better) comes from
+  each callable's own `.BiB` attribute when it has one (e.g. set by a `metrics.py` wrapper's
+  `.measure` factory), falling back to the constructor's `BiB` default otherwise — `BiB` is the
+  single source of truth for direction, there is no separate `score_func`/`error_func` split.
+  Internally holds a `StatisticSamples` keyed by system name; new predictions can be added later via
+  `perf(y_pred, name=...)` (`__call__`).
   `Perf.difference(wrt=...)` produces a `Difference` instance (comparing every system against the
   best, or an explicit reference) whose `p_value()` is computed directly from the bootstrap
   distribution of paired differences — no parametric test assumptions. `Perf.plot()` /
@@ -104,10 +107,11 @@ statistic → derived comparisons/plots.
 - **`metrics.py`**: thin wrappers around `sklearn.metrics` functions (`accuracy_score`,
   `balanced_accuracy_score`, `top_k_accuracy_score`, `f1_score`, etc.). Each wrapper closes over the
   sklearn metric (plus its metric-specific kwargs like `average`, `normalize`) and constructs a
-  `Perf` with that as `score_func`/`error_func`. The `@metrics_docs` decorator (from `utils.py`)
+  `Perf` with that as `func`, tagging the inner closure's `.BiB` (`True` for a score, `False` for an
+  error) so direction travels with the callable. The `@metrics_docs` decorator (from `utils.py`)
   injects the shared `Perf`-style docstring (params like `num_samples`, `n_jobs`, `use_tqdm`) into
   each wrapper automatically — when adding a new metric wrapper, follow this same
-  `@metrics_docs(hy_name=..., attr_name=...)` + inner-function-closure pattern rather than duplicating
+  `@metrics_docs(hy_name=..., bib=...)` + inner-function-closure pattern rather than duplicating
   docstrings.
 
 - **`measurements.py`**: stateless helpers — `CI` (percentile bootstrap confidence interval), `SE`
@@ -131,9 +135,10 @@ statistic → derived comparisons/plots.
 - Bootstrap resampling must stay *paired* across systems being compared — `StatisticSamples.samples`
   caches resample indices by population size `N` precisely so every system's bootstrap replicate `i`
   uses the same resampled indices. Don't introduce per-system independent resampling.
-- `BiB` (Bigger is Better) must be threaded consistently: `score_func` → `BiB=True`, `error_func` →
-  `BiB=False`. Sorting, `best`, and p-value sign logic throughout `interface.py`/`performance.py`
-  depend on this flag rather than re-deriving it from the function.
+- `BiB` (Bigger is Better) must be threaded consistently: a callable's own `.BiB` attribute wins when
+  present, otherwise `Perf`'s `BiB` constructor argument is the default. Sorting, `best`, and p-value
+  sign logic throughout `interface.py`/`performance.py` read this flag (`self._bib`/
+  `statistic_samples.BiB`) rather than re-deriving it from which argument a function was passed as.
 - `sklearn.base.clone` / `__sklearn_clone__` is used to duplicate `Perf`/`StatisticSamples` instances
   while reusing already-computed bootstrap samples (e.g. `Perf.difference()`, `performance.difference`).
   Don't replace these with plain re-instantiation, as that silently redraws new bootstrap samples and

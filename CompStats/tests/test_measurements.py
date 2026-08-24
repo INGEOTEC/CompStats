@@ -21,6 +21,7 @@ from CompStats.performance import performance, difference
 
 DATA = os.path.join(os.path.dirname(__file__), 'data.csv')
 
+
 def test_CI():
     """Test confidence interval"""
 

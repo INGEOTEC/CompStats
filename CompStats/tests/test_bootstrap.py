@@ -18,13 +18,13 @@ from CompStats.bootstrap import StatisticSamples
 def problem_algorithms():
     """Problem and three predictions"""
     labels = [0, 0, 0, 0, 0,
-                1, 1, 1, 1, 1]
+              1, 1, 1, 1, 1]
     a = [0, 0, 0, 0, 0,
-            1, 1, 1, 1, 0]
+         1, 1, 1, 1, 0]
     b = [0, 0, 1, 0, 0,
-            1, 1, 1, 1, 0]
+         1, 1, 1, 1, 0]
     c = [0, 0, 0, 1, 0,
-            1, 1, 0, 1, 0]
+         1, 1, 0, 1, 0]
     return (np.array(labels),
             dict(a=np.array(a),
                  b=np.array(b),
@@ -63,7 +63,6 @@ def test_StatisticSamples_melt():
         stats(labels, v, name=k)
     df = stats.melt()
     assert isinstance(df, pd.DataFrame)
-
 
 
 # def test_CI():

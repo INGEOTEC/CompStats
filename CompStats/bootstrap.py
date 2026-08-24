@@ -18,7 +18,7 @@ import numpy as np
 
 
 class StatisticSamples:
-    """Apply the statistic to `num_samples` samples taken with replacement 
+    """Apply the statistic to `num_samples` samples taken with replacement
     from the population (arguments).
 
     :param statistic: Statistic.
@@ -46,10 +46,10 @@ class StatisticSamples:
     """
 
     def __init__(self,
-                 statistic: Callable[[np.ndarray], float]=np.mean,
-                 num_samples: int=500,
-                 n_jobs: int=1,
-                 BiB: bool=True):
+                 statistic: Callable[[np.ndarray], float] = np.mean,
+                 num_samples: int = 500,
+                 n_jobs: int = 1,
+                 BiB: bool = True):
         self.statistic = statistic
         self.num_samples = num_samples
         self.n_jobs = n_jobs
@@ -62,7 +62,7 @@ class StatisticSamples:
     def info(self):
         """Information about the samples"""
         return self._info
-    
+
     @info.setter
     def info(self, value):
         self._info = value
@@ -85,7 +85,7 @@ class StatisticSamples:
     def calls(self):
         """Dictionary containing the output of the calls when a name is given"""
         return self._calls
-    
+
     @calls.setter
     def calls(self, value):
         self._calls = value
@@ -129,7 +129,7 @@ class StatisticSamples:
 
     def samples(self, N):
         """Samples.
-        
+
         :param N: Population size.
         :type N: int
         """
@@ -144,7 +144,7 @@ class StatisticSamples:
                 return inner(N)
         except AttributeError:
             return inner(N)
-        
+
     def keys(self):
         """calls keys"""
         return self.calls.keys()
@@ -153,7 +153,7 @@ class StatisticSamples:
         return self.calls[key]
 
     def __call__(self, *args: np.ndarray, name=None) -> np.ndarray:
-        """Population where the bootstrap process will be performed. 
+        """Population where the bootstrap process will be performed.
 
         :param *args: Population
         :type *args: np.ndarray
@@ -178,16 +178,15 @@ class StatisticSamples:
                                              value_name=value_name)
 
 
-
 # class CI(StatisticSamples):
 #     """Compute the Confidence Interval of a statistic using bootstrap.
-    
-#     :param alpha: :math:`[\\frac{\\alpha}{2}, 1 - \\frac{\\alpha}{2}]`. 
+
+#     :param alpha: :math:`[\\frac{\\alpha}{2}, 1 - \\frac{\\alpha}{2}]`.
 #     :type alpha: float
 
 #     >>> from IngeoML import CI
 #     >>> from sklearn.metrics import accuracy_score
-#     >>> import numpy as np    
+#     >>> import numpy as np
 #     >>> labels = np.r_[[0, 0, 0, 0, 0, 1, 1, 1, 1, 1]]
 #     >>> pred   = np.r_[[0, 0, 1, 0, 0, 1, 1, 1, 0, 1]]
 #     >>> acc = CI(statistic=accuracy_score)
@@ -204,24 +203,24 @@ class StatisticSamples:
 #         """The interval is computed for :math:`[\\frac{\\alpha}{2}, 1 - \\frac{\\alpha}{2}]`.
 #         """
 #         return self._alpha
-    
+
 #     @alpha.setter
 #     def alpha(self, value):
 #         self._alpha = value / 2
 
 #     def __call__(self, *args: np.ndarray) -> np.ndarray:
 #         B =  super().__call__(*args)
-#         alpha  = self.alpha  
-#         return (np.percentile(B, alpha * 100, axis=0), 
+#         alpha  = self.alpha
+#         return (np.percentile(B, alpha * 100, axis=0),
 #                 np.percentile(B, (1 - alpha) * 100, axis=0))
-    
+
 
 # class SE(StatisticSamples):
 #     """Compute the Standard Error of a statistic using bootstrap.
 
 #     >>> from IngeoML import SE
 #     >>> from sklearn.metrics import accuracy_score
-#     >>> import numpy as np    
+#     >>> import numpy as np
 #     >>> labels = np.r_[[0, 0, 0, 0, 0, 1, 1, 1, 1, 1]]
 #     >>> pred   = np.r_[[0, 0, 1, 0, 0, 1, 1, 1, 0, 1]]
 #     >>> se = SE(statistic=accuracy_score)
@@ -235,8 +234,8 @@ class StatisticSamples:
 
 
 # class Difference(CI):
-#     def __init__(self, y: np.ndarray, 
-#                  algorithms: dict={}, 
+#     def __init__(self, y: np.ndarray,
+#                  algorithms: dict={},
 #                  performance: Callable[[np.ndarray, np.ndarray], float]=lambda y, hy: f1_score(y, hy, average='macro'),
 #                  **kwargs) -> None:
 #         super(Difference, self).__init__(populations=algorithms, statistic=performance)
@@ -249,7 +248,7 @@ class StatisticSamples:
 #     @property
 #     def y(self):
 #         return self._y
-    
+
 #     @y.setter
 #     def y(self, value):
 #         self._y = value
@@ -278,7 +277,7 @@ class StatisticSamples:
 #         delta = perf(y, algs[self.best]) - perf(y, algs[key])
 #         self._delta[key] = delta
 #         return delta
-    
+
 #     def samples(self, key):
 #         if key in self.statistic_samples:
 #             return self.statistic_samples[key]
@@ -287,12 +286,12 @@ class StatisticSamples:
 #         output = np.array([self.statistic(y[s], data[s])
 #                            for s in self.bootstrap])
 #         self.statistic_samples[key] = output
-#         return output    
-    
+#         return output
+
 #     @property
 #     def best_performance(self):
 #         return self.samples(self.best)
-        
+
 #     def distribution(self, key):
 #         best = self.best
 #         assert key != best
@@ -322,11 +321,10 @@ class StatisticSamples:
 #         else:
 #             self._pvalue_l[key] = c
 #         return c
-    
+
 #     def sort(self, side='right'):
 #         best = self.best
 #         algs = [(k, self.pvalue(k, side=side))
 #                 for k in self.populations if k != best]
 #         algs.sort(key=lambda x: x[1], reverse=True)
 #         return [k for k, _ in algs]
-                

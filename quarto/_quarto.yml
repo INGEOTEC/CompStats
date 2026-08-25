@@ -24,6 +24,9 @@ website:
       - href: pages/multiple_testing.ipynb
         text: Multiple Testing
     right:
+      - text: "API Docs"
+        href: https://compstats.readthedocs.io/en/latest/
+        aria-label: "API documentation on ReadTheDocs"
       - icon: github
         href: https://github.com/INGEOTEC/CompStats
         aria-label: GitHub

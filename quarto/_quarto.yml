@@ -1,0 +1,41 @@
+project:
+  type: website
+  output-dir: _site
+
+lang: en
+
+execute:
+  enabled: true
+  freeze: auto
+
+website:
+  title: "CompStats"
+  site-url: https://ingeotec.github.io/CompStats/
+  repo-url: https://github.com/INGEOTEC/CompStats
+  navbar:
+    logo: images/ingeotec.png
+    left:
+      - href: index.ipynb
+        text: Home
+      - href: pages/sklearn_users.ipynb
+        text: scikit-learn Users
+      - href: pages/competition_organizers.ipynb
+        text: Competition Organizers
+      - href: pages/multiple_testing.ipynb
+        text: Multiple Testing
+    right:
+      - icon: github
+        href: https://github.com/INGEOTEC/CompStats
+        aria-label: GitHub
+  page-footer:
+    center: >
+      CompStats · [INGEOTEC](https://github.com/INGEOTEC) ·
+      Code under the Apache 2.0 license
+
+format:
+  html:
+    theme: [cosmo, style.scss]
+    toc: true
+    number-sections: true
+    code-fold: true
+    link-external-newwindow: true

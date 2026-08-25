@@ -160,5 +160,11 @@ cython_debug/
 #.idea/
 
 .vscode/settings.json
-quarto/CompStats_files/
-quarto/
+
+# Quarto build artifacts (source files under quarto/ are tracked)
+quarto/_site/
+quarto/.quarto/
+quarto/*_files/
+quarto/*.html
+quarto/pages/*_files/
+quarto/pages/*.html

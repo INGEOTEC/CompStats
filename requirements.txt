@@ -6,3 +6,4 @@ pyyaml
 sphinx
 pytest
 statsmodels
+sphinxcontrib-mermaid

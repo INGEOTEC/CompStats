@@ -150,6 +150,7 @@ class StatisticSamples:
         return self.calls.keys()
 
     def __getitem__(self, key):
+        """Bootstrap samples of a system by name"""
         return self.calls[key]
 
     def __call__(self, *args: np.ndarray, name=None) -> np.ndarray:

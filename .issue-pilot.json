@@ -1,0 +1,6 @@
+{
+  "test_command": ".venv/bin/python -m pytest CompStats",
+  "base_branch": "develop",
+  "model": "sonnet",
+  "effort": "high"
+}

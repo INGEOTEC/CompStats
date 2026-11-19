@@ -1,0 +1,131 @@
+---
+title: "Methodology"
+subtitle: "The statistical basis of CompStats"
+---
+
+This page states the methodology implemented by CompStats, as published in Nava-Muñoz, Graff and
+Escalante (2024). Each section gives a definition, its formula and the CompStats call that
+computes it.
+
+## Setting
+
+A competition provides a gold standard $y$ of size $n$, kept by the organizers, and the predictions
+$\hat{y}_1, \ldots, \hat{y}_m$ of $m$ systems. A performance measure $s(y, \hat{y})$ ranks the
+systems. The quantity of interest is the performance $\theta_j$ of system $j$ on the population
+from which the test set is assumed to be a random sample; the value computed on the test set is an
+estimate of it. The setting imposes three constraints: there is a single dataset of fixed size,
+the number of submissions is small, and only the predictions are available, not the algorithms.
+
+## Bootstrap
+
+Bootstrapping draws conclusions about the sampling distribution of a statistic by resampling the
+data with replacement (Chernick and LaBudde, 2011; Efron and Tibshirani, 1994). In CompStats,
+$B$ samples of $n$ indices are drawn with replacement from $\{1, \ldots, n\}$, and the measure is
+computed on each sample for every system, which gives the bootstrap distribution
+$s_j^{*1}, \ldots, s_j^{*B}$ of system $j$. The article uses $B = 10{,}000$; the package default
+is `num_samples=500`, and `num_samples` is a parameter of every function of `CompStats.metrics`
+and of `Perf`.
+
+## Standard error and confidence interval
+
+The standard error of the measure is the standard deviation of the bootstrap distribution
+(`Perf.se`). The $1-\alpha$ confidence interval is the percentile interval
+
+$$
+\left[ q_{\alpha/2}(s_j^{*}),\; q_{1-\alpha/2}(s_j^{*}) \right],
+$$
+
+where $q_p$ is the $p$-th quantile of the bootstrap distribution and $\alpha = 0.05$ by default
+(`Perf.ci`).
+
+## Comparison through independent samples
+
+If the confidence intervals of two systems do not overlap, their performances differ
+significantly; if they overlap, the comparison is inconclusive, which motivates the paired
+comparison described next. `Perf.plot()` draws the intervals of the systems, ordered by
+performance.
+
+## Comparison through paired samples
+
+Every bootstrap sample contains the gold standard and the prediction of every system for the same
+elements; therefore, the difference in performance can be computed on each sample (the paired
+bootstrap). For a system $A$ and a system $B$, the bootstrap distribution of the difference is
+
+$$
+\delta^{*} = s^{*}(y, \hat{y}_A) - s^{*}(y, \hat{y}_B).
+$$
+
+If the confidence interval of the difference contains zero, the hypothesis that both systems
+perform equally cannot be rejected. `Perf.difference()` returns the differences between the best
+system and each of the others, or with respect to the system named by the argument `wrt`, and
+`Difference.plot()` draws their intervals.
+
+## Statistical significance
+
+Let $\delta(x) = \theta_A(x) - \theta_B(x)$ be the difference observed between systems $A$ and $B$
+on the test set $x$. The null hypothesis $H_0$ states that $A$ is not better than $B$ in the
+population. The p-value is
+
+$$
+p\left(\delta(X) > \delta(x) \mid H_0, x\right),
+$$
+
+where $X$ ranges over test sets of size $n$. Following Berg-Kirkpatrick, Burkett and Klein (2012),
+it is estimated as the fraction of bootstrap samples in which the difference exceeds
+$2\delta(x)$; the bootstrap distribution is centred on $\delta(x)$ rather than on zero because the
+samples are drawn from $x$. `Difference.p_value()` returns these p-values.
+
+## Multiple comparisons
+
+Comparing the best system with each of the other $m-1$ systems tests the hypotheses
+$H_0^j: \theta_1 \le \theta_j$ against $H_1^j: \theta_1 > \theta_j$, for $j = 2, \ldots, m$,
+simultaneously, which inflates the probability of a Type I error. Three corrections are
+considered, all of which adjust the p-values: Bonferroni, which is conservative and multiplies
+each p-value by the number of comparisons; Holm's step-down procedure, which adjusts the p-values
+sequentially (Holm, 1979); and Benjamini-Hochberg, which controls the false discovery rate
+(Benjamini and Hochberg, 1995). In CompStats they are selected with
+`Difference.p_value(correction='bonferroni')`, `'holm'` and `'fdr_bh'`, respectively, or with any
+other method accepted by `statsmodels.stats.multitest.multipletests`. The same `correction`
+argument is accepted by `Perf.plot` and `Difference.plot`. When a `Perf` holds several measures,
+each measure is corrected as its own family.
+
+## Competitiveness of a competition
+
+The article characterizes a competition with four indicators: the number of systems statistically
+tied with the winner; the coefficient of variation of the systems' performance,
+$CV = 100\, s_x / \bar{x}$, where $s_x$ is the sample standard deviation and $\bar{x}$ the mean
+(a smaller value means a more competitive competition); the distance between the winner and the
+system in the middle of the table, $|win - med|$; and the possible percentage improvement,
+$PPI = 100\,(1 - x_{winner})$, for bigger-is-better scores bounded by 1 (a low value means little
+room for improvement). These indicators are computed by the earlier DataFrame-based interface,
+`CompStats.performance.performance_multiple_metrics`, documented in the [developer
+docs](https://ingeotec.github.io/CompStats/dev/performance_api.html).
+
+## Scope and assumptions
+
+The inference assumes that the test set can be treated as a random sample of the population of
+interest; the intervals and the tests must be read in light of how the test set was built. The
+methodology applies to any measure computed from a gold standard and predictions, for
+classification and for regression. Measures where smaller is better, for example the mean absolute
+error, are handled through the `BiB` (bigger is better) flag, which every function of
+`CompStats.metrics` sets for its measure.
+
+## References {.unnumbered}
+
+- Nava-Muñoz, S., Graff, M. and Escalante, H. J. (2024). Analysis of systems' performance in
+  natural language processing competitions. *Pattern Recognition Letters*.
+  [doi:10.1016/j.patrec.2024.03.010](https://doi.org/10.1016/j.patrec.2024.03.010)
+- Nava-Muñoz, S., Graff Guerrero, M. and Escalante, H. J. (2023). Comparison of Classifiers in
+  Challenge Scheme. *Pattern Recognition*, Lecture Notes in Computer Science 13902, 89-98.
+  [doi:10.1007/978-3-031-33783-3_9](https://doi.org/10.1007/978-3-031-33783-3_9)
+- Berg-Kirkpatrick, T., Burkett, D. and Klein, D. (2012). An empirical investigation of
+  statistical significance in NLP. *EMNLP-CoNLL 2012*.
+- Chernick, M. R. and LaBudde, R. A. (2011). *An Introduction to Bootstrap Methods with
+  Applications to R*. Wiley.
+- Efron, B. and Tibshirani, R. J. (1994). *An Introduction to the Bootstrap*. Chapman and
+  Hall/CRC.
+- Holm, S. (1979). A simple sequentially rejective multiple test procedure. *Scandinavian
+  Journal of Statistics*, 6, 65-70.
+- Benjamini, Y. and Hochberg, Y. (1995). Controlling the false discovery rate: a practical and
+  powerful approach to multiple testing. *Journal of the Royal Statistical Society, Series B*,
+  57, 289-300.

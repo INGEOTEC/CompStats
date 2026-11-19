@@ -1,0 +1,100 @@
+---
+title: "CompStats"
+subtitle: "Bootstrap-based statistical comparison of supervised-learning systems evaluated on a shared test set"
+toc: false
+number-sections: false
+---
+
+::: {.home-lead}
+**CompStats**, developed by [INGEOTEC](https://github.com/INGEOTEC), is an open-source Python
+package for the statistical analysis of the results of supervised-learning systems evaluated on a
+shared held-out test set, the setting of collaborative competitions (also called challenges). From
+the gold standard and the predictions of each system, it estimates by bootstrap the standard error
+and the confidence interval of every performance measure, tests whether the difference between the
+best system and each of the others is statistically significant, and corrects those tests for
+multiple comparisons.
+:::
+
+Competitions rank systems by a point estimate computed on a single test set. The differences
+between consecutive systems are often in the hundredths or thousandths; consequently, a higher
+score does not imply that a system would remain better on the population from which the test set
+was sampled. Moreover, the organizers have only the predictions (not the algorithms), a single
+dataset of fixed size and a small number of submissions, which rules out the classical tests that
+require retraining the systems or evaluating them on several datasets.
+
+CompStats implements the methodology of Nava-Muñoz, Graff and Escalante, [*Analysis of systems'
+performance in natural language processing competitions*](https://doi.org/10.1016/j.patrec.2024.03.010)
+(Pattern Recognition Letters, 2024; [preprint](https://arxiv.org/abs/2403.04693)). The methodology
+was validated on eight natural language processing competitions covering classification and
+regression tasks; it is not specific to natural language processing.
+
+::: {.pillars}
+::: {.pillar}
+### Follows the scikit-learn metrics API
+
+A function of `CompStats.metrics` takes `(y_true, y_pred)` like its `sklearn.metrics` namesake and
+returns a `Perf` object instead of a float.
+:::
+::: {.pillar}
+### Uncertainty for every measure
+
+The standard error and the percentile confidence interval are computed from the bootstrap
+distribution of the measure.
+:::
+::: {.pillar}
+### Paired significance testing
+
+Every system is evaluated on the same bootstrap samples, so the differences are paired. The
+p-values come from the bootstrap distribution of the difference, with optional Bonferroni, Holm or
+Benjamini-Hochberg correction.
+:::
+:::
+
+## Quickstart
+
+The package is installed with `pip install CompStats` or with `conda install --channel conda-forge
+CompStats`; see [Install](pages/install.qmd). The following example compares three classifiers on
+the digits problem.
+
+```python
+from sklearn.datasets import load_digits
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import GaussianNB
+from sklearn.svm import LinearSVC
+from CompStats.metrics import f1_score
+
+X, y = load_digits(return_X_y=True)
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.3, random_state=0)
+
+svm = LinearSVC(random_state=0).fit(X_train, y_train)
+score = f1_score(y_val, svm.predict(X_val), average='macro', name='Linear SVM')
+score(RandomForestClassifier(random_state=0).fit(X_train, y_train).predict(X_val),
+      name='Random Forest')
+score(GaussianNB().fit(X_train, y_train).predict(X_val), name='Naive Bayes')
+
+score                 # point estimate and standard error of every system
+score.ci              # 95% percentile bootstrap confidence intervals
+diff = score.difference()            # paired differences against the best system
+diff.p_value(correction='holm')      # p-values adjusted for multiple comparisons
+score.plot()                         # performance with confidence intervals
+```
+
+## Where to go next
+
+[Install](pages/install.qmd) describes the requirements and the installation methods, and
+[Methodology](pages/methodology.qmd) states the statistical basis of the package. The tutorials
+are [scikit-learn Users](pages/sklearn_users.ipynb), [Competition
+Organizers](pages/competition_organizers.ipynb) and [Multiple
+Testing](pages/multiple_testing.ipynb); these three pages are Jupyter notebooks that can be opened
+in Colab from the badge at their top. [Citing](pages/citing.qmd) gives the references to cite, and
+the architecture and the complete API are in the [developer
+docs](https://ingeotec.github.io/CompStats/dev/).
+
+## Colophon {.unnumbered}
+
+As with the rest of the project, this site was built by the CompStats team
+together with Claude, Anthropic's coding assistant, through [Claude
+Code](https://claude.com/claude-code): the assistant helped set up the Quarto
+site and draft this page, with the authors reviewing and validating every
+change before it was committed.

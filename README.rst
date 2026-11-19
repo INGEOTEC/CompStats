@@ -19,85 +19,103 @@ CompStats
 .. image:: https://img.shields.io/conda/pn/conda-forge/compstats.svg
 		:target: https://anaconda.org/conda-forge/compstats
 
-.. image:: https://readthedocs.org/projects/compstats/badge/?version=latest
-		:target: https://compstats.readthedocs.io/en/latest/?badge=latest
+CompStats is an open-source Python package for the statistical analysis of the results of
+supervised-learning systems evaluated on a shared held-out test set, the setting of collaborative
+competitions (also called challenges). From the gold standard and the predictions of each system,
+it estimates by bootstrap the standard error and the confidence interval of every performance
+measure, tests whether the difference between the best system and each of the others is
+statistically significant, and corrects those tests for multiple comparisons. It implements the
+methodology of the article `Analysis of systems' performance in natural language processing
+competitions <https://doi.org/10.1016/j.patrec.2024.03.010>`_ (Pattern Recognition Letters, 2024).
 
-.. image:: https://colab.research.google.com/assets/colab-badge.svg
-		:target: https://colab.research.google.com/github/INGEOTEC/CompStats/blob/docs/docs/CompStats_metrics.ipynb
+Documentation
+====================================
 
-Collaborative competitions have gained popularity in the scientific and technological fields. These competitions involve defining tasks, selecting evaluation scores, and devising result verification methods. In the standard scenario, participants receive a training set and are expected to provide a solution for a held-out dataset kept by organizers. An essential challenge for organizers arises when comparing algorithms' performance, assessing multiple participants, and ranking them. Statistical tools are often used for this purpose; however, traditional statistical methods often fail to capture decisive differences between systems' performance. CompStats implements an evaluation methodology for statistically analyzing competition results and competition. CompStats offers several advantages, including off-the-shell comparisons with correction mechanisms and the inclusion of confidence intervals. 
+- Using the package: https://ingeotec.github.io/CompStats/
+- Extending the package (developer reference): https://ingeotec.github.io/CompStats/dev/
 
-To illustrate the use of `CompStats`, the following snippets show an example. The instructions load the necessary libraries, including the one to obtain the problem (e.g., digits), four different classifiers, and the last line is the score used to measure the performance and compare the algorithm. 
+Installation
+====================================
 
->>> from sklearn.svm import LinearSVC
->>> from sklearn.naive_bayes import GaussianNB
->>> from sklearn.ensemble import RandomForestClassifier
->>> from sklearn.datasets import load_digits
->>> from sklearn.model_selection import train_test_split
->>> from sklearn.base import clone
->>> from CompStats.metrics import f1_score
+The package is installed from PyPI with
 
-The first step is to load the digits problem and split the dataset into training and validation sets. The second step is to estimate the parameters of a linear Support Vector Machine and predict the validation set's classes. The predictions are stored in the variable `hy`.
+.. code:: bash
 
->>> X, y = load_digits(return_X_y=True)
->>> _ = train_test_split(X, y, test_size=0.3)
->>> X_train, X_val, y_train, y_val = _
->>> m = LinearSVC().fit(X_train, y_train)
->>> hy = m.predict(X_val)
+    pip install CompStats
 
-Once the predictions are available, it is time to measure the algorithm's performance, as seen in the following code. It is essential to note that the API used in `sklearn.metrics` is followed; the difference is that the function returns an instance with different methods that can be used to estimate different performance statistics and compare algorithms. 
+or from conda-forge with
 
->>> score = f1_score(y_val, hy, average='macro')
->>> score
-<Perf(func=f1_score, statistic=0.9435, se=0.0099)>
+.. code:: bash
 
-The previous code shows the macro-f1 score and its standard error. The actual performance value is stored in the attributes `statistic` function, and `se`
+    conda install --channel conda-forge CompStats
 
->>> score.statistic, score.se
-(0.9521479775366307, 0.009717884979482313)
+Quickstart
+====================================
 
-Continuing with the example, let us assume that one wants to test another classifier on the same problem, in this case, a random forest, as can be seen in the following two lines. The second line predicts the validation set and sets it to the analysis. 
+The following example compares three classifiers on the digits problem.
 
->>> ens = RandomForestClassifier().fit(X_train, y_train)
->>> score(ens.predict(X_val), name='Random Forest')
-<Perf(func=f1_score)>
-Statistic with its standard error (se)
-statistic (se)
-0.9720 (0.0076) <= Random Forest
-0.9521 (0.0097) <= alg-1
+.. code:: python
 
-Let us incorporate another predictions, now with Naive Bayes classifier, and Histogram Gradient Boosting as seen below.
+    from sklearn.datasets import load_digits
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.model_selection import train_test_split
+    from sklearn.naive_bayes import GaussianNB
+    from sklearn.svm import LinearSVC
+    from CompStats.metrics import f1_score
 
->>> nb = GaussianNB().fit(X_train, y_train)
->>> score(nb.predict(X_val), name='Naive Bayes')
->>> hist = HistGradientBoostingClassifier().fit(X_train, y_train)
->>> score(hist.predict(X_val), name='Hist. Grad. Boost. Tree')
-<Perf(func=f1_score)>
-Statistic with its standard error (se)
-statistic (se)
-0.9759 (0.0068) <= Hist. Grad. Boost. Tree
-0.9720 (0.0076) <= Random Forest
-0.9521 (0.0097) <= alg-1
-0.8266 (0.0159) <= Naive Bayes
+    X, y = load_digits(return_X_y=True)
+    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.3, random_state=0)
 
-The performance, its confidence interval (5%), and a statistical comparison (5%) between the best performing system with the rest of the algorithms is depicted in the following figure.
+    svm = LinearSVC(random_state=0).fit(X_train, y_train)
+    score = f1_score(y_val, svm.predict(X_val), average='macro', name='Linear SVM')
+    score(RandomForestClassifier(random_state=0).fit(X_train, y_train).predict(X_val),
+          name='Random Forest')
+    score(GaussianNB().fit(X_train, y_train).predict(X_val), name='Naive Bayes')
 
->>> score.plot()
+    score                 # point estimate and standard error of every system
+    score.ci              # 95% percentile bootstrap confidence intervals
+    diff = score.difference()            # paired differences against the best system
+    diff.p_value(correction='holm')      # p-values adjusted for multiple comparisons
+    score.plot()                         # performance with confidence intervals
 
-.. image:: https://github.com/INGEOTEC/CompStats/raw/docs/docs/source/digits_perf.png
+The variable ``score`` holds the point estimate and the standard error of every system, and
+``score.ci`` returns the percentile confidence intervals obtained from the bootstrap
+distribution. The call ``score.difference()`` computes the paired differences between the best
+system and each of the others, and ``diff.p_value(correction='holm')`` returns the p-values of
+those differences adjusted for multiple comparisons with Holm's method. Finally,
+``score.plot()`` draws the performance of the systems together with their confidence intervals.
 
-The final step is to compare the performance of the four classifiers, which can be done with the `difference` method, as seen next.  
+Citing
+====================================
 
->>> diff = score.difference()
->>> diff
-<Difference>
-difference p-values  w.r.t Hist. Grad. Boost. Tree
-0.0000 <= Naive Bayes
-0.0100 <= alg-1
-0.3240 <= Random Forest
+When CompStats is used in academic work, the first reference below, which describes the
+methodology, should be cited; the second is the work it extends.
 
-The class `Difference` has the `plot` method that can be used to depict the difference with respect to the best. 
+.. code:: bibtex
 
->>> diff.plot()
+    @article{Nava-Munoz2024,
+      author  = {Nava-Mu{\~n}oz, Sergio and Graff, Mario and Escalante, Hugo Jair},
+      title   = {Analysis of systems' performance in natural language processing competitions},
+      journal = {Pattern Recognition Letters},
+      year    = {2024},
+      doi     = {10.1016/j.patrec.2024.03.010},
+      url     = {https://doi.org/10.1016/j.patrec.2024.03.010}
+    }
 
-.. image:: https://github.com/INGEOTEC/CompStats/raw/docs/docs/source/digits_difference.png
+    @inproceedings{Nava-Munoz2023,
+      author    = {Nava-Mu{\~n}oz, Sergio and Graff Guerrero, Mario and Escalante, Hugo Jair},
+      title     = {Comparison of Classifiers in Challenge Scheme},
+      booktitle = {Pattern Recognition},
+      series    = {Lecture Notes in Computer Science},
+      volume    = {13902},
+      pages     = {89--98},
+      year      = {2023},
+      publisher = {Springer Nature Switzerland},
+      doi       = {10.1007/978-3-031-33783-3_9},
+      url       = {https://doi.org/10.1007/978-3-031-33783-3_9}
+    }
+
+License
+====================================
+
+CompStats is distributed under the Apache License 2.0; see the ``LICENSE`` file.

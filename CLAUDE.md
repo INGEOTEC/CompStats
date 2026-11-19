@@ -86,6 +86,37 @@ Coveralls, and runs `scripts/check_package_versions.py` (the version gate descri
 - After a release, bump `__version__` before the next change is merged, otherwise the version gate
   fails ("local is not ahead of PyPI").
 
+## Documentation
+
+The documentation has two halves that share one GitHub Pages site, both deployed by
+`.github/workflows/website.yml` on pushes to `main` (pull requests and pushes to `develop` only
+build them):
+
+- the **user site** (Quarto, source in `quarto/`), at `https://ingeotec.github.io/CompStats/`;
+- the **developer reference** (Sphinx, source in `docs/source/`), published under `/dev/`,
+  `https://ingeotec.github.io/CompStats/dev/`.
+
+Rules:
+
+- User-facing examples (site and README) use the `Perf`-based API only
+  (`CompStats.metrics.<measure>(y_true, y_pred, name=...)`, calling the instance to add a system,
+  `.difference()`, `.p_value(correction=...)`, `.plot()`), never the DataFrame functions of
+  `CompStats.performance`.
+- Preview the user site with live reload, or render it statically into `quarto/_site/`:
+
+  ```bash
+  QUARTO_PYTHON="$PWD/.venv/bin/python" quarto preview quarto
+  QUARTO_PYTHON="$PWD/.venv/bin/python" quarto render quarto
+  ```
+
+- Freeze rule: CI never executes notebooks; it renders from the committed `quarto/_freeze/` cache.
+  After changing any `quarto/**/*.ipynb`, render locally and commit `quarto/_freeze/` with
+  `git add -A quarto/_freeze` in the same commit. `CompStats/tests/test_docs.py` fails when a
+  notebook and its freeze entry disagree.
+- Notebooks are edited through `nbformat` (or Jupyter), never by hand-editing the JSON.
+- The Colab-only install cell (`!pip install -q CompStats`) keeps `#| eval: false` as its first
+  line, so it is shown but not executed when the site is rendered.
+
 ## Architecture
 
 The package is small and organized around one core data flow: raw predictions → bootstrap resampled

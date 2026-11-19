@@ -1,0 +1,44 @@
+---
+title: "Citing"
+---
+
+When CompStats is used in academic work, the following article, which describes the methodology
+implemented by the package, should be cited.
+
+```bibtex
+@article{Nava-Munoz2024,
+  author  = {Nava-Mu{\~n}oz, Sergio and Graff, Mario and Escalante, Hugo Jair},
+  title   = {Analysis of systems' performance in natural language processing competitions},
+  journal = {Pattern Recognition Letters},
+  year    = {2024},
+  doi     = {10.1016/j.patrec.2024.03.010},
+  url     = {https://doi.org/10.1016/j.patrec.2024.03.010}
+}
+```
+
+The conference paper that the article extends is the following.
+
+```bibtex
+@inproceedings{Nava-Munoz2023,
+  author    = {Nava-Mu{\~n}oz, Sergio and Graff Guerrero, Mario and Escalante, Hugo Jair},
+  title     = {Comparison of Classifiers in Challenge Scheme},
+  booktitle = {Pattern Recognition},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {13902},
+  pages     = {89--98},
+  year      = {2023},
+  publisher = {Springer Nature Switzerland},
+  doi       = {10.1007/978-3-031-33783-3_9},
+  url       = {https://doi.org/10.1007/978-3-031-33783-3_9}
+}
+```
+
+## Authors
+
+- Sergio Nava-Muñoz, CIMAT, Aguascalientes, Mexico.
+- Mario Graff, INFOTEC, Aguascalientes, Mexico.
+- Hugo Jair Escalante, INAOE, Puebla, Mexico.
+
+## License
+
+CompStats is distributed under the Apache License 2.0.

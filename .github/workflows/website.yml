@@ -1,0 +1,75 @@
+name: Publish website
+
+# One GitHub Pages site, two sources: the Quarto user site (quarto/) at the
+# root and the Sphinx developer reference (docs/) under /dev/. Pull requests
+# and pushes to develop only build both; pushes to main also deploy them.
+#
+# The Quarto pages that are notebooks are never executed here: Quarto reads
+# their results from the committed quarto/_freeze/ cache. If a notebook was
+# changed without refreshing the cache, the render step fails ("Jupyter is
+# not available"); the fix is to render locally and commit quarto/_freeze/.
+on:
+  pull_request:
+    paths:
+      - "quarto/**"
+      - "docs/**"
+      - "CompStats/**"
+      - "pyproject.toml"
+      - ".github/workflows/website.yml"
+  push:
+    branches: [main, develop]
+    paths:
+      - "quarto/**"
+      - "docs/**"
+      - "CompStats/**"
+      - "pyproject.toml"
+      - ".github/workflows/website.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: quarto-dev/quarto-actions/setup@v2
+        with:
+          # Keep equal to the version used to produce quarto/_freeze/.
+          version: 1.10.20
+
+      - run: quarto render quarto
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install docs and package dependencies
+        run: |
+          pip install -r docs/requirements.txt
+          # Not --no-deps: conf.py imports CompStats, and autodoc imports its
+          # dependencies with it.
+          pip install -e .
+
+      - name: Build the developer docs strictly into the site
+        run: python -m sphinx -n -W --keep-going -b html docs/source quarto/_site/dev
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: quarto/_site
+
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: website
+      cancel-in-progress: true
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

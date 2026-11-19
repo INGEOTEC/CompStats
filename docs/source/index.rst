@@ -307,6 +307,17 @@ Releases are published by pushing a ``v<version>`` tag, which triggers the workf
 ``.github/workflows/publish-pypi.yml``; the version gate ``scripts/check_package_versions.py``
 verifies that the version is a single step ahead of the one published on PyPI.
 
+User site
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The user site is written with Quarto in ``quarto/`` and is previewed with
+``QUARTO_PYTHON="$PWD/.venv/bin/python" quarto preview quarto`` (live reload) or rendered
+statically into ``quarto/_site/`` with ``QUARTO_PYTHON="$PWD/.venv/bin/python" quarto render quarto``.
+Continuous integration never executes the notebooks of the site: it renders them from the cache
+committed in ``quarto/_freeze/``. After changing a notebook, the site must therefore be rendered
+locally and ``quarto/_freeze/`` committed together with the notebook; a test fails when they
+disagree.
+
 Citing
 ====================================
 

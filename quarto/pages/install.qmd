@@ -1,0 +1,40 @@
+---
+title: "Install"
+---
+
+## Requirements
+
+CompStats is a pure-Python package. Its runtime dependencies are numpy, scikit-learn (version 1.3.0
+or later), pandas, seaborn (version 0.13.0 or later) and statsmodels. The package tqdm is optional;
+when it is installed, progress bars are shown while the bootstrap samples are computed.
+
+## From PyPI
+
+```bash
+pip install CompStats
+```
+
+## From conda-forge
+
+```bash
+conda install --channel conda-forge CompStats
+```
+
+## From source
+
+The following commands install the package in editable mode, together with the dependencies
+required to run the test suite.
+
+```bash
+git clone https://github.com/INGEOTEC/CompStats.git
+cd CompStats
+pip install -e ".[test]"
+```
+
+## Checking the installation
+
+The installed version is printed with the following command.
+
+```bash
+python -c "import CompStats; print(CompStats.__version__)"
+```

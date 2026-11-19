@@ -1,6 +1,9 @@
+import hashlib
 import importlib
 import inspect
+import json
 import re
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -11,7 +14,20 @@ DOCS = ROOT / "docs" / "source"
 pytestmark = pytest.mark.skipif(
     not DOCS.is_dir(), reason="needs the repository checkout (docs/source)")
 
+SITE = ROOT / "quarto"
+_SKIPPED_DIRS = {"_site", "_freeze", ".quarto"}
+needs_site = pytest.mark.skipif(
+    not SITE.is_dir(), reason="needs the repository checkout (quarto/)")
+
 _AUTOMODULE_RE = re.compile(r"^\.\.\s+automodule::\s+(\S+)\s*$", re.MULTILINE)
+
+
+
+def _site_files(suffix):
+    """Source pages of the Quarto site with the given suffix"""
+    return sorted(p for p in SITE.rglob(f"*{suffix}")
+                  if not _SKIPPED_DIRS & set(p.relative_to(SITE).parts))
+
 
 MODULES = ["bootstrap", "interface", "measurements", "metrics",
            "performance", "utils"]
@@ -76,8 +92,8 @@ def test_index_cites_both_papers():
     assert "/COVER" not in text
 
 
-def test_no_readthedocs_in_developer_docs():
-    """ReadTheDocs is not used any more"""
+def test_no_legacy_hosting_in_developer_docs():
+    """The previous hosting service is not referenced any more"""
     word = "readthe" + "docs"
     files = list(DOCS.glob("*.rst")) + [DOCS / "conf.py"]
     for path in files:
@@ -103,3 +119,150 @@ def test_docs_job_in_ci():
         pytest.skip("needs the repository checkout (.github/workflows)")
     command = "python -m sphinx -n -W --keep-going -b html docs/source docs/build/html"
     assert command in workflow.read_text(encoding="utf-8")
+
+
+@needs_site
+def test_freeze_matches_notebooks():
+    """The freeze entry of every notebook is up to date"""
+    notebooks = _site_files(".ipynb")
+    assert notebooks
+    for notebook in notebooks:
+        relative = notebook.relative_to(SITE).with_suffix("")
+        entry = SITE / "_freeze" / relative / "execute-results" / "html.json"
+        fix = ('render locally with QUARTO_PYTHON="$PWD/.venv/bin/python" '
+               'quarto render quarto and commit quarto/_freeze/')
+        assert entry.is_file(), f"{entry} is missing: {fix}"
+        digest = hashlib.md5(notebook.read_bytes()).hexdigest()
+        stored = json.loads(entry.read_text(encoding="utf-8"))["hash"]
+        assert stored == digest, f"{notebook.name} and its freeze differ: {fix}"
+
+
+@needs_site
+def test_no_orphan_freeze_entries():
+    """Every freeze entry belongs to an existing notebook"""
+    freeze = SITE / "_freeze"
+    if not freeze.is_dir():
+        pytest.skip("no freeze directory")
+    for entry in freeze.rglob("execute-results/html.json"):
+        page = entry.parent.parent.relative_to(freeze)
+        assert (SITE / page).with_suffix(".ipynb").is_file(), page
+
+
+@needs_site
+def test_install_cells_are_not_executed():
+    """The Colab-only install cell is shown but not executed"""
+    for notebook in _site_files(".ipynb"):
+        cells = json.loads(notebook.read_text(encoding="utf-8"))["cells"]
+        cells = ["".join(c["source"]) for c in cells
+                 if c["cell_type"] == "code"]
+        cells = [c for c in cells if "!pip install" in c]
+        assert len(cells) == 1, notebook.name
+        assert cells[0].startswith("#| eval: false"), notebook.name
+
+
+@needs_site
+def test_navbar_pages_exist():
+    """Every local link of the navbar names an existing page"""
+    text = (SITE / "_quarto.yml").read_text(encoding="utf-8")
+    hrefs = re.findall(r"^\s*-?\s*href:\s*(\S+)\s*$", text, re.MULTILINE)
+    local = [h for h in hrefs if not h.startswith("http")]
+    for href in local:
+        assert (SITE / href).is_file(), href
+    for page in ["index.qmd", "pages/install.qmd", "pages/methodology.qmd",
+                 "pages/citing.qmd", "pages/sklearn_users.ipynb",
+                 "pages/competition_organizers.ipynb",
+                 "pages/multiple_testing.ipynb"]:
+        assert page in local, page
+
+
+@needs_site
+def test_user_docs_use_the_perf_api():
+    """User-facing examples do not use the DataFrame-based functions"""
+    forbidden = ["from CompStats.performance", "from CompStats import performance"]
+    texts = [p.read_text(encoding="utf-8") for p in _site_files(".qmd")]
+    for notebook in _site_files(".ipynb"):
+        cells = json.loads(notebook.read_text(encoding="utf-8"))["cells"]
+        texts += ["".join(c["source"]) for c in cells
+                  if c["cell_type"] == "code"]
+    readme = ROOT / "README.rst"
+    if readme.is_file():
+        texts.append(readme.read_text(encoding="utf-8"))
+    for text in texts:
+        for item in forbidden:
+            assert item not in text, item
+
+
+@needs_site
+def test_methodology_page_content():
+    """The methodology page covers the published methodology"""
+    text = (SITE / "pages" / "methodology.qmd").read_text(encoding="utf-8")
+    lower = text.lower()
+    for word in ["bootstrap", "confidence interval", "paired", "p-value",
+                 "Bonferroni", "Holm", "Benjamini", "Berg-Kirkpatrick",
+                 "coefficient of variation", "PPI"]:
+        assert word.lower() in lower, word
+    assert "10.1016/j.patrec.2024.03.010" in text
+
+
+def test_no_legacy_hosting_anywhere():
+    """No tracked text file refers to the previous hosting service"""
+    word = "readthe" + "docs"
+    try:
+        output = subprocess.run(["git", "ls-files", "-z"], cwd=ROOT,
+                                capture_output=True, check=True).stdout
+    except (OSError, subprocess.CalledProcessError):
+        pytest.skip("needs a git checkout")
+    for name in output.decode("utf-8").split("\0"):
+        path = ROOT / name
+        if not name or not path.is_file():
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+        assert word not in text.lower(), name
+
+
+def test_readme():
+    """The README links both sites and is valid reStructuredText"""
+    readme = ROOT / "README.rst"
+    if not readme.is_file():
+        pytest.skip("needs the repository checkout (README.rst)")
+    text = readme.read_text(encoding="utf-8")
+    assert "https://ingeotec.github.io/CompStats/" in text
+    assert "https://ingeotec.github.io/CompStats/dev/" in text
+    assert "10.1016/j.patrec.2024.03.010" in text
+    assert "raw/docs/docs" not in text
+    core = pytest.importorskip("docutils.core")
+    core.publish_string(text, writer_name="html",
+                        settings_overrides={"halt_level": 2,
+                                            "report_level": 2})
+
+
+def test_site_workflow():
+    """The site is published by one workflow that deploys to GitHub Pages"""
+    workflows = ROOT / ".github" / "workflows"
+    if not workflows.is_dir():
+        pytest.skip("needs the repository checkout (.github/workflows)")
+    website = workflows / "website.yml"
+    assert website.is_file()
+    assert not (workflows / "publish.yml").exists()
+    text = website.read_text(encoding="utf-8")
+    assert "quarto render quarto" in text
+    assert ("python -m sphinx -n -W --keep-going -b html docs/source "
+            "quarto/_site/dev") in text
+    assert "actions/deploy-pages" in text
+    assert "conda" not in text
+    assert "gh-pages" not in text
+
+
+def test_project_urls():
+    """The project URLs point at the GitHub Pages site"""
+    tomllib = pytest.importorskip("tomllib")
+    pyproject = ROOT / "pyproject.toml"
+    if not pyproject.is_file():
+        pytest.skip("needs the repository checkout (pyproject.toml)")
+    with open(pyproject, "rb") as fpt:
+        urls = tomllib.load(fpt)["project"]["urls"]
+    assert urls["Homepage"] == "https://ingeotec.github.io/CompStats/"
+    assert urls["Documentation"] == "https://ingeotec.github.io/CompStats/"

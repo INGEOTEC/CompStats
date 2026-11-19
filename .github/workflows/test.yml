@@ -62,3 +62,20 @@ jobs:
         run: pip install packaging
       - name: Check package versions against PyPI
         run: python scripts/check_package_versions.py
+
+  # Sphinx gate: a strict HTML build of the developer reference. Any broken
+  # cross-reference or other warning fails it. The docstring examples are not
+  # run (their outputs depend on random bootstrap samples).
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install docs and package dependencies
+        run: |
+          pip install -r docs/requirements.txt
+          pip install -e .
+      - name: Build the docs strictly
+        run: python -m sphinx -n -W --keep-going -b html docs/source docs/build/html

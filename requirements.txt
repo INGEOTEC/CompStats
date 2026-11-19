@@ -7,3 +7,4 @@ sphinx
 pytest
 statsmodels
 sphinxcontrib-mermaid
+furo

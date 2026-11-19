@@ -35,7 +35,7 @@ def performance(data: pd.DataFrame,
     """Calculate bootstrap samples of a performance score for a given dataset.
 
     Parameters:
-    data (pd.DataFrame): Input dataset.
+    data (pandas.DataFrame): Input dataset.
     gold (str, optional): Column name of the ground truth or target variable. Defaults to 'y'.
     score (Callable, optional): Performance score function. Defaults to accuracy_score.
     num_samples (int, optional): Number of bootstrap samples. Defaults to 500.
@@ -78,6 +78,7 @@ def difference(statistic_samples: StatisticSamples):  # , best_index: int=-1):
     StatisticSamples: A new instance of StatisticSamples with the computed differences and information about the best algorithm.
 
     The function works as follows:
+
     1. Determines the index of the best performing algorithm based on the BiB attribute.
     2. Extracts and calculates the mean performance for each algorithm.
     3. Sorts the algorithms by their mean performance.
@@ -123,6 +124,7 @@ def all_differences(statistic_samples: StatisticSamples):
     StatisticSamples: A new instance of StatisticSamples with the computed performance differences among all algorithms.
 
     The function works as follows:
+
     1. Extracts the performance data for each algorithm.
     2. Calculates the mean performance for each algorithm and sorts the algorithms based on their mean performance.
     3. Iterates over all possible pairs of algorithms.
@@ -168,7 +170,7 @@ def plot_performance(statistic_samples: StatisticSamples, CI: float = 0.05,
     """Plots the performance of algorithms with confidence intervals.
 
     :param statistic_samples: An instance of StatisticSamples containing the performance data, or a DataFrame in long format.
-    :type statistic_samples: StatisticSamples or pd.DataFrame
+    :type statistic_samples: CompStats.bootstrap.StatisticSamples or pandas.DataFrame
     :param CI: Confidence interval level (default is 0.05).
     :type CI: float
     :param var_name: Variable name for algorithms (default is 'Algorithm').
@@ -186,9 +188,10 @@ def plot_performance(statistic_samples: StatisticSamples, CI: float = 0.05,
     :param kwargs: Additional keyword arguments passed to seaborn's catplot function.
 
     :returns: A seaborn FacetGrid object containing the plot.
-    :rtype: sns.axisgrid.FacetGrid
+    :rtype: seaborn.FacetGrid
 
     The function works as follows:
+
     1. If statistic_samples is an instance of StatisticSamples, it extracts and sorts the performance data.
     2. Converts the data into a long format DataFrame.
     3. Computes the confidence intervals if CI is provided as a float.
@@ -236,12 +239,13 @@ def plot_difference(statistic_samples: StatisticSamples, CI: float = 0.05,
     set_title (bool, optional): Whether to set the title of the plot with the best performing algorithm. Defaults to True.
     hue (str or None, optional): Column name for hue encoding. Defaults to 'Significant'.
     palette (list or None, optional): Colors to use for different hue levels. Defaults to None.
-    **kwargs: Additional keyword arguments passed to the plot_performance function.
+    ``**kwargs``: Additional keyword arguments passed to the plot_performance function.
 
     Returns:
-    sns.axisgrid.FacetGrid: A seaborn FacetGrid object containing the plot.
+    seaborn.FacetGrid: A seaborn FacetGrid object containing the plot.
 
     The function works as follows:
+
     1. Converts the differences stored in statistic_samples into a long format DataFrame.
     2. Adds a 'Significant' column to indicate whether the confidence interval includes zero.
     3. Plots the differences with confidence intervals using the plot_performance function.
@@ -293,28 +297,29 @@ def performance_multiple_metrics(data: pd.DataFrame, gold: str,
     Calculate bootstrap samples of multiple performance metrics for a given dataset.
 
     Parameters:
-    data (pd.DataFrame): Input dataset.
+    data (pandas.DataFrame): Input dataset.
     gold (str): Column name of the ground truth or target variable.
     scores (List[dict]): A list of dictionaries, each containing:
+
         - "func": The performance score function.
         - "args" (optional): Arguments to pass to the score function.
         - "BiB": Whether the metric is Bigger is Better.
+
     num_samples (int, optional): Number of bootstrap samples. Defaults to 500.
     n_jobs (int, optional): Number of jobs to run in parallel. Defaults to -1.
 
     Returns:
     dict: A dictionary containing the results for each metric, including:
+
         - 'samples': Bootstrap samples of the performance scores.
         - 'performance': Calculated performance scores for each algorithm.
-        - 'compg': General performance comparison metrics, including:
-            - 'n': Number of samples.
-            - 'm': Number of algorithms.
-            - 'cv': Coefficient of variation for each metric.
-            - 'dist': Distance metric for each metric.
-            - 'PPI': Performance potential index for each metric.
+        - 'compg': General performance comparison metrics ('n': number of samples,
+          'm': number of algorithms, 'cv': coefficient of variation, 'dist': distance
+          metric and 'PPI': performance potential index, each one per metric).
         - 'BiB': Whether each metric is Bigger is Better.
 
     The function works as follows:
+
     1. Defines auxiliary functions for calculating additional performance metrics.
     2. Iterates over the list of score functions and their respective arguments.
     3. Initializes a StatisticSamples object for each score function.
@@ -389,12 +394,13 @@ def plot_performance2(results: dict, CI: float = 0.05,
     linestyle (str, optional): Line style for the plot. Defaults to 'none'.
     kind (str, optional): Type of the plot, e.g., 'point', 'bar'. Defaults to 'point'.
     sharex (bool, optional): Whether to share the x-axis among subplots. Defaults to False.
-    **kwargs: Additional keyword arguments for seaborn.catplot.
+    ``**kwargs``: Additional keyword arguments for seaborn.catplot.
 
     Returns:
-    sns.axisgrid.FacetGrid: A seaborn FacetGrid object containing the plot.
+    seaborn.FacetGrid: A seaborn FacetGrid object containing the plot.
 
     The function works as follows:
+
     1. If results is a dictionary, it sorts the algorithms by their mean performance scores.
     2. Converts the sorted data into a long format DataFrame.
     3. Computes the confidence intervals if CI is provided as a float.
@@ -420,17 +426,14 @@ def difference_multiple(results_dict, CI: float = 0.05,):
     with itself. Additionally, identify the best performing algorithm for each metric.
 
     Parameters:
-    results_dict (dict): A dictionary where keys are metric names and values are dictionaries.
-                         Each sub-dictionary has algorithm names as keys and lists of performance scores as values.
+    results_dict (dict): A dictionary where keys are metric names and values are dictionaries. Each sub-dictionary has algorithm names as keys and lists of performance scores as values.
     CI (float, optional): Confidence interval level. Defaults to 0.05.
 
     Returns:
-    dict: A dictionary with the same structure, but where the scores for each algorithm are replaced
-          by their differences to the scores of the best performing algorithm for that metric,
-          excluding the best performing algorithm comparing with itself.
-          Also includes the best algorithm name for each metric.
+    dict: A dictionary with the same structure, but where the scores for each algorithm are replaced by their differences to the scores of the best performing algorithm for that metric, excluding the best performing algorithm comparing with itself. Also includes the best algorithm name for each metric.
 
     The function works as follows:
+
     1. Iterates over each metric in the results dictionary.
     2. Converts performance scores to numpy arrays for efficient computations.
     3. Identifies the best performing algorithm for each metric based on the mean performance scores.
@@ -533,18 +536,18 @@ def plot_performance_multiple(results_dict: dict, CI: float = 0.05, capsize: flo
     Create multiple performance plots, one for each performance metric in the results dictionary.
 
     Parameters:
-    results_dict (dict): A dictionary where keys are metric names and values are dictionaries
-                         with algorithm names as keys and lists of performance scores as values.
+    results_dict (dict): A dictionary where keys are metric names and values are dictionaries with algorithm names as keys and lists of performance scores as values.
     CI (float, optional): Confidence interval level for error bars. Defaults to 0.05.
     capsize (float, optional): Cap size for error bars. Defaults to 0.2.
     linestyle (str, optional): Line style for the plot. Defaults to 'none'.
     kind (str, optional): Type of the plot, e.g., 'point', 'bar'. Defaults to 'point'.
-    **kwargs: Additional keyword arguments for seaborn.catplot.
+    ``**kwargs``: Additional keyword arguments for seaborn.catplot.
 
     Returns:
     None: The function creates and displays plots.
 
     The function works as follows:
+
     1. Iterates over each metric in the results dictionary.
     2. Uses the plot_performance2 function to create and display the plot for each metric.
     3. Sets the title of each plot to the metric name and the best performing algorithm.

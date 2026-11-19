@@ -29,13 +29,13 @@ class Perf(object):
 
     :param y_true: True measurement or could be a pandas.DataFrame where column label 'y' corresponds to the true measurement.
     :type y_true: numpy.ndarray or pandas.DataFrame
-    :param func: Function (or list of functions) to measure the performance. Whether the best algorithm has the highest or the lowest value is given by :py:attr:`BiB` -- either the constructor's default, or, when a callable already carries its own :py:attr:`BiB` attribute (e.g. built by a :py:mod:`CompStats.metrics` wrapper's ``.measure`` factory), that tag takes precedence. A list of functions combines them into a single, multi-measure :py:class:`Perf.`
+    :param func: Function (or list of functions) to measure the performance. Whether the best algorithm has the highest or the lowest value is given by ``BiB`` -- either the constructor's default, or, when a callable already carries its own ``BiB`` attribute (e.g. built by a :py:mod:`CompStats.metrics` wrapper's ``.measure`` factory), that tag takes precedence. A list of functions combines them into a single, multi-measure :py:class:`~CompStats.interface.Perf`.
     :type func: Function, or list of functions, where the first argument is :math:`y` and the second is :math:`\\hat{y}.`
-    :param BiB: Bigger is Better; the default direction used for any measure in :py:attr:`func` that doesn't already carry its own :py:attr:`BiB` attribute. A single bool applies to every measure; a list applies element-wise, one entry per measure in :py:attr:`func`.
+    :param BiB: Bigger is Better; the default direction used for any measure in ``func`` that doesn't already carry its own ``BiB`` attribute. A single bool applies to every measure; a list applies element-wise, one entry per measure in ``func``.
     :type BiB: bool or list of bool
     :param measure_names: Display name for each measure, only relevant when more than one measure is given; defaults to each function's ``__name__``.
     :type measure_names: list
-    :param y_pred: Predictions, the algorithms will be identified with alg-k where k=1 is the first argument included in :py:attr:`args.`
+    :param y_pred: Predictions, the algorithms will be identified with alg-k where k=1 is the first argument included in ``args``.
     :type y_pred: numpy.ndarray
     :param kwargs: Predictions, the algorithms will be identified using the keyword
     :type kwargs: numpy.ndarray
@@ -69,7 +69,7 @@ class Perf(object):
     0.9792 (0.0221) <= LinearSVC
     0.9744 (0.0246) <= forest
 
-    If an algorithm's prediction is missing, this can be included by calling the instance, as can be seen in the following instruction. Note that the algorithm's name can also be given with the keyword :py:attr:`name.`
+    If an algorithm's prediction is missing, this can be included by calling the instance, as can be seen in the following instruction. Note that the algorithm's name can also be given with the keyword ``name``.
 
     >>> lr = LogisticRegression().fit(X_train, y_train)
     >>> perf(lr.predict(X_val), name='Log. Reg.')
@@ -96,7 +96,7 @@ class Perf(object):
     When several algorithms are compared, :py:meth:`difference`'s p-values can be
     adjusted for multiple comparisons by passing a
     :py:func:`statsmodels.stats.multitest.multipletests` method name (e.g.
-    ``'bonferroni'``, ``'holm'``, ``'fdr_bh'``) as :py:attr:`correction` --
+    ``'bonferroni'``, ``'holm'``, ``'fdr_bh'``) as ``correction`` --
     both to :py:meth:`Difference.p_value` directly and, so that plots reflect
     the same adjusted significance, to :py:meth:`plot`/:py:meth:`dataframe`.
 
@@ -109,8 +109,8 @@ class Perf(object):
 
     Two or more measures can be combined into a single :py:class:`Perf` instance
     (e.g. macro-F1 together with macro-recall) by passing a list of functions
-    to :py:attr:`func` -- see :py:mod:`CompStats.metrics`'s
-    ``.measure`` factories (e.g. :py:func:`~CompStats.metrics.f1_score.measure`). Every
+    to ``func`` -- see :py:mod:`CompStats.metrics`'s
+    ``.measure`` factories (e.g. ``f1_score.measure``). Every
     measure is evaluated on the same bootstrap resamples, so comparisons across
     algorithms remain paired for each measure.
 
@@ -119,7 +119,7 @@ class Perf(object):
     ...             func=[f1_score.measure(average='macro'),
     ...                   recall_score.measure(average='macro')])
 
-    With multiple measures, :py:attr:`correction` is applied independently
+    With multiple measures, ``correction`` is applied independently
     per measure (i.e. per column), so one metric's correction never mixes
     with another's.
 
@@ -173,9 +173,9 @@ class Perf(object):
     def _measures(self):
         """List of (callable, BiB) pairs, one per measure being evaluated
 
-        Each callable's own :py:attr:`BiB` attribute (set by, e.g., a
+        Each callable's own ``BiB`` attribute (set by, e.g., a
         :py:meth:`metrics.py <CompStats.metrics>` wrapper's ``.measure`` factory)
-        takes precedence over :py:attr:`BiB`, the constructor's default direction.
+        takes precedence over ``BiB``, the constructor's default direction.
         """
         funcs = self._as_list(self.func)
         default = self.BiB
@@ -278,7 +278,18 @@ class Perf(object):
         return self
 
     def difference(self, wrt: str = None):
-        """Compute the difference w.r.t any algorithm by default is the best
+        """Create the :py:class:`~CompStats.interface.Difference` between a
+        reference system and every other system, computed on the bootstrap
+        samples already stored in this instance (so the comparison is paired).
+        By default the reference is the best system.
+
+        :param wrt: Name of the reference system; ``None`` (default) uses
+            :py:attr:`~CompStats.interface.Perf.best`.
+        :type wrt: str
+        :return: Instance holding the bootstrap distribution of the paired
+            differences, signed so that a positive value means the reference is better.
+        :rtype: CompStats.interface.Difference
+
 
         >>> from sklearn.svm import LinearSVC
         >>> from sklearn.ensemble import RandomForestClassifier
@@ -604,8 +615,8 @@ class Perf(object):
     def statistic_func(self):
         """Statistic function
 
-        A single :py:attr:`func` callable is returned as-is; when more than
-        one measure is given (a list passed to :py:attr:`func`), a composite
+        A single ``func`` callable is returned as-is; when more than
+        one measure is given (a list passed to ``func``), a composite
         callable is returned that concatenates every measure's output into a
         single vector, evaluated on the same bootstrap samples.
         """
@@ -707,7 +718,7 @@ class Perf(object):
 
     @property
     def BiB(self):
-        """Bigger is Better; default direction for measures without their own :py:attr:`BiB` tag"""
+        """Bigger is Better; default direction for measures without their own ``BiB`` tag"""
         return self._BiB
 
     @BiB.setter
@@ -719,7 +730,11 @@ class Perf(object):
 
 @dataclass
 class Difference:
-    """Difference
+    """Bootstrap distribution of the paired differences between a reference
+    system (by default the best one) and every other system. It is built by
+    :py:meth:`~CompStats.interface.Perf.difference` and provides the p-values
+    (:py:meth:`~CompStats.interface.Difference.p_value`) and the plot of the
+    differences.
 
     >>> from sklearn.svm import LinearSVC
     >>> from sklearn.ensemble import RandomForestClassifier
@@ -795,7 +810,7 @@ class Difference:
 
         :param right: Estimate the p-value using :math:`\\text{sample} \\geq 2\\delta`
         :type right: bool
-        :param correction: Method to adjust for multiple comparisons, passed to :py:func:`statsmodels.stats.multitest.multipletests` (e.g. ``'bonferroni'``, ``'holm'``, ``'fdr_bh'``); ``None`` (default) leaves the p-values uncorrected. With a single measure, the family of comparisons is every other system against :py:attr:`best`; with multiple measures, each measure is corrected as its own family (i.e. per column) so metrics do not contaminate each other's correction.
+        :param correction: Method to adjust for multiple comparisons, passed to :py:func:`statsmodels.stats.multitest.multipletests` (e.g. ``'bonferroni'``, ``'holm'``, ``'fdr_bh'``); ``None`` (default) leaves the p-values uncorrected. With a single measure, the family of comparisons is every other system against :py:attr:`~CompStats.interface.Perf.best`; with multiple measures, each measure is corrected as its own family (i.e. per column) so metrics do not contaminate each other's correction.
         :type correction: str
 
         >>> from sklearn.svm import LinearSVC

@@ -64,10 +64,11 @@ coverage run -m pytest CompStats
 coverage report
 ```
 
-Build the Sphinx docs:
+Build the Sphinx developer reference (strict: `-n` reports every unresolved cross-reference and
+`-W` turns warnings into errors; this is the same command CI runs, so a warning fails the build):
 
 ```bash
-cd docs && make html
+python -m sphinx -n -W --keep-going -b html docs/source docs/build/html
 ```
 
 CI (`.github/workflows/test.yml`) runs `pytest CompStats` on Python 3.10-3.12, collects coverage for
@@ -124,6 +125,9 @@ statistic → derived comparisons/plots.
   each wrapper automatically — when adding a new metric wrapper, follow this same
   `@metrics_docs(hy_name=..., bib=...)` + inner-function-closure pattern rather than duplicating
   docstrings.
+  In docstrings, parameter names and `.measure` factories are written as inline literals (double
+  backticks), not as `:py:attr:`/`:py:func:` cross-references, because the strict Sphinx build
+  rejects references that do not resolve.
 
 - **`measurements.py`**: stateless helpers — `CI` (percentile bootstrap confidence interval), `SE`
   (bootstrap standard error), `difference_p_value`. Each accepts either a raw ndarray of bootstrap

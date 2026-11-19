@@ -1,0 +1,5 @@
+# Build-time dependencies for the Sphinx developer reference. CompStats itself is
+# installed normally (pip install -e .) by the workflows that build these docs.
+sphinx>=7
+furo
+sphinxcontrib-mermaid

@@ -6,8 +6,8 @@ CompStats
 .. image:: https://img.shields.io/badge/GitHub-CompStats-black?logo=github
         :target: https://github.com/INGEOTEC/CompStats
 
-.. image:: https://github.com/INGEOTEC/CompStats/actions/workflows/test.yaml/badge.svg
-		:target: https://github.com/INGEOTEC/CompStats/actions/workflows/test.yaml
+.. image:: https://github.com/INGEOTEC/CompStats/actions/workflows/test.yml/badge.svg
+		:target: https://github.com/INGEOTEC/CompStats/actions/workflows/test.yml
 
 .. image:: https://coveralls.io/repos/github/INGEOTEC/CompStats/badge.svg?branch=develop
 		:target: https://coveralls.io/github/INGEOTEC/CompStats?branch=develop

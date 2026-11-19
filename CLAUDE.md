@@ -44,7 +44,7 @@ pip install -r requirements.txt
 ```
 
 Run the full test suite (this is what VS Code's test explorer and `.vscode/settings.json` are
-configured to use — despite CI still invoking `nosetests`, day-to-day development here uses pytest):
+configured to use, and what CI runs):
 
 ```bash
 pytest CompStats
@@ -70,9 +70,20 @@ Build the Sphinx docs:
 cd docs && make html
 ```
 
-Note: `.github/workflows/test.yaml` (CI) builds the environment with conda and runs `nosetests`,
-not pytest — this is legacy and inconsistent with local/devcontainer tooling. Don't be surprised if
-CI config and local dev commands diverge; prefer `pytest` locally.
+CI (`.github/workflows/test.yml`) runs `pytest CompStats` on Python 3.10-3.12, collects coverage for
+Coveralls, and runs `scripts/check_package_versions.py` (the version gate described below).
+
+## Releasing
+
+- The version lives in one place: `__version__` in `CompStats/__init__.py`.
+- `scripts/check_package_versions.py` (run by CI on every push and pull request) fails unless
+  `__version__` is exactly one patch or one minor release ahead of the latest version on PyPI.
+- To release: make sure `__version__` is the version to publish, merge to `main`, then create and
+  push the tag `v<__version__>` (for example `git tag v0.2.0 && git push origin v0.2.0`).
+  `.github/workflows/publish-pypi.yml` verifies that the tag equals `__version__`, builds the
+  sdist and the wheel, runs `twine check` and uploads with the `TWINE` repository secret.
+- After a release, bump `__version__` before the next change is merged, otherwise the version gate
+  fails ("local is not ahead of PyPI").
 
 ## Architecture
 

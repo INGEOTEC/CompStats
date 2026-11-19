@@ -1,0 +1,56 @@
+name: Publish to PyPI
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+concurrency:
+  group: publish-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install version-check dependencies
+        if: github.event_name != 'workflow_dispatch'
+        run: pip install packaging
+
+      # Tags are the release trigger, so a stale tag (forgot to bump
+      # __version__) must fail loudly instead of publishing the wrong
+      # version. `version` is declared `dynamic` in pyproject.toml, so it is
+      # read the same way scripts/check_package_versions.py reads it.
+      - name: Verify tag matches the package version
+        if: github.event_name != 'workflow_dispatch'
+        run: |
+          tag_version="${GITHUB_REF_NAME#v}"
+          pkg_version=$(python -c "import sys; sys.path.insert(0, 'scripts'); from check_package_versions import local_version; print(local_version())")
+          if [ "$tag_version" != "$pkg_version" ]; then
+            echo "Tag version $tag_version does not match CompStats.__version__ $pkg_version" >&2
+            exit 1
+          fi
+
+      - name: Install build tooling
+        run: pip install build twine
+
+      # CompStats is pure Python: one sdist and one universal wheel, built once.
+      - name: Build sdist and wheel
+        run: python -m build
+
+      - name: Check package metadata
+        run: twine check dist/*
+
+      # `TWINE` is a repository secret holding a PyPI API token.
+      - name: Upload to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.TWINE }}
+        run: twine upload dist/*

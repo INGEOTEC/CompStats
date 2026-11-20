@@ -113,6 +113,11 @@ Rules:
   After changing any `quarto/**/*.ipynb`, render locally and commit `quarto/_freeze/` with
   `git add -A quarto/_freeze` in the same commit. `CompStats/tests/test_docs.py` fails when a
   notebook and its freeze entry disagree.
+- Prose follows the style of the published article: one idea per sentence, relations expressed
+  with sentence-initial connectors (However, Therefore, Furthermore, ...) or subordination, a
+  colon only before an enumeration or a piece of code, at most a couple of semicolons per page,
+  and no dashes as punctuation. `CompStats/tests/test_docs.py::test_site_prose_style` enforces
+  the punctuation limits on the user site.
 - Notebooks are edited through `nbformat` (or Jupyter), never by hand-editing the JSON.
 - The Colab-only install cell (a `try`/`except ImportError` block that runs
   `uv pip install -q --system CompStats`, with `pip` as the fallback) keeps `#| eval: false` as its

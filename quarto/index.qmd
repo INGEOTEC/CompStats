@@ -16,7 +16,7 @@ multiple comparisons.
 :::
 
 Competitions rank systems by a point estimate computed on a single test set. The differences
-between consecutive systems are often in the hundredths or thousandths; consequently, a higher
+between consecutive systems are often in the hundredths or thousandths. Consequently, a higher
 score does not imply that a system would remain better on the population from which the test set
 was sampled. Moreover, the statistical tests for comparing learning algorithms require access to
 the underlying algorithm [@Dietterich1998], whereas a competition gives access only to the
@@ -26,9 +26,9 @@ not apply because a competition involves a single dataset.
 CompStats implements the methodology of @Nava-Munoz2024, *Analysis of systems' performance in
 natural language processing competitions* (Pattern Recognition Letters). The methodology
 is designed to complement the standard winner selection process, which in most cases relies solely
-on the ranking of the scores, with well-established statistical tools and graphics; it also provides
+on the ranking of the scores, with well-established statistical tools and graphics. It also provides
 [measures](pages/methodology.qmd#competitiveness-of-a-competition) that allow organizers to assess
-the difficulty of a competition. It is designed to be universally applicable; the article
+the difficulty of a competition. It is designed to be universally applicable. The article
 illustrates it with eight natural language processing competitions as case studies, involving
 classification and regression problems.
 
@@ -57,7 +57,7 @@ Benjamini-Hochberg correction.
 ## Quickstart
 
 The package is installed with `pip install CompStats` or with `conda install --channel conda-forge
-CompStats`; see [Install](pages/install.qmd). The following example compares three classifiers on
+CompStats`. See [Install](pages/install.qmd) for details. The following example compares three classifiers on
 the digits problem.
 
 ```python
@@ -90,7 +90,7 @@ score.plot()                         # performance with confidence intervals
 [Methodology](pages/methodology.qmd) states the statistical basis of the package. The tutorials
 are [scikit-learn Users](pages/sklearn_users.ipynb), [Competition
 Organizers](pages/competition_organizers.ipynb) and [Multiple
-Testing](pages/multiple_testing.ipynb); these three pages are Jupyter notebooks that can be opened
+Testing](pages/multiple_testing.ipynb). These three pages are Jupyter notebooks that can be opened
 in Colab from the badge at their top. [Citing](pages/citing.qmd) gives the references to cite, and
 the architecture and the complete API are in the [developer
 docs](https://ingeotec.github.io/CompStats/dev/).
@@ -99,6 +99,6 @@ docs](https://ingeotec.github.io/CompStats/dev/).
 
 As with the rest of the project, this site was built by the CompStats team
 together with Claude, Anthropic's coding assistant, through [Claude
-Code](https://claude.com/claude-code): the assistant helped set up the Quarto
+Code](https://claude.com/claude-code). The assistant helped set up the Quarto
 site and draft this page, with the authors reviewing and validating every
 change before it was committed.

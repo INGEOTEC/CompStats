@@ -91,7 +91,7 @@ Citing
 ====================================
 
 When CompStats is used in academic work, the first reference below, which describes the
-methodology, should be cited; the second is the work it extends.
+methodology, should be cited. The second is the work it extends.
 
 .. code:: bibtex
 
@@ -122,4 +122,4 @@ methodology, should be cited; the second is the work it extends.
 License
 ====================================
 
-CompStats is distributed under the Apache License 2.0; see the ``LICENSE`` file.
+CompStats is distributed under the Apache License 2.0. See the ``LICENSE`` file.

@@ -15,7 +15,7 @@ pytestmark = pytest.mark.skipif(
     not DOCS.is_dir(), reason="needs the repository checkout (docs/source)")
 
 SITE = ROOT / "quarto"
-_SKIPPED_DIRS = {"_site", "_freeze", ".quarto"}
+_SKIPPED_DIRS = {"_site", "_freeze", ".quarto", ".ipynb_checkpoints"}
 needs_site = pytest.mark.skipif(
     not SITE.is_dir(), reason="needs the repository checkout (quarto/)")
 
@@ -335,3 +335,29 @@ def test_sklearn_users_covers_regression():
     text = ["".join(c["source"]) for c in cells if c["cell_type"] == "markdown"]
     assert any("mean_absolute_error" in c for c in code)
     assert any(c.startswith("## Regression") for c in text)
+
+
+@needs_site
+def test_site_prose_style():
+    """The punctuation of the prose of the site follows the published article"""
+    pages = {}
+    for name in ["index.qmd", "pages/install.qmd", "pages/methodology.qmd"]:
+        pages[name] = (SITE / name).read_text(encoding="utf-8")
+    for name in ["sklearn_users", "competition_organizers", "multiple_testing"]:
+        path = SITE / "pages" / f"{name}.ipynb"
+        cells = json.loads(path.read_text(encoding="utf-8"))["cells"]
+        pages[name] = "\n\n".join("".join(c["source"]) for c in cells
+                                  if c["cell_type"] == "markdown")
+    for name, text in pages.items():
+        text = re.sub(r"\A---\n.*?\n---\n", "", text, flags=re.S)
+        text = re.sub(r"```.*?```", "", text, flags=re.S)
+        text = re.sub(r"\$\$.*?\$\$", "", text, flags=re.S)
+        text = re.sub(r"`[^`]*`", "CODE", text)
+        text = re.sub(r"\$[^$]*\$", "MATH", text)
+        text = re.sub(r"\[@[^\]]*\]", "CITE", text)
+        text = re.sub(r"\]\([^)]*\)", "]", text)
+        text = re.sub(r"^:::.*$", "", text, flags=re.M)
+        text = re.sub(r"https?://\S+", "URL", text)
+        assert "--" not in text and "—" not in text, name
+        assert text.count(";") <= 2, name
+        assert len(re.findall(r":(?=\s|$)", text, flags=re.M)) <= 3, name

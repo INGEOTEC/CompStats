@@ -155,9 +155,11 @@ def test_install_cells_are_not_executed():
         cells = json.loads(notebook.read_text(encoding="utf-8"))["cells"]
         cells = ["".join(c["source"]) for c in cells
                  if c["cell_type"] == "code"]
-        cells = [c for c in cells if "!pip install" in c]
+        cells = [c for c in cells if "pip install -q" in c and "CompStats" in c]
         assert len(cells) == 1, notebook.name
         assert cells[0].startswith("#| eval: false"), notebook.name
+        assert "except ImportError" in cells[0], notebook.name
+        assert "uv pip install" in cells[0], notebook.name
 
 
 @needs_site
@@ -322,3 +324,14 @@ def test_site_code_is_visible():
         cells = json.loads(notebook.read_text(encoding="utf-8"))["cells"]
         for cell in cells:
             assert word not in "".join(cell["source"]), notebook.name
+
+
+@needs_site
+def test_sklearn_users_covers_regression():
+    """The scikit-learn tutorial also shows a regression problem"""
+    path = SITE / "pages" / "sklearn_users.ipynb"
+    cells = json.loads(path.read_text(encoding="utf-8"))["cells"]
+    code = ["".join(c["source"]) for c in cells if c["cell_type"] == "code"]
+    text = ["".join(c["source"]) for c in cells if c["cell_type"] == "markdown"]
+    assert any("mean_absolute_error" in c for c in code)
+    assert any(c.startswith("## Regression") for c in text)

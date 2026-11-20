@@ -114,8 +114,9 @@ Rules:
   `git add -A quarto/_freeze` in the same commit. `CompStats/tests/test_docs.py` fails when a
   notebook and its freeze entry disagree.
 - Notebooks are edited through `nbformat` (or Jupyter), never by hand-editing the JSON.
-- The Colab-only install cell (`!pip install -q CompStats`) keeps `#| eval: false` as its first
-  line, so it is shown but not executed when the site is rendered.
+- The Colab-only install cell (a `try`/`except ImportError` block that runs
+  `uv pip install -q --system CompStats`, with `pip` as the fallback) keeps `#| eval: false` as its
+  first line, so it is shown but not executed when the site is rendered.
 
 ## Architecture
 

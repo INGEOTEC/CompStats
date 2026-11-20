@@ -6,7 +6,7 @@ number-sections: false
 ---
 
 ::: {.home-lead}
-**CompStats**, developed by [INGEOTEC](https://github.com/INGEOTEC), is an open-source Python
+**CompStats** is an open-source Python
 package for the statistical analysis of the results of supervised-learning systems evaluated on a
 shared held-out test set, the setting of collaborative competitions (also called challenges). From
 the gold standard and the predictions of each system, it estimates by bootstrap the standard error
@@ -18,15 +18,21 @@ multiple comparisons.
 Competitions rank systems by a point estimate computed on a single test set. The differences
 between consecutive systems are often in the hundredths or thousandths; consequently, a higher
 score does not imply that a system would remain better on the population from which the test set
-was sampled. Moreover, the organizers have only the predictions (not the algorithms), a single
-dataset of fixed size and a small number of submissions, which rules out the classical tests that
-require retraining the systems or evaluating them on several datasets.
+was sampled. Moreover, the statistical tests for comparing learning algorithms require access to
+the underlying algorithm (Dietterich, 1998), whereas a competition gives access only to the
+predictions, and the procedures for comparing classifiers over multiple datasets (Demšar, 2006) do
+not apply because a competition involves a single dataset. The cited works are listed in the
+[references](pages/methodology.qmd#references) of the methodology page.
 
 CompStats implements the methodology of Nava-Muñoz, Graff and Escalante, [*Analysis of systems'
 performance in natural language processing competitions*](https://doi.org/10.1016/j.patrec.2024.03.010)
 (Pattern Recognition Letters, 2024; [preprint](https://arxiv.org/abs/2403.04693)). The methodology
-was validated on eight natural language processing competitions covering classification and
-regression tasks; it is not specific to natural language processing.
+is designed to complement the standard winner selection process, which in most cases relies solely
+on the ranking of the scores, with well-established statistical tools and graphics; it also provides
+[measures](pages/methodology.qmd#competitiveness-of-a-competition) that allow organizers to assess
+the difficulty of a competition. It is designed to be universally applicable; the article
+illustrates it with eight natural language processing competitions as case studies, involving
+classification and regression problems.
 
 ::: {.pillars}
 ::: {.pillar}

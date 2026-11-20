@@ -26,7 +26,9 @@ it estimates by bootstrap the standard error and the confidence interval of ever
 measure, tests whether the difference between the best system and each of the others is
 statistically significant, and corrects those tests for multiple comparisons. It implements the
 methodology of the article `Analysis of systems' performance in natural language processing
-competitions <https://doi.org/10.1016/j.patrec.2024.03.010>`_ (Pattern Recognition Letters, 2024).
+competitions <https://doi.org/10.1016/j.patrec.2024.03.010>`_ (Pattern Recognition Letters, 2024),
+which complements the standard selection of a winner, usually based only on the ranking of the
+scores.
 
 Documentation
 ====================================

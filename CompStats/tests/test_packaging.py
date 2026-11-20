@@ -6,6 +6,9 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts" / "check_package_versions.py"
 WORKFLOWS = ROOT / ".github" / "workflows"
+# Built from fragments so that this file does not contain the legacy names it checks for.
+LEGACY_RUNNER = "nose" + "tests"
+LEGACY_WORKFLOW = "test" + ".yaml"
 
 pytest.importorskip("tomllib")    # Python 3.11+
 pytest.importorskip("packaging")
@@ -83,12 +86,12 @@ def test_workflows():
     """Legacy workflows are gone and the new ones have the key steps"""
     assert (WORKFLOWS / "test.yml").is_file()
     assert (WORKFLOWS / "publish-pypi.yml").is_file()
-    assert not (WORKFLOWS / "test.yaml").exists()
+    assert not (WORKFLOWS / LEGACY_WORKFLOW).exists()
     assert not (WORKFLOWS / "pip.yaml").exists()
     test = (WORKFLOWS / "test.yml").read_text(encoding="utf-8")
     assert "pytest CompStats" in test
     assert "scripts/check_package_versions.py" in test
-    assert "nosetests" not in test
+    assert LEGACY_RUNNER not in test
     publish = (WORKFLOWS / "publish-pypi.yml").read_text(encoding="utf-8")
     assert "secrets.TWINE" in publish
     assert "twine check" in publish

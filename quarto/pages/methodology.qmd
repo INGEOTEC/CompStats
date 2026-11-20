@@ -40,10 +40,12 @@ where $q_p$ is the $p$-th quantile of the bootstrap distribution and $\alpha = 0
 
 ## Comparison through independent samples
 
-If the confidence intervals of two systems do not overlap, their performances differ
-significantly; if they overlap, the comparison is inconclusive, which motivates the paired
-comparison described next. `Perf.plot()` draws the intervals of the systems, ordered by
-performance.
+For two systems $i$ and $j$, with $i \neq j$, the comparison tests the null hypothesis
+$H_0: \theta_i = \theta_j$ against the alternative $H_1: \theta_i \neq \theta_j$. If the
+confidence intervals of the two systems do not overlap, there is a significant difference between
+their performances; if they partially overlap, there is some possibility that the performances of
+the two systems are the same in the population. The latter case motivates the paired comparison
+described next. `Perf.plot()` draws the intervals of the systems, ordered by performance.
 
 ## Comparison through paired samples
 
@@ -70,8 +72,12 @@ $$
 p\left(\delta(X) > \delta(x) \mid H_0, x\right),
 $$
 
-where $X$ ranges over test sets of size $n$. Following Berg-Kirkpatrick, Burkett and Klein (2012),
-it is estimated as the fraction of bootstrap samples in which the difference exceeds
+where $X$ ranges over test sets of size $n$. Traditionally, if the p-value is below 0.05, the
+observed difference $\delta(x)$ is considered sufficiently unlikely under $H_0$ to reject it, in
+which case the evidence suggests that $A$ is superior to $B$. The exact p-value is in general hard
+to compute and must be approximated; the paired bootstrap is widely used for this purpose
+(Koehn, 2004; Berg-Kirkpatrick, Burkett and Klein, 2012) and applies to any performance measure.
+Following Berg-Kirkpatrick, Burkett and Klein (2012), the p-value is estimated as the fraction of bootstrap samples in which the difference exceeds
 $2\delta(x)$; the bootstrap distribution is centred on $\delta(x)$ rather than on zero because the
 samples are drawn from $x$. `Difference.p_value()` returns these p-values.
 
@@ -79,7 +85,9 @@ samples are drawn from $x$. `Difference.p_value()` returns these p-values.
 
 Comparing the best system with each of the other $m-1$ systems tests the hypotheses
 $H_0^j: \theta_1 \le \theta_j$ against $H_1^j: \theta_1 > \theta_j$, for $j = 2, \ldots, m$,
-simultaneously, which inflates the probability of a Type I error. Three corrections are
+simultaneously, which inflates the probability of a Type I error. Correcting the p-values serves to
+control the Type I error, to avoid spurious findings and to preserve the validity of the research.
+Three corrections are
 considered, all of which adjust the p-values: Bonferroni, which is conservative and multiplies
 each p-value by the number of comparisons; Holm's step-down procedure, which adjusts the p-values
 sequentially (Holm, 1979); and Benjamini-Hochberg, which controls the false discovery rate
@@ -91,13 +99,32 @@ each measure is corrected as its own family.
 
 ## Competitiveness of a competition
 
-The article characterizes a competition with four indicators: the number of systems statistically
-tied with the winner; the coefficient of variation of the systems' performance,
-$CV = 100\, s_x / \bar{x}$, where $s_x$ is the sample standard deviation and $\bar{x}$ the mean
-(a smaller value means a more competitive competition); the distance between the winner and the
-system in the middle of the table, $|win - med|$; and the possible percentage improvement,
-$PPI = 100\,(1 - x_{winner})$, for bigger-is-better scores bounded by 1 (a low value means little
-room for improvement). These indicators are computed by the earlier DataFrame-based interface,
+The competitiveness of a competition is evaluated with three aspects. The first is the number of
+ties between systems in relation to the number of possible comparisons, which is $m(m-1)/2$ for
+$m$ participants; a large proportion of ties indicates a higher level of competitiveness. The
+second is the coefficient of variation of the participants' performance,
+$CV = 100\, s_x / \bar{x}$, where $s_x$ is the sample standard deviation and $\bar{x}$ the mean;
+a smaller $CV$ means greater competitiveness. The third is the distance between the winner and the
+competitor in the middle of the table, $|win. - med.|$; a smaller distance indicates a smaller gap
+between them.
+
+The potential for improvement of a task, considering its measure, is assessed separately with the
+possible percentage improvement,
+
+$$
+PPI = 100\,(1 - x_{winner}),
+$$
+
+where $x_{winner}$ is the score of the winner. The $PPI$ is higher when the gap between the
+performance of the winner and the ideal value of the measure is large. It applies to scores where
+the highest value is the best and the scores are capped; when a competition has a low $PPI$,
+achieving substantial improvements is more challenging. It is a measure of the room for
+improvement, not of competitiveness.
+
+The summary tables of the article also report the number of ties with the winner without
+correction and with the Bonferroni, Holm and Benjamini-Hochberg corrections, and the $CV$ is not
+analysed for the mean absolute error, due to the nature of that measure. These indicators are
+computed by the earlier DataFrame-based interface,
 `CompStats.performance.performance_multiple_metrics`, documented in the [developer
 docs](https://ingeotec.github.io/CompStats/dev/performance_api.html).
 
@@ -118,6 +145,12 @@ error, are handled through the `BiB` (bigger is better) flag, which every functi
 - Nava-Muñoz, S., Graff Guerrero, M. and Escalante, H. J. (2023). Comparison of Classifiers in
   Challenge Scheme. *Pattern Recognition*, Lecture Notes in Computer Science 13902, 89-98.
   [doi:10.1007/978-3-031-33783-3_9](https://doi.org/10.1007/978-3-031-33783-3_9)
+- Dietterich, T. G. (1998). Approximate statistical tests for comparing supervised
+  classification learning algorithms. *Neural Computation*, 10(7), 1895-1923.
+- Demšar, J. (2006). Statistical comparisons of classifiers over multiple data sets. *Journal of
+  Machine Learning Research*, 7, 1-30.
+- Koehn, P. (2004). Statistical significance tests for machine translation evaluation.
+  *Proceedings of EMNLP 2004*, 388-395.
 - Berg-Kirkpatrick, T., Burkett, D. and Klein, D. (2012). An empirical investigation of
   statistical significance in NLP. *EMNLP-CoNLL 2012*.
 - Chernick, M. R. and LaBudde, R. A. (2011). *An Introduction to Bootstrap Methods with

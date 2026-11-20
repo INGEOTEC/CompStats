@@ -118,16 +118,17 @@ example ``'bonferroni'``, ``'holm'`` or ``'fdr_bh'``). When several measures are
 measure is corrected as its own family.
 
 **Competitiveness of a competition.** The legacy functional API
-(:py:func:`~CompStats.performance.performance_multiple_metrics`) summarizes a competition with the
-coefficient of variation of the systems' performance,
+(:py:func:`~CompStats.performance.performance_multiple_metrics`) summarizes the competitiveness of
+a competition with the coefficient of variation of the systems' performance,
 
 .. math::
 
    CV = 100 \, \frac{s_x}{\bar{x}},
 
 where :math:`s_x` is the sample standard deviation and :math:`\bar{x}` the mean of the systems'
-performance; with the possible percentage improvement, :math:`PPI = 100\,(1 - x_{best})`, for
-scores bounded by 1; and with the distance between the winner and the median system.
+performance, and with the distance between the winner and the system in the middle of the table.
+The potential for improvement of a task is assessed separately with the possible percentage
+improvement, :math:`PPI = 100\,(1 - x_{best})`, for bigger-is-better scores bounded by 1.
 
 Architecture
 ====================================

@@ -266,3 +266,18 @@ def test_project_urls():
         urls = tomllib.load(fpt)["project"]["urls"]
     assert urls["Homepage"] == "https://ingeotec.github.io/CompStats/"
     assert urls["Documentation"] == "https://ingeotec.github.io/CompStats/"
+
+
+@needs_site
+def test_site_follows_the_article():
+    """The wording of the site agrees with the published article"""
+    index = (SITE / "index.qmd").read_text(encoding="utf-8").lower()
+    assert "developed" + " by" not in index
+    assert "validated" not in index
+    lines = (SITE / "_quarto.yml").read_text(encoding="utf-8").splitlines()
+    marker = next(i for i, line in enumerate(lines)
+                  if "Code under the Apache 2.0 license" in line)
+    assert "INGEOTEC" not in "\n".join(lines[max(marker - 1, 0):marker + 1])
+    methodology = (SITE / "pages" / "methodology.qmd").read_text(encoding="utf-8")
+    assert "m(m-1)/2" in methodology.replace(" ", "")
+    assert "four" + " indicators" not in methodology

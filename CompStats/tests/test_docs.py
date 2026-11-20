@@ -308,3 +308,17 @@ def test_site_bibliography():
     for entry in re.split(r"^(?=@)", content, flags=re.MULTILINE):
         if entry.strip():
             assert re.search(r"^\s*(doi|url)\s*=", entry, re.MULTILINE), entry[:40]
+
+
+@needs_site
+def test_site_code_is_visible():
+    """No code of the site is folded behind a link"""
+    word = "code-" + "fold"
+    config = SITE / "_quarto.yml"
+    assert word not in config.read_text(encoding="utf-8")
+    for page in _site_files(".qmd"):
+        assert word not in page.read_text(encoding="utf-8"), page.name
+    for notebook in _site_files(".ipynb"):
+        cells = json.loads(notebook.read_text(encoding="utf-8"))["cells"]
+        for cell in cells:
+            assert word not in "".join(cell["source"]), notebook.name

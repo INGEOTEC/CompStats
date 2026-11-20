@@ -1,0 +1,81 @@
+name: test
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+env:
+  # The suite draws seaborn figures; the runner has no display.
+  MPLBACKEND: Agg
+
+jobs:
+  # The whole suite: no test touches the network.
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install package and test dependencies
+        run: pip install -e ".[test]"
+      - name: Run tests
+        run: pytest CompStats
+
+  # Coverage is collected once (not per matrix cell) and sent to Coveralls,
+  # which the README badge reads. `.coveragerc` omits the tests package.
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install package, test and coverage dependencies
+        run: |
+          pip install -e ".[test]"
+          pip install coverage coveralls
+      - name: Run tests with coverage
+        run: coverage run -m pytest CompStats
+      - name: Report
+        run: coverage report
+      - name: Coveralls
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: coveralls --service=github
+
+  # Hard gate on the single-step-ahead rule: __version__ may not be behind,
+  # equal to, or more than one release past what is published on PyPI.
+  check-package-versions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install checker dependencies
+        run: pip install packaging
+      - name: Check package versions against PyPI
+        run: python scripts/check_package_versions.py
+
+  # Sphinx gate: a strict HTML build of the developer reference. Any broken
+  # cross-reference or other warning fails it. The docstring examples are not
+  # run (their outputs depend on random bootstrap samples).
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install docs and package dependencies
+        run: |
+          pip install -r docs/requirements.txt
+          pip install -e .
+      - name: Build the docs strictly
+        run: python -m sphinx -n -W --keep-going -b html docs/source docs/build/html

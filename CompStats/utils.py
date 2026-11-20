@@ -20,17 +20,17 @@ except ImportError:
 
 
 def progress_bar(arg, use_tqdm: bool = True, **kwargs):
-    """Wrap `arg` in a :py:class:`tqdm.tqdm` progress bar.
+    """Wrap `arg` in a ``tqdm.tqdm`` progress bar.
 
-    Returns `arg` unchanged when tqdm is not installed or :py:attr:`use_tqdm` is
+    Returns `arg` unchanged when tqdm is not installed or ``use_tqdm`` is
     `False`, so callers can iterate over the result the same way regardless of
     whether a progress bar is actually shown.
 
     :param arg: Iterable to wrap.
     :param use_tqdm: Whether to show the progress bar, default=True.
     :type use_tqdm: bool
-    :param kwargs: Extra keyword arguments passed to :py:class:`tqdm.tqdm`.
-    :return: `arg`, optionally wrapped in a :py:class:`tqdm.tqdm` iterator.
+    :param kwargs: Extra keyword arguments passed to ``tqdm.tqdm``.
+    :return: `arg`, optionally wrapped in a ``tqdm.tqdm`` iterator.
     """
     if not USE_TQDM or not use_tqdm:
         return arg
@@ -57,11 +57,11 @@ def metrics_docs(hy_name='y_pred', bib: bool = True):
         """Decorator to Perf to write :py:class:`~sklearn.metrics` documentation"""
 
         direction = 'score-type (bigger is better)' if bib else 'error-type (smaller is better)'
-        func.__doc__ = f""":py:class:`~CompStats.interface.Perf` with :py:func:`~sklearn.metrics.{func.__name__}` as a {direction} :py:attr:`func.` The parameters not described can be found in :py:func:`~sklearn.metrics.{func.__name__}`.
+        func.__doc__ = f""":py:class:`~CompStats.interface.Perf` with :py:func:`~sklearn.metrics.{func.__name__}` as a {direction} ``func``. The parameters not described can be found in :py:func:`~sklearn.metrics.{func.__name__}`.
 
     :param y_true: True measurement or could be a pandas.DataFrame where column label 'y' corresponds to the true measurement.
     :type y_true: numpy.ndarray or pandas.DataFrame
-    :param {hy_name}: Predictions, the algorithms will be identified with alg-k where k=1 is the first argument included in :py:attr:`y_pred.`
+    :param {hy_name}: Predictions, the algorithms will be identified with alg-k where k=1 is the first argument included in ``{hy_name}``.
     :type {hy_name}: numpy.ndarray
     :param kwargs: Predictions, the algorithms will be identified using the keyword
     :type kwargs: numpy.ndarray
@@ -72,7 +72,7 @@ def metrics_docs(hy_name='y_pred', bib: bool = True):
     :param use_tqdm: Whether to use tqdm.tqdm to visualize the progress, default=True
     :type use_tqdm: bool
 
-    :py:func:`~CompStats.metrics.{func.__name__}.measure` builds the tagged callable used internally as :py:attr:`func`; call it directly (e.g. ``{func.__name__}.measure(...)``) to combine this metric with others into a single, multi-measure :py:class:`~CompStats.interface.Perf` -- see :py:class:`~CompStats.interface.Perf`'s class docstring for a worked example.
+    ``{func.__name__}.measure`` builds the tagged callable used internally as ``func``; call it directly (e.g. ``{func.__name__}.measure(...)``) to combine this metric with others into a single, multi-measure :py:class:`~CompStats.interface.Perf` -- see :py:class:`~CompStats.interface.Perf`'s class docstring for a worked example.
 
     """ + func.__doc__
 

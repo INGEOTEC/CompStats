@@ -477,11 +477,11 @@ def macro_f1(y_true, *y_pred, labels=None,
              sample_weight=None, zero_division='warn',
              num_samples: int = 500, n_jobs: int = -1, use_tqdm=True,
              **kwargs):
-    """:py:class:`~CompStats.interface.Perf` with :py:func:`~sklearn.metrics.f1_score` (as :py:attr:`func`) with the parameteres needed to compute the macro score. The parameters not described can be found in :py:func:`~sklearn.metrics.f1_score`
+    """:py:class:`~CompStats.interface.Perf` with :py:func:`~sklearn.metrics.f1_score` (as ``func``) with the parameteres needed to compute the macro score. The parameters not described can be found in :py:func:`~sklearn.metrics.f1_score`
 
     :param y_true: True measurement or could be a pandas.DataFrame where column label 'y' corresponds to the true measurement.
     :type y_true: numpy.ndarray or pandas.DataFrame
-    :param y_pred: Predictions, the algorithms will be identified with alg-k where k=1 is the first argument included in :py:attr:`y_pred.`
+    :param y_pred: Predictions, the algorithms will be identified with alg-k where k=1 is the first argument included in ``y_pred``.
     :type y_pred: numpy.ndarray
     :param kwargs: Predictions, the algorithms will be identified using the keyword
     :type kwargs: numpy.ndarray
@@ -513,11 +513,11 @@ def macro_recall(y_true, *y_pred, labels=None,
                  sample_weight=None, zero_division='warn',
                  num_samples: int = 500, n_jobs: int = -1, use_tqdm=True,
                  **kwargs):
-    """:py:class:`~CompStats.interface.Perf` with :py:func:`~sklearn.metrics.recall_score` (as :py:attr:`func`) with the parameteres needed to compute the macro score. The parameters not described can be found in :py:func:`~sklearn.metrics.recall_score`
+    """:py:class:`~CompStats.interface.Perf` with :py:func:`~sklearn.metrics.recall_score` (as ``func``) with the parameteres needed to compute the macro score. The parameters not described can be found in :py:func:`~sklearn.metrics.recall_score`
 
     :param y_true: True measurement or could be a pandas.DataFrame where column label 'y' corresponds to the true measurement.
     :type y_true: numpy.ndarray or pandas.DataFrame
-    :param y_pred: Predictions, the algorithms will be identified with alg-k where k=1 is the first argument included in :py:attr:`y_pred.`
+    :param y_pred: Predictions, the algorithms will be identified with alg-k where k=1 is the first argument included in ``y_pred``.
     :type y_pred: numpy.ndarray
     :param kwargs: Predictions, the algorithms will be identified using the keyword
     :type kwargs: numpy.ndarray
@@ -549,11 +549,11 @@ def macro_precision(y_true, *y_pred, labels=None,
                     sample_weight=None, zero_division='warn',
                     num_samples: int = 500, n_jobs: int = -1, use_tqdm=True,
                     **kwargs):
-    """:py:class:`~CompStats.interface.Perf` with :py:func:`~sklearn.metrics.precision_score` (as :py:attr:`func`) with the parameteres needed to compute the macro score. The parameters not described can be found in :py:func:`~sklearn.metrics.precision_score`
+    """:py:class:`~CompStats.interface.Perf` with :py:func:`~sklearn.metrics.precision_score` (as ``func``) with the parameteres needed to compute the macro score. The parameters not described can be found in :py:func:`~sklearn.metrics.precision_score`
 
     :param y_true: True measurement or could be a pandas.DataFrame where column label 'y' corresponds to the true measurement.
     :type y_true: numpy.ndarray or pandas.DataFrame
-    :param y_pred: Predictions, the algorithms will be identified with alg-k where k=1 is the first argument included in :py:attr:`y_pred.`
+    :param y_pred: Predictions, the algorithms will be identified with alg-k where k=1 is the first argument included in ``y_pred``.
     :type y_pred: numpy.ndarray
     :param kwargs: Predictions, the algorithms will be identified using the keyword
     :type kwargs: numpy.ndarray
@@ -1032,11 +1032,11 @@ def pearsonr(y_true, *y_pred,
              n_jobs: int = -1,
              use_tqdm=True,
              **kwargs):
-    """:py:class:`~CompStats.interface.Perf` with :py:func:`~scipy.stats.pearsonr` as :py:attr:`func.`
+    """:py:class:`~CompStats.interface.Perf` with :py:func:`~scipy.stats.pearsonr` as ``func``.
 
     :param y_true: True measurement or could be a pandas.DataFrame where column label 'y' corresponds to the true measurement.
     :type y_true: numpy.ndarray or pandas.DataFrame
-    :param y_pred: Predictions, the algorithms will be identified with alg-k where k=1 is the first argument included in :py:attr:`y_pred.`
+    :param y_pred: Predictions, the algorithms will be identified with alg-k where k=1 is the first argument included in ``y_pred``.
     :type y_pred: numpy.ndarray
     :param kwargs: Predictions, the algorithms will be identified using the keyword
     :type kwargs: numpy.ndarray

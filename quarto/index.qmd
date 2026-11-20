@@ -19,14 +19,13 @@ Competitions rank systems by a point estimate computed on a single test set. The
 between consecutive systems are often in the hundredths or thousandths; consequently, a higher
 score does not imply that a system would remain better on the population from which the test set
 was sampled. Moreover, the statistical tests for comparing learning algorithms require access to
-the underlying algorithm (Dietterich, 1998), whereas a competition gives access only to the
-predictions, and the procedures for comparing classifiers over multiple datasets (Demšar, 2006) do
-not apply because a competition involves a single dataset. The cited works are listed in the
-[references](pages/methodology.qmd#references) of the methodology page.
+the underlying algorithm [@Dietterich1998], whereas a competition gives access only to the
+predictions, and the procedures for comparing classifiers over multiple datasets [@Demsar2006] do
+not apply because a competition involves a single dataset.
 
-CompStats implements the methodology of Nava-Muñoz, Graff and Escalante, [*Analysis of systems'
-performance in natural language processing competitions*](https://doi.org/10.1016/j.patrec.2024.03.010)
-(Pattern Recognition Letters, 2024; [preprint](https://arxiv.org/abs/2403.04693)). The methodology
+CompStats implements the methodology of @Nava-Munoz2024, *Analysis of systems' performance in
+natural language processing competitions* (Pattern Recognition Letters;
+[preprint](https://arxiv.org/abs/2403.04693)). The methodology
 is designed to complement the standard winner selection process, which in most cases relies solely
 on the ranking of the scores, with well-established statistical tools and graphics; it also provides
 [measures](pages/methodology.qmd#competitiveness-of-a-competition) that allow organizers to assess

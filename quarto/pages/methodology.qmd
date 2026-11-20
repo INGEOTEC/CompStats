@@ -1,10 +1,10 @@
 ---
 title: "Methodology"
 subtitle: "The statistical basis of CompStats"
+nocite: "@Nava-Munoz2023"
 ---
 
-This page states the methodology implemented by CompStats, as published in Nava-Muñoz, Graff and
-Escalante (2024). Each section gives a definition, its formula and the CompStats call that
+This page states the methodology implemented by CompStats, as published in @Nava-Munoz2024. Each section gives a definition, its formula and the CompStats call that
 computes it.
 
 ## Setting
@@ -19,7 +19,7 @@ the number of submissions is small, and only the predictions are available, not 
 ## Bootstrap
 
 Bootstrapping draws conclusions about the sampling distribution of a statistic by resampling the
-data with replacement (Chernick and LaBudde, 2011; Efron and Tibshirani, 1994). In CompStats,
+data with replacement [@Chernick2011; @Efron1994]. In CompStats,
 $B$ samples of $n$ indices are drawn with replacement from $\{1, \ldots, n\}$, and the measure is
 computed on each sample for every system, which gives the bootstrap distribution
 $s_j^{*1}, \ldots, s_j^{*B}$ of system $j$. The article uses $B = 10{,}000$; the package default
@@ -76,8 +76,8 @@ where $X$ ranges over test sets of size $n$. Traditionally, if the p-value is be
 observed difference $\delta(x)$ is considered sufficiently unlikely under $H_0$ to reject it, in
 which case the evidence suggests that $A$ is superior to $B$. The exact p-value is in general hard
 to compute and must be approximated; the paired bootstrap is widely used for this purpose
-(Koehn, 2004; Berg-Kirkpatrick, Burkett and Klein, 2012) and applies to any performance measure.
-Following Berg-Kirkpatrick, Burkett and Klein (2012), the p-value is estimated as the fraction of bootstrap samples in which the difference exceeds
+[@Koehn2004; @Berg-Kirkpatrick2012] and applies to any performance measure.
+Following @Berg-Kirkpatrick2012, the p-value is estimated as the fraction of bootstrap samples in which the difference exceeds
 $2\delta(x)$; the bootstrap distribution is centred on $\delta(x)$ rather than on zero because the
 samples are drawn from $x$. `Difference.p_value()` returns these p-values.
 
@@ -90,8 +90,8 @@ control the Type I error, to avoid spurious findings and to preserve the validit
 Three corrections are
 considered, all of which adjust the p-values: Bonferroni, which is conservative and multiplies
 each p-value by the number of comparisons; Holm's step-down procedure, which adjusts the p-values
-sequentially (Holm, 1979); and Benjamini-Hochberg, which controls the false discovery rate
-(Benjamini and Hochberg, 1995). In CompStats they are selected with
+sequentially [@Holm1979]; and Benjamini-Hochberg, which controls the false discovery rate
+[@Benjamini1995]. In CompStats they are selected with
 `Difference.p_value(correction='bonferroni')`, `'holm'` and `'fdr_bh'`, respectively, or with any
 other method accepted by `statsmodels.stats.multitest.multipletests`. The same `correction`
 argument is accepted by `Perf.plot` and `Difference.plot`. When a `Perf` holds several measures,
@@ -139,26 +139,5 @@ error, are handled through the `BiB` (bigger is better) flag, which every functi
 
 ## References {.unnumbered}
 
-- Nava-Muñoz, S., Graff, M. and Escalante, H. J. (2024). Analysis of systems' performance in
-  natural language processing competitions. *Pattern Recognition Letters*.
-  [doi:10.1016/j.patrec.2024.03.010](https://doi.org/10.1016/j.patrec.2024.03.010)
-- Nava-Muñoz, S., Graff Guerrero, M. and Escalante, H. J. (2023). Comparison of Classifiers in
-  Challenge Scheme. *Pattern Recognition*, Lecture Notes in Computer Science 13902, 89-98.
-  [doi:10.1007/978-3-031-33783-3_9](https://doi.org/10.1007/978-3-031-33783-3_9)
-- Dietterich, T. G. (1998). Approximate statistical tests for comparing supervised
-  classification learning algorithms. *Neural Computation*, 10(7), 1895-1923.
-- Demšar, J. (2006). Statistical comparisons of classifiers over multiple data sets. *Journal of
-  Machine Learning Research*, 7, 1-30.
-- Koehn, P. (2004). Statistical significance tests for machine translation evaluation.
-  *Proceedings of EMNLP 2004*, 388-395.
-- Berg-Kirkpatrick, T., Burkett, D. and Klein, D. (2012). An empirical investigation of
-  statistical significance in NLP. *EMNLP-CoNLL 2012*.
-- Chernick, M. R. and LaBudde, R. A. (2011). *An Introduction to Bootstrap Methods with
-  Applications to R*. Wiley.
-- Efron, B. and Tibshirani, R. J. (1994). *An Introduction to the Bootstrap*. Chapman and
-  Hall/CRC.
-- Holm, S. (1979). A simple sequentially rejective multiple test procedure. *Scandinavian
-  Journal of Statistics*, 6, 65-70.
-- Benjamini, Y. and Hochberg, Y. (1995). Controlling the false discovery rate: a practical and
-  powerful approach to multiple testing. *Journal of the Royal Statistical Society, Series B*,
-  57, 289-300.
+::: {#refs}
+:::

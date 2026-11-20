@@ -201,7 +201,8 @@ def test_methodology_page_content():
                  "Bonferroni", "Holm", "Benjamini", "Berg-Kirkpatrick",
                  "coefficient of variation", "PPI"]:
         assert word.lower() in lower, word
-    assert "10.1016/j.patrec.2024.03.010" in text
+    assert "@Nava-Munoz2024" in text
+    assert "{#refs}" in text
 
 
 def test_no_legacy_hosting_anywhere():
@@ -281,3 +282,23 @@ def test_site_follows_the_article():
     methodology = (SITE / "pages" / "methodology.qmd").read_text(encoding="utf-8")
     assert "m(m-1)/2" in methodology.replace(" ", "")
     assert "four" + " indicators" not in methodology
+
+
+@needs_site
+def test_site_bibliography():
+    """Every citation of the site links to a complete entry of references.bib"""
+    bib = SITE / "references.bib"
+    assert bib.is_file()
+    assert "bibliography: references.bib" in (SITE / "_quarto.yml").read_text(
+        encoding="utf-8")
+    content = bib.read_text(encoding="utf-8")
+    keys = set(re.findall(r"^@\w+\{([^,]+),", content, re.MULTILINE))
+    pages = [SITE / "index.qmd", SITE / "pages" / "methodology.qmd"]
+    for page in pages:
+        text = page.read_text(encoding="utf-8")
+        for key in re.findall(r"@([A-Za-z][A-Za-z0-9-]*[0-9]{4})", text):
+            assert key in keys, f"{key} cited in {page.name} is not in references.bib"
+        assert not re.search(r"\((?:[^()]*, )?(?:19|20)\d{2}\)", text), page.name
+    for entry in re.split(r"^(?=@)", content, flags=re.MULTILINE):
+        if entry.strip():
+            assert re.search(r"^\s*(doi|url)\s*=", entry, re.MULTILINE), entry[:40]

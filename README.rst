@@ -99,6 +99,8 @@ methodology, should be cited; the second is the work it extends.
       author  = {Nava-Mu{\~n}oz, Sergio and Graff, Mario and Escalante, Hugo Jair},
       title   = {Analysis of systems' performance in natural language processing competitions},
       journal = {Pattern Recognition Letters},
+      volume  = {186},
+      pages   = {346--353},
       year    = {2024},
       doi     = {10.1016/j.patrec.2024.03.010},
       url     = {https://doi.org/10.1016/j.patrec.2024.03.010}

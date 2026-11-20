@@ -5,6 +5,7 @@ project:
 lang: en
 
 bibliography: references.bib
+csl: compstats.csl
 
 execute:
   enabled: true

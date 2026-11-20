@@ -24,8 +24,7 @@ predictions, and the procedures for comparing classifiers over multiple datasets
 not apply because a competition involves a single dataset.
 
 CompStats implements the methodology of @Nava-Munoz2024, *Analysis of systems' performance in
-natural language processing competitions* (Pattern Recognition Letters;
-[preprint](https://arxiv.org/abs/2403.04693)). The methodology
+natural language processing competitions* (Pattern Recognition Letters). The methodology
 is designed to complement the standard winner selection process, which in most cases relies solely
 on the ranking of the scores, with well-established statistical tools and graphics; it also provides
 [measures](pages/methodology.qmd#competitiveness-of-a-competition) that allow organizers to assess

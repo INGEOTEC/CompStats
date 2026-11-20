@@ -292,6 +292,12 @@ def test_site_bibliography():
     assert "bibliography: references.bib" in (SITE / "_quarto.yml").read_text(
         encoding="utf-8")
     content = bib.read_text(encoding="utf-8")
+    csl = SITE / "compstats.csl"
+    assert csl.is_file()
+    assert "csl: compstats.csl" in (SITE / "_quarto.yml").read_text(encoding="utf-8")
+    assert 'variable="note"' in csl.read_text(encoding="utf-8")
+    assert "https://arxiv.org/abs/2403.04693" in content
+    assert "arxiv.org" not in (SITE / "index.qmd").read_text(encoding="utf-8")
     keys = set(re.findall(r"^@\w+\{([^,]+),", content, re.MULTILINE))
     pages = [SITE / "index.qmd", SITE / "pages" / "methodology.qmd"]
     for page in pages:

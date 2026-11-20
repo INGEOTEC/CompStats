@@ -1,0 +1,143 @@
+---
+title: "Methodology"
+subtitle: "The statistical basis of CompStats"
+nocite: "@Nava-Munoz2023"
+---
+
+This page states the methodology implemented by CompStats, as published in @Nava-Munoz2024. Each section gives a definition, its formula and the CompStats call that
+computes it.
+
+## Setting
+
+A competition provides a gold standard $y$ of size $n$, kept by the organizers, and the predictions
+$\hat{y}_1, \ldots, \hat{y}_m$ of $m$ systems. A performance measure $s(y, \hat{y})$ ranks the
+systems. The quantity of interest is the performance $\theta_j$ of system $j$ on the population
+from which the test set is assumed to be a random sample. The value computed on the test set is an
+estimate of it. The setting imposes three constraints: there is a single dataset of fixed size,
+the number of submissions is small, and only the predictions are available, not the algorithms.
+
+## Bootstrap
+
+Bootstrapping draws conclusions about the sampling distribution of a statistic by resampling the
+data with replacement [@Chernick2011; @Efron1994]. In CompStats,
+$B$ samples of $n$ indices are drawn with replacement from $\{1, \ldots, n\}$, and the measure is
+computed on each sample for every system, which gives the bootstrap distribution
+$s_j^{*1}, \ldots, s_j^{*B}$ of system $j$. The article uses $B = 10{,}000$, whereas the package default
+is `num_samples=500`. This value is set with the parameter `num_samples` of every function of
+`CompStats.metrics` and of `Perf`.
+
+## Standard error and confidence interval
+
+The standard error of the measure is the standard deviation of the bootstrap distribution
+(`Perf.se`). The $1-\alpha$ confidence interval is the percentile interval
+
+$$
+\left[ q_{\alpha/2}(s_j^{*}),\; q_{1-\alpha/2}(s_j^{*}) \right],
+$$
+
+where $q_p$ is the $p$-th quantile of the bootstrap distribution and $\alpha = 0.05$ by default
+(`Perf.ci`).
+
+## Comparison through independent samples
+
+For two systems $i$ and $j$, with $i \neq j$, the comparison tests the null hypothesis
+$H_0: \theta_i = \theta_j$ against the alternative $H_1: \theta_i \neq \theta_j$. If the
+confidence intervals of the two systems do not overlap, there is a significant difference between
+their performances. Conversely, if they partially overlap, there is some possibility that the performances of
+the two systems are the same in the population. The latter case motivates the paired comparison
+described next. `Perf.plot()` draws the intervals of the systems, ordered by performance.
+
+## Comparison through paired samples
+
+Every bootstrap sample contains the gold standard and the prediction of every system for the same
+elements. Therefore, the difference in performance can be computed on each sample (the paired
+bootstrap). For a system $A$ and a system $B$, the bootstrap distribution of the difference is
+
+$$
+\delta^{*} = s^{*}(y, \hat{y}_A) - s^{*}(y, \hat{y}_B).
+$$
+
+If the confidence interval of the difference contains zero, the hypothesis that both systems
+perform equally cannot be rejected. `Perf.difference()` returns the differences between the best
+system and each of the others, or with respect to the system named by the argument `wrt`, and
+`Difference.plot()` draws their intervals.
+
+## Statistical significance
+
+Let $\delta(x) = \theta_A(x) - \theta_B(x)$ be the difference observed between systems $A$ and $B$
+on the test set $x$. The null hypothesis $H_0$ states that $A$ is not better than $B$ in the
+population. The p-value is
+
+$$
+p\left(\delta(X) > \delta(x) \mid H_0, x\right),
+$$
+
+where $X$ ranges over test sets of size $n$. Traditionally, if the p-value is below 0.05, the
+observed difference $\delta(x)$ is considered sufficiently unlikely under $H_0$ to reject it, in
+which case the evidence suggests that $A$ is superior to $B$. The exact p-value is in general hard
+to compute and must be approximated. The paired bootstrap is widely used for this purpose
+[@Koehn2004; @Berg-Kirkpatrick2012] and applies to any performance measure.
+Following @Berg-Kirkpatrick2012, the p-value is estimated as the fraction of bootstrap samples in which the difference exceeds
+$2\delta(x)$. The bootstrap distribution is centred on $\delta(x)$ rather than on zero because the
+samples are drawn from $x$. `Difference.p_value()` returns these p-values.
+
+## Multiple comparisons
+
+Comparing the best system with each of the other $m-1$ systems tests the hypotheses
+$H_0^j: \theta_1 \le \theta_j$ against $H_1^j: \theta_1 > \theta_j$, for $j = 2, \ldots, m$,
+simultaneously, which inflates the probability of a Type I error. Correcting the p-values serves to
+control the Type I error, to avoid spurious findings and to preserve the validity of the research.
+Three corrections are
+considered, all of which adjust the p-values. Bonferroni is conservative and multiplies each
+p-value by the number of comparisons. Holm's step-down procedure adjusts the p-values
+sequentially [@Holm1979]. Benjamini-Hochberg controls the false discovery rate [@Benjamini1995].
+In CompStats they are selected with
+`Difference.p_value(correction='bonferroni')`, `'holm'` and `'fdr_bh'`, respectively, or with any
+other method accepted by `statsmodels.stats.multitest.multipletests`. The same `correction`
+argument is accepted by `Perf.plot` and `Difference.plot`. When a `Perf` holds several measures,
+each measure is corrected as its own family.
+
+## Competitiveness of a competition
+
+The competitiveness of a competition is evaluated with three aspects. The first is the number of
+ties between systems in relation to the number of possible comparisons, which is $m(m-1)/2$ for
+$m$ participants. A large proportion of ties indicates a higher level of competitiveness. The
+second is the coefficient of variation of the participants' performance,
+$CV = 100\, s_x / \bar{x}$, where $s_x$ is the sample standard deviation and $\bar{x}$ the mean.
+A smaller $CV$ means greater competitiveness. The third is the distance between the winner and the
+competitor in the middle of the table, $|win. - med.|$. A smaller distance indicates a smaller gap
+between them.
+
+The potential for improvement of a task, considering its measure, is assessed separately with the
+possible percentage improvement,
+
+$$
+PPI = 100\,(1 - x_{winner}),
+$$
+
+where $x_{winner}$ is the score of the winner. The $PPI$ is higher when the gap between the
+performance of the winner and the ideal value of the measure is large. It applies to scores where
+the highest value is the best and the scores are capped. When a competition has a low $PPI$,
+achieving substantial improvements is more challenging. It is a measure of the room for
+improvement, not of competitiveness.
+
+The summary tables of the article also report the number of ties with the winner without
+correction and with the Bonferroni, Holm and Benjamini-Hochberg corrections, and the $CV$ is not
+analysed for the mean absolute error, due to the nature of that measure. These indicators are
+computed by the earlier DataFrame-based interface,
+`CompStats.performance.performance_multiple_metrics`, documented in the [developer
+docs](https://ingeotec.github.io/CompStats/dev/performance_api.html).
+
+## Scope and assumptions
+
+The inference assumes that the test set can be treated as a random sample of the population of
+interest. Therefore, the intervals and the tests must be read in light of how the test set was built. The
+methodology applies to any measure computed from a gold standard and predictions, for
+classification and for regression. Measures where smaller is better, for example the mean absolute
+error, are handled through the `BiB` (bigger is better) flag, which every function of
+`CompStats.metrics` sets for its measure.
+
+## References {.unnumbered}
+
+::: {#refs}
+:::

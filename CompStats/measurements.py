@@ -41,7 +41,13 @@ def CI(samples: np.ndarray, alpha=0.05):
 
 
 def SE(samples: np.ndarray):
-    """Compute the Standard Error of a statistic using bootstrap.
+    """Compute the Standard Error of a statistic using bootstrap: the standard
+    deviation of the bootstrap samples.
+
+    :param samples: Bootstrap samples, or a :py:class:`~CompStats.bootstrap.StatisticSamples`
+        instance, in which case a dictionary with one value per system is returned.
+    :type samples: numpy.ndarray or CompStats.bootstrap.StatisticSamples
+    :return: Standard error (one value per measure when the samples have several columns).
 
     >>> from CompStats import StatisticSamples, SE
     >>> from sklearn.metrics import accuracy_score
@@ -51,6 +57,7 @@ def SE(samples: np.ndarray):
     >>> bootstrap = StatisticSamples(statistic=accuracy_score)
     >>> samples = bootstrap(labels, pred)
     >>> SE(samples)
+    0.1459
     """
     if isinstance(samples, StatisticSamples):
         return {k: SE(v) for k, v in samples.calls.items()}
@@ -58,7 +65,19 @@ def SE(samples: np.ndarray):
 
 
 def difference_p_value(samples: np.ndarray, BiB: bool = True):
-    """Compute the difference p-value"""
+    """Estimate the p-value of the paired differences, as the fraction of
+    bootstrap differences that are at least twice the mean difference (the
+    bootstrap distribution is centred on the observed difference rather than
+    on zero). With ``BiB`` false the comparison is reversed.
+
+    :param samples: Bootstrap samples of the paired differences, or a
+        :py:class:`~CompStats.bootstrap.StatisticSamples` instance, in which
+        case a dictionary with one p-value per system is returned.
+    :type samples: numpy.ndarray or CompStats.bootstrap.StatisticSamples
+    :param BiB: Bigger is Better, default=True.
+    :type BiB: bool
+    :return: Estimated p-value.
+    """
     if isinstance(samples, StatisticSamples):
         if samples.BiB:
             return {k: (v > 2 * np.mean(v)).mean() for k, v in samples.calls.items()}

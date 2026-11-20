@@ -1,0 +1,51 @@
+project:
+  type: website
+  output-dir: _site
+
+lang: en
+
+bibliography: references.bib
+csl: compstats.csl
+
+execute:
+  enabled: true
+  freeze: auto
+
+website:
+  title: "CompStats"
+  site-url: https://ingeotec.github.io/CompStats/
+  repo-url: https://github.com/INGEOTEC/CompStats
+  navbar:
+    logo: images/ingeotec.png
+    left:
+      - href: index.qmd
+        text: Home
+      - href: pages/install.qmd
+        text: Install
+      - href: pages/methodology.qmd
+        text: Methodology
+      - href: pages/sklearn_users.ipynb
+        text: scikit-learn Users
+      - href: pages/competition_organizers.ipynb
+        text: Competition Organizers
+      - href: pages/multiple_testing.ipynb
+        text: Multiple Testing
+      - href: pages/citing.qmd
+        text: Citing
+      - href: https://ingeotec.github.io/CompStats/dev/
+        text: Developer docs
+    right:
+      - icon: github
+        href: https://github.com/INGEOTEC/CompStats
+        aria-label: GitHub
+  page-footer:
+    center: >
+      CompStats · Sergio Nava-Muñoz, Mario Graff and Hugo Jair Escalante ·
+      Code under the Apache 2.0 license
+
+format:
+  html:
+    theme: [cosmo, style.scss]
+    toc: true
+    number-sections: true
+    link-external-newwindow: true

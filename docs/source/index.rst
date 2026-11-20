@@ -3,11 +3,12 @@
 ====================================
 CompStats
 ====================================
+
 .. image:: https://img.shields.io/badge/GitHub-CompStats-black?logo=github
         :target: https://github.com/INGEOTEC/CompStats
 
-.. image:: https://github.com/INGEOTEC/CompStats/actions/workflows/test.yaml/badge.svg
-		:target: https://github.com/INGEOTEC/CompStats/actions/workflows/test.yaml
+.. image:: https://github.com/INGEOTEC/CompStats/actions/workflows/test.yml/badge.svg
+		:target: https://github.com/INGEOTEC/CompStats/actions/workflows/test.yml
 
 .. image:: https://coveralls.io/repos/github/INGEOTEC/CompStats/badge.svg?branch=develop
 		:target: https://coveralls.io/github/INGEOTEC/CompStats?branch=develop
@@ -24,260 +25,343 @@ CompStats
 .. image:: https://img.shields.io/conda/pn/conda-forge/compstats.svg
 		:target: https://anaconda.org/conda-forge/compstats
 
-.. image:: https://readthedocs.org/projects/compstats/badge/?version=latest
-		:target: https://compstats.readthedocs.io/en/latest/?badge=latest
+Version |compstats_version|.
 
-.. image:: https://colab.research.google.com/assets/colab-badge.svg
-		:target: https://colab.research.google.com/github/INGEOTEC/CompStats/blob/docs/docs/CompStats.ipynb
+.. note::
 
+   This is the **developer reference** of **CompStats**: the architecture of the package and the
+   complete API. Installation, tutorials and the description of the methodology for users are
+   published on the project site, https://ingeotec.github.io/CompStats/.
 
-Collaborative competitions have gained popularity in the scientific and technological fields. These competitions involve defining tasks, selecting evaluation scores, and devising result verification methods. In the standard scenario, participants receive a training set and are expected to provide a solution for a held-out dataset kept by organizers. An essential challenge for organizers arises when comparing algorithms' performance, assessing multiple participants, and ranking them. Statistical tools are often used for this purpose; however, traditional statistical methods often fail to capture decisive differences between systems' performance. :py:class:`CompStats` implements an evaluation methodology for statistically analyzing competition results and competition. :py:class:`CompStats` offers several advantages, including off-the-shell comparisons with correction mechanisms and the inclusion of confidence intervals. 
-
-Quickstart Guide
+Introduction
 ====================================
 
-The first step is to install CompStats, which is described below.
+Collaborative competitions (challenges) evaluate systems on a single held-out test set whose gold
+standard is kept by the organizers. The systems are ranked by a performance measure computed on that
+set. The organizers have access only to the predictions, to a fixed dataset size and to a small
+number of submissions; consequently, the classical statistical tests that require access to the
+algorithm, or that require performance estimates on several datasets, do not apply.
 
-Installing CompStats
+**CompStats** implements a bootstrap-based methodology that complements the ranking with standard
+errors, confidence intervals, significance tests of paired differences and corrections for multiple
+comparisons. The same setting covers any comparison of supervised-learning systems on a shared
+test set, whether the task is classification or regression. The methodology is described in
+*Analysis of systems' performance in natural language processing competitions*
+(`doi:10.1016/j.patrec.2024.03.010 <https://doi.org/10.1016/j.patrec.2024.03.010>`_), which extends
+*Comparison of Classifiers in Challenge Scheme*
+(`doi:10.1007/978-3-031-33783-3_9 <https://doi.org/10.1007/978-3-031-33783-3_9>`_).
+
+Statistical background
+====================================
+
+Each concept below is stated with its formula and the symbol of the package that computes it.
+
+**Setting.** Let :math:`y` be a gold standard of size :math:`n`, let
+:math:`\hat{y}_1, \ldots, \hat{y}_m` be the predictions of :math:`m` systems, and let
+:math:`s(y, \hat{y})` be a performance measure. A measure is either bigger-is-better (a score) or
+smaller-is-better (an error); the flag ``BiB`` carries that direction.
+
+**Bootstrap.** :math:`B` samples (``num_samples``, default 500) of :math:`n` indices are drawn with
+replacement from :math:`\{1, \ldots, n\}`. The measure is evaluated on every sample for every
+system, which gives the bootstrap distribution :math:`s_j^{*1}, \ldots, s_j^{*B}` of system
+:math:`j` (:py:class:`~CompStats.bootstrap.StatisticSamples`). The **same** index samples are used
+for all the systems, which is what makes the comparisons paired.
+
+**Standard error.** The standard deviation of the bootstrap distribution,
+
+.. math::
+
+   \widehat{\mathrm{SE}}_j = \sqrt{\frac{1}{B} \sum_{b=1}^{B} \left(s_j^{*b} - \bar{s}_j^{*}\right)^2},
+   \qquad \bar{s}_j^{*} = \frac{1}{B} \sum_{b=1}^{B} s_j^{*b},
+
+computed by :py:func:`~CompStats.measurements.SE` and exposed as the ``se`` property of
+:py:class:`~CompStats.interface.Perf`.
+
+**Confidence interval.** The percentile interval
+
+.. math::
+
+   \left[ q_{\alpha/2}(s_j^{*}),\; q_{1-\alpha/2}(s_j^{*}) \right],
+
+where :math:`q_p` is the :math:`p`-th quantile of the bootstrap distribution and
+:math:`\alpha = 0.05` by default. It is computed by :py:func:`~CompStats.measurements.CI` and
+exposed as the ``ci`` property of :py:class:`~CompStats.interface.Perf`.
+
+**Paired difference.** For a reference system :math:`A` (by default the best one) and another
+system :math:`B`, the bootstrap distribution of
+
+.. math::
+
+   \delta^{*} = s^{*}(y, \hat{y}_A) - s^{*}(y, \hat{y}_B)
+
+is computed on the same samples. The sign is flipped for smaller-is-better measures, so that a
+positive difference always means that the reference is better. It is built by
+:py:meth:`~CompStats.interface.Perf.difference`, which returns a
+:py:class:`~CompStats.interface.Difference`.
+
+**Significance.** Let :math:`\delta(x)` be the difference observed on the test set. The p-value of
+the null hypothesis :math:`H_0`: "the reference is not better" is estimated as the fraction of
+bootstrap differences that are at least :math:`2\delta(x)`,
+
+.. math::
+
+   \hat{p} = \frac{1}{B} \sum_{b=1}^{B} \mathbb{1}\left[\delta^{*b} \geq 2\delta(x)\right],
+
+(:py:meth:`~CompStats.interface.Difference.p_value`), following Berg-Kirkpatrick, Burkett and
+Klein (2012). The bootstrap distribution is centred on :math:`\delta(x)` rather than on zero,
+hence the factor 2.
+
+**Multiple comparisons.** Comparing the best system against the other :math:`m - 1` systems tests
+several hypotheses at once. The p-values can be adjusted with any method of
+:py:func:`statsmodels.stats.multitest.multipletests` through the ``correction`` argument (for
+example ``'bonferroni'``, ``'holm'`` or ``'fdr_bh'``). When several measures are evaluated, each
+measure is corrected as its own family.
+
+**Competitiveness of a competition.** The legacy functional API
+(:py:func:`~CompStats.performance.performance_multiple_metrics`) summarizes the competitiveness of
+a competition with the coefficient of variation of the systems' performance,
+
+.. math::
+
+   CV = 100 \, \frac{s_x}{\bar{x}},
+
+where :math:`s_x` is the sample standard deviation and :math:`\bar{x}` the mean of the systems'
+performance, and with the distance between the winner and the system in the middle of the table.
+The potential for improvement of a task is assessed separately with the possible percentage
+improvement, :math:`PPI = 100\,(1 - x_{best})`, for bigger-is-better scores bounded by 1.
+
+Architecture
+====================================
+
+**CompStats** is organized around one core data flow: raw predictions from one or more
+systems are turned into bootstrap-resampled statistics, from which derived comparisons and plots
+are computed. This section gives a map of how the modules and classes relate to each other before
+diving into the per-function API references that follow.
+
+Data flow
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The first step is to install the library, which can be done using the `conda package manager <https://conda-forge.org/>`_ with the following instruction. 
+Given a set of systems' predictions and a shared ground truth (:math:`y`), the same bootstrap
+resample indices are drawn once per population size and reused across every system being compared
+-- this pairing is what makes the pairwise comparisons statistically valid. A performance statistic
+(e.g. accuracy, F1) is evaluated on each resample for each system, producing an empirical
+distribution per system. Everything else -- standard errors, confidence intervals, and pairwise
+significance testing between systems -- is derived from these bootstrap distributions rather than
+from parametric assumptions.
+
+Module and class relationships
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. mermaid::
+
+    classDiagram
+        class StatisticSamples {
+            statistic: Callable
+            num_samples: int
+            n_jobs: int
+            BiB: bool or ndarray[bool]
+            calls: dict~str, ndarray~
+            __call__(*args, name)
+            __sklearn_clone__()
+        }
+        class Perf {
+            y_true: ndarray
+            predictions: dict~str, ndarray~
+            func: Callable or list~Callable~
+            BiB: bool or list~bool~
+            statistic_samples: StatisticSamples
+            best
+            difference(wrt)
+            dataframe()
+            plot()
+            __call__(y_pred, name)
+        }
+        class Difference {
+            statistic_samples: StatisticSamples
+            statistic: dict
+            best: str or ndarray
+            p_value(right, correction)
+            dataframe()
+            plot()
+        }
+        class MetricsWrappers {
+            <<CompStats.metrics>>
+            accuracy_score(y_true, *y_pred)
+            balanced_accuracy_score(y_true, *y_pred)
+            f1_score(y_true, *y_pred)
+            ...
+            .measure(**kwargs) Callable
+        }
+        class PerformanceModule {
+            <<CompStats.performance>>
+            performance(dataframe, score)
+            difference(statistic_samples)
+            all_differences(statistic_samples)
+            plot_performance(statistic_samples)
+            plot_difference(statistic_samples)
+        }
+        class Measurements {
+            <<CompStats.measurements>>
+            CI(samples, alpha)
+            SE(samples)
+            difference_p_value(samples, BiB)
+        }
+
+        Perf "1" *-- "1" StatisticSamples : owns
+        Difference "1" *-- "1" StatisticSamples : owns (cloned)
+        Perf ..> Difference : difference() clones\nvia sklearn.base.clone
+        MetricsWrappers ..> Perf : constructs, tagging\nfunc.BiB
+        PerformanceModule ..> StatisticSamples : operates on directly
+        Measurements ..> StatisticSamples : reads .calls
+
+- **StatisticSamples** (:py:mod:`CompStats.bootstrap`) is the foundational primitive: given a
+  ``statistic`` callable, it draws ``num_samples`` bootstrap resamples of the population and
+  evaluates the statistic on each one, optionally in parallel via ``n_jobs``. Results for a named
+  system are cached in ``calls`` (name -> ndarray of bootstrap samples); resample *indices* are
+  cached per population size so every system sharing a population reuses the same resampling.
+  ``__sklearn_clone__`` lets :py:func:`sklearn.base.clone` produce a fresh instance that carries over
+  parameters -- used to build a :py:class:`~CompStats.interface.Difference` from a
+  :py:class:`~CompStats.interface.Perf` without recomputing bootstrap samples.
+
+- **Perf** (:py:mod:`CompStats.interface`) is the main user-facing entry point. It wraps one or more
+  systems' predictions against shared ground truth, holding one :py:class:`~CompStats.bootstrap.StatisticSamples`
+  instance keyed by system name. ``func`` is a single callable or a list of callables (a
+  multi-measure ``Perf``); direction (bigger-is-better vs. smaller-is-better) comes from each
+  callable's own ``BiB`` attribute when present (tagged by a :py:mod:`CompStats.metrics` wrapper's
+  ``.measure`` factory), falling back to the constructor's ``BiB`` default otherwise --
+  ``BiB`` is the single source of truth for direction; there is no separate score/error split.
+  ``Perf.difference(wrt=...)`` produces a ``Difference`` comparing every system against the best (or
+  an explicit reference).
+
+- **Difference** (:py:mod:`CompStats.interface`) is created from ``Perf.difference()`` via
+  :py:func:`sklearn.base.clone`, reusing the already-computed bootstrap samples rather than
+  recomputing them. Its ``p_value()`` is computed directly from the bootstrap distribution of paired
+  differences, with no parametric test assumptions.
+
+- **CompStats.metrics** wrappers (``accuracy_score``, ``balanced_accuracy_score``,
+  ``top_k_accuracy_score``, ``f1_score``, ...) are factories that close over an
+  :py:mod:`sklearn.metrics` function (plus its metric-specific keyword arguments) and construct a
+  ``Perf`` with that closure as ``func``, tagging it with ``.BiB`` so direction travels with the
+  callable. The shared ``@metrics_docs`` decorator injects the common ``Perf``-style docstring into
+  each wrapper.
+
+- **CompStats.performance** is an alternative, more functional API operating directly on a
+  ``pandas.DataFrame`` (one gold column plus one column per system): ``performance()``,
+  ``difference()``/``all_differences()``, and the ``plot_performance*``/``plot_difference*`` family,
+  plus ``*_multiple`` variants for comparing several metrics at once. It predates ``Perf`` and is
+  intentionally not composed with ``Perf``/``Difference``.
+
+- **CompStats.measurements** provides stateless helpers -- ``CI`` (percentile bootstrap confidence
+  interval), ``SE`` (bootstrap standard error), and ``difference_p_value`` -- each accepting either a
+  raw ndarray of bootstrap samples or a ``StatisticSamples`` instance, in which case it maps itself
+  over ``.calls``.
+
+Invariants to preserve
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. note::
+   **Bootstrap resampling must stay paired across systems.**
+   ``StatisticSamples`` caches resample indices by population size precisely so every system's
+   bootstrap replicate *i* uses the same resampled indices. Do not introduce per-system independent
+   resampling -- it would invalidate every pairwise comparison.
+
+.. note::
+   **BiB (Bigger is Better) must be threaded consistently, never re-derived.**
+   A callable's own ``BiB`` attribute wins when present; otherwise ``Perf``'s ``BiB`` constructor
+   argument is the default. Sorting, ``best``, and p-value sign logic throughout
+   :py:mod:`CompStats.interface`/:py:mod:`CompStats.performance` read this flag rather than
+   re-deriving direction from which argument a function was passed as.
+
+.. note::
+   **Bootstrap samples must be reused via** ``__sklearn_clone__``, **not re-instantiation.**
+   :py:func:`sklearn.base.clone` duplicates ``Perf``/``StatisticSamples`` instances while carrying
+   over already-computed bootstrap samples (e.g. ``Perf.difference()``,
+   ``CompStats.performance.difference``). Plain re-instantiation silently redraws new bootstrap
+   samples and breaks paired comparisons.
+
+Development
+====================================
+
+Install the package with its test dependencies and the documentation dependencies:
 
 .. code:: bash
 
-	  conda install -c conda-forge CompStats
+   pip install -e ".[test]"
+   pip install -r docs/requirements.txt
 
-A more general approach to installing CompStats is through the use of the command pip, as illustrated in the following instruction. 
+Run the test suite:
 
 .. code:: bash
 
-	  pip install CompStats
+   pytest CompStats
 
-Libraries used
-^^^^^^^^^^^^^^^^^^^^^
+Build the developer reference; the HTML is written to ``docs/build/html/index.html``:
 
-After installing :py:class:`CompStats`, we must import the necessary libraries for our analysis. :py:class:`CompStats` relies on several Python libraries for data analysis and scientific computing.
+.. code:: bash
 
-The first line of the following code loads two functions from the :py:class:`CompStats` library. The :py:func:`~CompStats.performance.performance` function is used to calculate and analyze the performance of machine learning models. On the other hand, the :py:func:`~CompStats.performance.plot_performance` function visualizes the performance metrics calculated by :py:func:`~CompStats.performance.performance`, such as accuracy or F1 score, along with confidence intervals to help understand the variability and reliability of the performance metrics.
+   python -m sphinx -n -W --keep-going -b html docs/source docs/build/html
 
-The second line imports two functions: :py:func:`~CompStats.performance.difference` and :py:func:`~CompStats.performance.plot_difference`; :py:func:`~CompStats.performance.difference` assesses the differences in performance between models in comparison to the best system, and :py:func:`~CompStats.performance.plot_difference` visually represents these differences relative to the best system.
+The same strict build runs in continuous integration, and any warning (for example, a
+cross-reference that does not resolve) makes it fail.
 
-The third line imports two functions: :py:func:`~CompStats.performance.all_differences` and :py:func:`~CompStats.measurements.difference_p_value`. :py:func:`~CompStats.performance.all_differences` evaluates the differences in performance between all models, and :py:func:`~CompStats.measurements.difference_p_value` estimates the p-value of the hypothesis that the difference is significantly greater than zero.
+Releases are published by pushing a ``v<version>`` tag, which triggers the workflow
+``.github/workflows/publish-pypi.yml``; the version gate ``scripts/check_package_versions.py``
+verifies that the version is a single step ahead of the one published on PyPI.
 
-The fourth line imports the function :py:func:`multipletests` that is used for adjusting p-values when multiple hypothesis tests are performed, to control for the false discovery rate or family-wise error rate.
+User site
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The rest of the lines load commonly used Python libraries.
-
-.. code-block:: python
-
-    >>> from CompStats import performance, plot_performance
-    >>> from CompStats import difference, plot_difference
-    >>> from CompStats import all_differences, difference_p_value
-    >>> from statsmodels.stats.multitest import multipletests
-    >>> from sklearn.metrics import f1_score
-    >>> import pandas as pd
-
-Dataset
-^^^^^^^^^^^^^^^^^^^^^
-
-Once we have set up our environment, we can explore what CompStats offers. Let's begin with a basic example of how to use CompStats for a simple statistical analysis.
-
-To illustrate the use of CompStats, we will use a dataset included in the CompStats package. The path of the dataset is found with the following instructions. The variable :py:attr:`DATA` contains the path as shown below.  
-
-.. code-block:: python
-
-    >>> from CompStats.tests.test_performance import DATA
-    >>> DATA
-    '/usr/local/lib/python3.10/dist-packages/CompStats/tests/data.csv'
-
-
-:py:attr:`DATA` contains the information to compare six systems for a multiclass classification task. The next instruction loads the data into a dataframe.
-
-.. code-block:: python
-
-    >>> df = pd.read_csv(DATA)
-
-It can be observed that the first column contains the gold standard, identified with :py:attr:`y`, and the rest of the columns are the predictions performed by different systems.
-
-.. code-block:: python
-
-    >>> df.columns
-    Index(['y', 'BoW (Corpus)', 'BoW', 'INGEOTEC',
-           'BoW (Class Weight)', 'Dense', 'StackBoW'],
-          dtype='object')
-
-Performance Analysis
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Let us start with the performance analysis of the different systems. The performance metric used is the weighted average F1 score. This performance is coded in the variable :py:attr:`score` as observed in the next instruction.
-
-.. code-block:: python
-
-    >>> score = lambda y, hy: f1_score(y, hy, average='weighted')
-
-The next step is to compute the performance on the bootstrap samples; this is done with the function :py:func:`~CompStats.performance.performance`. The function has a few parameters; one is the :py:attr:`score`, which receives the metric used to measure the performance.
-
-.. code-block:: python
-
-    >>> perf = performance(df, score=score, num_samples=1000)
-
-:py:attr:`perf` is an instance of :py:class:`~CompStats.bootstrap.StatisticSamples`, the bootstrap samples can be seen on the property :py:attr:`calls`. The first five bootstrap samples of the performance of INGEOTEC are shown below. 
-
-.. code-block:: python
-
-    >>> perf.calls['INGEOTEC'][:5]
-    [0.37056471 0.38665852 0.36580968 0.39611708 0.39422416]
-
-The performance of the systems, along with their confidence intervals, can be seen using the next instruction.
-
-.. code-block:: python
-
-    >>> face_grid = plot_performance(perf)
-
-.. image:: performance.png
-
-
-It can be observed that the best system is INGEOTEC. Although the confidence intervals provide information that helps to assess the difference in the performance of the systems, in this case, the intervals intersect. Therefore, one needs another statistical tool to determine if the difference in performance is significant.
-
-Performance Comparison against the Winner
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The difference in their performance compared to the best-performing system can be used to compare the algorithms analyzed. The function :py:func:`~CompStats.performance.difference` computes the difference as shown below.
-
-.. code-block:: python
-    
-    >>> diff = difference(perf)
-
-:py:attr:`diff` is an instance of :py:class:`~CompStats.bootstrap.StatisticSamples`; one can find the best system on the property :py:attr:`info`, as the following instruction shows.
-
-.. code-block:: python
-
-    >>> diff.info
-    {'best': 'INGEOTEC'}
-
-The difference in performance can be visualized with the following instruction.
-
-.. code-block:: python
-
-    >>> face_grid_diff = plot_difference(diff)
-
-.. image:: difference.png
-
-From the performance graphs, for this example, we can observe that the ranking is *INGEOTEC*, *BoW*, *StackBoW*, *BoW (Corpus)*, *Dense*, *Bow (Class Weight)*. Hence, in the last graph, we analyze the performance difference against the winner (INGEOTEC). From this graph, we can conclude that *BoW* and *StackBoW*, might perform similarly to INGEOTEC. As can be seen, *Dense* is practically on the border between being significant and not significant.
-
-Should we test the hypothesis of equality versus difference, considering that one system outperforms the other in the test? To address this question, we compare the performance of two systems, :math:`A` and :math:`B`, to determine whether :math:`A` is superior to :math:`B` in a larger data population, represented as :math:`\theta_A > \theta_B`. We can estimate the p-value associated with the hypothesis test :math:`H_0: \theta_A \le \theta_B` vs :math:`H_1: \theta_A > \theta_B` given the data, equivalently :math:`H_0: \theta_A< - \theta_B\le 0` vs :math:`H_1: \theta_A - \theta_B > 0`. The p-values for these differences can be estimated using the following instruction, comparing them against the winner (INGEOTEC) to determine the probability that :math:`a` (INGEOTEC) is better than :math:`b`.
-
-The :py:func:`~CompStats.measurements.difference_p_value` function estimates the p-value for each difference in comparison to the best system, as illustrated below.
-
-.. code-block:: python
-
-    >>> p_values = difference_p_value(diff)
-
-For a given :math:`\alpha` level, p-values smaller than :math:`\alpha`  are significant, meaning the observed difference is unlikely to be due to chance. An :math:`\alpha` level of 0.05 is commonly used.
-
-.. code-block:: python
-
-    >>> p_values
-    {'BoW (Class Weight)': 0.001,
-     'Dense': 0.032,
-     'BoW (Corpus)': 0.006,
-     'StackBoW': 0.091,
-     'BoW': 0.265}
-
-Performance comparison between all models
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Similarly, the differences for each pair of variables between all models can be estimated using the function :py:func:`~CompStats.performance.all_differences`, as illustrated in the following instructions. This approach allows for a comprehensive analysis of how each model compares to the others, providing a statistical basis to understand the significance of performance variations among them. This method extends the comparative analysis, offering a detailed view of the competitive landscape of model performance.
-
-.. code-block:: python
-
-    >>> all_diff = all_differences(perf)
-
-Once again, we use the function :py:func:`~CompStats.measurements.difference_p_value` to estimate the p-value.
-
-.. code-block::  python
-
-    >>> p_values = difference_p_value(all_diff)
-
-And we can analyze from all pairs of systems individually which ones have significantly different performances by comparing their p-value with :math:`\alpha`. 
-
-.. code-block:: python
-
-    >>> p_values
-    {'INGEOTEC - BoW': 0.265,
-     'INGEOTEC - StackBoW': 0.091,
-     'INGEOTEC - BoW (Corpus)': 0.006,
-     'INGEOTEC - Dense': 0.032,
-     'INGEOTEC - BoW (Class Weight)': 0.001,
-     'BoW - StackBoW': 0.374,
-     'BoW - BoW (Corpus)': 0.099,
-     'BoW - Dense': 0.14,
-     'BoW - BoW (Class Weight)': 0.04,
-     'StackBoW - BoW (Corpus)': 0.11,
-     'StackBoW - Dense': 0.148,
-     'StackBoW - BoW (Class Weight)': 0.024,
-     'BoW (Corpus) - Dense': 0.451,
-     'BoW (Corpus) - BoW (Class Weight)': 0.204,
-     'Dense - BoW (Class Weight)': 0.38}
-
-When conducting numerous comparisons or hypothesis tests on a dataset, the risk of incurring Type I errors (incorrectly dismissing a valid null hypothesis) increases. This happens because more tests performed increase the probability of randomly identifying statistically significant outcomes. Implementing adjustments for multiple comparisons is critical for several reasons: (1) To manage the risk of Type I Error, (2) To prevent erroneous conclusions, and (3) To uphold the integrity of the research.
-
-The following code illustrates the effect of these methods for multiple comparison corrections. The function :py:func:`multipletests` makes the p-value correction by selecting the parameter :py:attr:`method`. In this example, the Bonferroni correction method is used.
-
-.. code-block:: python
-
-    >>> result = multipletests(list(p_values.values()), method='bonferroni')
-
-:py:attr:`result` is an array; next, we convert it back into a dictionary.
-
-.. code-block:: python
-
-    >>> p_valuesC = dict(zip(p_values.keys(),result[1]))
-
-And we can analyze from all pairs of systems simunstally which ones have significantly different performances by comparing their p-value with :math:`\alpha`.
-
-.. code-block:: python
-
-    >>> p_valuesC
-    {'INGEOTEC - BoW': 1.0,
-     'INGEOTEC - StackBoW': 1.0,
-     'INGEOTEC - BoW (Corpus)': 0.09,
-     'INGEOTEC - Dense': 0.48,
-     'INGEOTEC - BoW (Class Weight)': 0.015,
-     'BoW - StackBoW': 1.0,
-     'BoW - BoW (Corpus)': 1.0,
-     'BoW - Dense': 1.0,
-     'BoW - BoW (Class Weight)': 0.6,
-     'StackBoW - BoW (Corpus)': 1.0,
-     'StackBoW - Dense': 1.0,
-     'StackBoW - BoW (Class Weight)': 0.36,
-     'BoW (Corpus) - Dense': 1.0,
-     'BoW (Corpus) - BoW (Class Weight)': 1.0,
-     'Dense - BoW (Class Weight)': 1.0}
-  
+The user site is written with Quarto in ``quarto/`` and is previewed with
+``QUARTO_PYTHON="$PWD/.venv/bin/python" quarto preview quarto`` (live reload) or rendered
+statically into ``quarto/_site/`` with ``QUARTO_PYTHON="$PWD/.venv/bin/python" quarto render quarto``.
+Continuous integration never executes the notebooks of the site: it renders them from the cache
+committed in ``quarto/_freeze/``. After changing a notebook, the site must therefore be rendered
+locally and ``quarto/_freeze/`` committed together with the notebook; a test fails when they
+disagree.
 
 Citing
-==========
+====================================
 
-If you find CompStats useful for any academic/scientific purpose, we would appreciate citations to the following reference:
-  
+The first reference below is the one to cite for the methodology; the second is the work it extends.
+
 .. code:: bibtex
 
-    @article{Nava:2023,
-    title = {{Comparison of Classifiers in Challenge Scheme}},
-    year = {2023},
-    journal = {Lecture Notes in Computer Science (including subseries Lecture Notes in Artificial Intelligence and Lecture Notes in Bioinformatics)},
-    author = {Nava-Mu{\~{n}}oz, Sergio and Graff Guerrero, Mario and Escalante, Hugo Jair},
-    pages = {89--98},
-    volume = {13902 LNCS},
-    publisher = {Springer Science and Business Media Deutschland GmbH},
-    url = {https://link.springer.com/chapter/10.1007/978-3-031-33783-3_9},
-    isbn = {9783031337826},
-    doi = {10.1007/978-3-031-33783-3{\_}9/COVER},
-    issn = {16113349},
-    keywords = {Bootstrap, Challenges, Performance}
+    @article{Nava-Munoz2024,
+      author  = {Nava-Mu{\~n}oz, Sergio and Graff, Mario and Escalante, Hugo Jair},
+      title   = {Analysis of systems' performance in natural language processing competitions},
+      journal = {Pattern Recognition Letters},
+      year    = {2024},
+      doi     = {10.1016/j.patrec.2024.03.010},
+      url     = {https://doi.org/10.1016/j.patrec.2024.03.010}
     }
 
+    @inproceedings{Nava-Munoz2023,
+      author    = {Nava-Mu{\~n}oz, Sergio and Graff Guerrero, Mario and Escalante, Hugo Jair},
+      title     = {Comparison of Classifiers in Challenge Scheme},
+      booktitle = {Pattern Recognition},
+      series    = {Lecture Notes in Computer Science},
+      volume    = {13902},
+      pages     = {89--98},
+      year      = {2023},
+      publisher = {Springer Nature Switzerland},
+      doi       = {10.1007/978-3-031-33783-3_9},
+      url       = {https://doi.org/10.1007/978-3-031-33783-3_9}
+    }
+
+References
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Berg-Kirkpatrick, T., Burkett, D. and Klein, D. (2012). An empirical investigation of
+  statistical significance in NLP. *EMNLP-CoNLL 2012*.
+- Chernick, M. R. and LaBudde, R. A. (2011). *An Introduction to Bootstrap Methods with
+  Applications to R*. Wiley.
+- Efron, B. and Tibshirani, R. J. (1994). *An Introduction to the Bootstrap*. Chapman and
+  Hall/CRC.
+- Holm, S. (1979). A simple sequentially rejective multiple test procedure. *Scandinavian
+  Journal of Statistics*, 6, 65-70.
+- Benjamini, Y. and Hochberg, Y. (1995). Controlling the false discovery rate: a practical and
+  powerful approach to multiple testing. *Journal of the Royal Statistical Society, Series B*,
+  57, 289-300.
 
 API
 ====================================
@@ -285,8 +369,9 @@ API
 .. toctree::
    :maxdepth: 1
 
-   metrics_api
    interface_api
-   performance_api
+   metrics_api
    measurements_api
    bootstrap_api
+   performance_api
+   utils_api

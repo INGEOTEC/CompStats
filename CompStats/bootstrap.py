@@ -27,8 +27,8 @@ class StatisticSamples:
     :type num_samples: int
     :param n_jobs: Number of jobs to run in parallel, default=1.
     :type n_jobs: int
-    :param BiB: Bigger is Better; a single bool for a scalar/vector statistic, or one bool per column when :py:attr:`statistic` returns the concatenation of several measures (see :py:class:`~CompStats.interface.Perf`'s multi-measure support).
-    :type BiB: bool or numpy.ndarray[bool]
+    :param BiB: Bigger is Better; a single bool for a scalar/vector statistic, or one bool per column when ``statistic`` returns the concatenation of several measures (see :py:class:`~CompStats.interface.Perf`'s multi-measure support).
+    :type BiB: bool or numpy.ndarray of bool
 
 
     >>> from CompStats import StatisticSamples
@@ -128,10 +128,15 @@ class StatisticSamples:
         self._statistic_samples = value
 
     def samples(self, N):
-        """Samples.
+        """Indices of the bootstrap samples for a population of size `N`. The
+        indices are drawn once per population size and cached, so every system
+        evaluated on a population of the same size uses the same resamples
+        (this is what makes the comparisons paired).
 
         :param N: Population size.
         :type N: int
+        :return: Array of shape (``num_samples``, `N`) with indices drawn with replacement.
+        :rtype: numpy.ndarray
         """
         def inner(N):
             _ = np.random.randint(N, size=(self.num_samples, N))
@@ -146,17 +151,21 @@ class StatisticSamples:
             return inner(N)
 
     def keys(self):
-        """calls keys"""
+        """Names of the systems whose bootstrap samples are stored.
+
+        :return: Keys of ``calls``.
+        """
         return self.calls.keys()
 
     def __getitem__(self, key):
+        """Bootstrap samples of a system by name"""
         return self.calls[key]
 
     def __call__(self, *args: np.ndarray, name=None) -> np.ndarray:
         """Population where the bootstrap process will be performed.
 
         :param *args: Population
-        :type *args: np.ndarray
+        :type args: numpy.ndarray
         """
         def inner(s):
             _ = [arg[s] for arg in args]

@@ -1,3 +1,9 @@
+[build-system]
+# 77 is the first setuptools that accepts the SPDX string form `license = "Apache-2.0"`
+# used below.
+requires = ["setuptools>=77.0.3"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = 'CompStats'
 description = 'CompStats implements an evaluation methodology for statistically analyzing competition results and competition'
@@ -24,6 +30,10 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Information Analysis"
 ]
 
+[project.optional-dependencies]
+# `packaging` is only needed by scripts/check_package_versions.py and its test.
+test = ["pytest>=7.0", "packaging"]
+
 [tool.setuptools.dynamic]
 version = {attr = 'CompStats.__version__'}
 
@@ -31,6 +41,8 @@ version = {attr = 'CompStats.__version__'}
 packages = ['CompStats', 'CompStats.tests']
 
 [project.urls]
-Homepage = "https://compstats.readthedocs.io"
+Homepage = "https://ingeotec.github.io/CompStats/"
+Documentation = "https://ingeotec.github.io/CompStats/"
+"Developer documentation" = "https://ingeotec.github.io/CompStats/dev/"
 Repository = "https://github.com/INGEOTEC/CompStats"
 Issues = "https://github.com/INGEOTEC/CompStats/issues"

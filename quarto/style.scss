@@ -1,0 +1,107 @@
+/*-- scss:defaults --*/
+
+// A software/statistics look: sans-serif, teal accent, generous whitespace.
+$font-family-base: "Inter", system-ui, -apple-system, "Segoe UI", Roboto,
+  sans-serif;
+$headings-font-family: $font-family-base;
+$font-family-monospace: "SFMono-Regular", Consolas, "Liberation Mono", Menlo,
+  monospace;
+
+$body-bg: #ffffff;
+$body-color: #1c1f22;
+$link-color: #0f766e;
+$link-decoration: none;
+
+$grid-body-width: 820px;
+$grid-sidebar-width: 260px;
+$grid-margin-width: 260px;
+
+/*-- scss:rules --*/
+
+h1.title {
+  font-weight: 700;
+}
+
+.subtitle.lead {
+  color: #52565b;
+}
+
+// Landing page.
+.home-lead p {
+  font-size: 1.2em;
+  line-height: 1.55;
+  margin: 1.4rem 0 1.8rem;
+}
+
+.pillars {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: 1.8rem 0 2.2rem;
+
+  .pillar {
+    border: 1px solid #e2e5e8;
+    border-top: 3px solid #0f766e;
+    background: #f7faf9;
+    border-radius: 4px;
+    padding: 1rem 1.1rem 1.2rem;
+
+    h3 {
+      margin: 0 0 0.5rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #0f766e;
+    }
+
+    p {
+      margin: 0;
+      font-size: 0.9em;
+      line-height: 1.5;
+      color: #3c4045;
+    }
+  }
+}
+
+.installs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin: 1.2rem 0 2rem;
+
+  .install {
+    border: 1px solid #e2e5e8;
+    border-radius: 4px;
+    padding: 1rem 1.1rem;
+
+    h3 {
+      margin: 0 0 0.6rem;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #52565b;
+    }
+
+    pre {
+      margin: 0;
+      background: #f7faf9;
+      border-radius: 4px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .pillars,
+  .installs {
+    grid-template-columns: 1fr;
+  }
+}
+
+.navbar {
+  border-bottom: 1px solid #e2e5e8;
+}
+
+.page-footer {
+  font-size: 0.8rem;
+  color: #898f94;
+}

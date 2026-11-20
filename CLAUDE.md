@@ -44,7 +44,7 @@ pip install -r requirements.txt
 ```
 
 Run the full test suite (this is what VS Code's test explorer and `.vscode/settings.json` are
-configured to use — despite CI still invoking `nosetests`, day-to-day development here uses pytest):
+configured to use, and what CI runs):
 
 ```bash
 pytest CompStats
@@ -64,15 +64,64 @@ coverage run -m pytest CompStats
 coverage report
 ```
 
-Build the Sphinx docs:
+Build the Sphinx developer reference (strict: `-n` reports every unresolved cross-reference and
+`-W` turns warnings into errors; this is the same command CI runs, so a warning fails the build):
 
 ```bash
-cd docs && make html
+python -m sphinx -n -W --keep-going -b html docs/source docs/build/html
 ```
 
-Note: `.github/workflows/test.yaml` (CI) builds the environment with conda and runs `nosetests`,
-not pytest — this is legacy and inconsistent with local/devcontainer tooling. Don't be surprised if
-CI config and local dev commands diverge; prefer `pytest` locally.
+CI (`.github/workflows/test.yml`) runs `pytest CompStats` on Python 3.10-3.12, collects coverage for
+Coveralls, and runs `scripts/check_package_versions.py` (the version gate described below).
+
+## Releasing
+
+- The version lives in one place: `__version__` in `CompStats/__init__.py`.
+- `scripts/check_package_versions.py` (run by CI on every push and pull request) fails unless
+  `__version__` is exactly one patch or one minor release ahead of the latest version on PyPI.
+- To release: make sure `__version__` is the version to publish, merge to `main`, then create and
+  push the tag `v<__version__>` (for example `git tag v0.2.0 && git push origin v0.2.0`).
+  `.github/workflows/publish-pypi.yml` verifies that the tag equals `__version__`, builds the
+  sdist and the wheel, runs `twine check` and uploads with the `TWINE` repository secret.
+- After a release, bump `__version__` before the next change is merged, otherwise the version gate
+  fails ("local is not ahead of PyPI").
+
+## Documentation
+
+The documentation has two halves that share one GitHub Pages site, both deployed by
+`.github/workflows/website.yml` on pushes to `main` (pull requests and pushes to `develop` only
+build them):
+
+- the **user site** (Quarto, source in `quarto/`), at `https://ingeotec.github.io/CompStats/`;
+- the **developer reference** (Sphinx, source in `docs/source/`), published under `/dev/`,
+  `https://ingeotec.github.io/CompStats/dev/`.
+
+Rules:
+
+- User-facing examples (site and README) use the `Perf`-based API only
+  (`CompStats.metrics.<measure>(y_true, y_pred, name=...)`, calling the instance to add a system,
+  `.difference()`, `.p_value(correction=...)`, `.plot()`), never the DataFrame functions of
+  `CompStats.performance`.
+- Preview the user site with live reload, or render it statically into `quarto/_site/`:
+
+  ```bash
+  QUARTO_PYTHON="$PWD/.venv/bin/python" quarto preview quarto
+  QUARTO_PYTHON="$PWD/.venv/bin/python" quarto render quarto
+  ```
+
+- Freeze rule: CI never executes notebooks; it renders from the committed `quarto/_freeze/` cache.
+  After changing any `quarto/**/*.ipynb`, render locally and commit `quarto/_freeze/` with
+  `git add -A quarto/_freeze` in the same commit. `CompStats/tests/test_docs.py` fails when a
+  notebook and its freeze entry disagree.
+- Prose follows the style of the published article: one idea per sentence, relations expressed
+  with sentence-initial connectors (However, Therefore, Furthermore, ...) or subordination, a
+  colon only before an enumeration or a piece of code, at most a couple of semicolons per page,
+  and no dashes as punctuation. `CompStats/tests/test_docs.py::test_site_prose_style` enforces
+  the punctuation limits on the user site.
+- Notebooks are edited through `nbformat` (or Jupyter), never by hand-editing the JSON.
+- The Colab-only install cell (a `try`/`except ImportError` block that runs
+  `uv pip install -q --system CompStats`, with `pip` as the fallback) keeps `#| eval: false` as its
+  first line, so it is shown but not executed when the site is rendered.
 
 ## Architecture
 
@@ -113,6 +162,9 @@ statistic → derived comparisons/plots.
   each wrapper automatically — when adding a new metric wrapper, follow this same
   `@metrics_docs(hy_name=..., bib=...)` + inner-function-closure pattern rather than duplicating
   docstrings.
+  In docstrings, parameter names and `.measure` factories are written as inline literals (double
+  backticks), not as `:py:attr:`/`:py:func:` cross-references, because the strict Sphinx build
+  rejects references that do not resolve.
 
 - **`measurements.py`**: stateless helpers — `CI` (percentile bootstrap confidence interval), `SE`
   (bootstrap standard error), `difference_p_value`. Each accepts either a raw ndarray of bootstrap

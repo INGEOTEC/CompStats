@@ -304,9 +304,10 @@ Build the developer reference; the HTML is written to ``docs/build/html/index.ht
 The same strict build runs in continuous integration, and any warning (for example, a
 cross-reference that does not resolve) makes it fail.
 
-Releases are published by pushing a ``v<version>`` tag, which triggers the workflow
-``.github/workflows/publish-pypi.yml``; the version gate ``scripts/check_package_versions.py``
-verifies that the version is a single step ahead of the one published on PyPI.
+Releases are published by running the workflow ``.github/workflows/publish-pypi.yml`` manually
+on ``main``. Creating a tag or a GitHub release does not publish the package. The version gate
+``scripts/check_package_versions.py`` verifies that the version is a single step ahead of the one
+published on PyPI.
 
 User site
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

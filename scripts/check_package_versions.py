@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Check the package's local version against PyPI.
 
-``publish-pypi.yml`` only checks, at the moment a tag is pushed, that the tag
-matches ``CompStats.__version__``. Nothing checks *before* that whether the
-local version is actually ahead of what PyPI has, or whether it jumped more
-than one release past it. This script reports PyPI's latest version, the
+``publish-pypi.yml`` is run by hand and uploads whatever version the checked
+out code declares. Nothing in it checks whether the local version is actually
+ahead of what PyPI has, or whether it jumped more than one release past it.
+This script reports PyPI's latest version, the
 local version (read from the attribute ``pyproject.toml`` declares as the
 dynamic version, without importing the package, so none of its dependencies
 need to be installed), and whether the local version is a valid single-step

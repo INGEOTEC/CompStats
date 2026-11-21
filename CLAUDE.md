@@ -79,10 +79,13 @@ Coveralls, and runs `scripts/check_package_versions.py` (the version gate descri
 - The version lives in one place: `__version__` in `CompStats/__init__.py`.
 - `scripts/check_package_versions.py` (run by CI on every push and pull request) fails unless
   `__version__` is exactly one patch or one minor release ahead of the latest version on PyPI.
-- To release: make sure `__version__` is the version to publish, merge to `main`, then create and
-  push the tag `v<__version__>` (for example `git tag v0.2.0 && git push origin v0.2.0`).
-  `.github/workflows/publish-pypi.yml` verifies that the tag equals `__version__`, builds the
-  sdist and the wheel, runs `twine check` and uploads with the `TWINE` repository secret.
+- To release: make sure `__version__` is the version to publish, merge to `main`, then run
+  `.github/workflows/publish-pypi.yml` by hand (the "Run workflow" button of the Actions tab, or
+  `gh workflow run publish-pypi.yml --ref main`). It builds the sdist and the wheel, runs
+  `twine check` and uploads with the `TWINE` repository secret.
+- Publishing is manual only. Creating a tag or a GitHub release (for example
+  `gh release create v0.2.0 --target main`) does not upload anything to PyPI, so the release is
+  created after the package is published.
 - After a release, bump `__version__` before the next change is merged, otherwise the version gate
   fails ("local is not ahead of PyPI").
 

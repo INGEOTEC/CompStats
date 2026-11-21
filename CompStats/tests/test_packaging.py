@@ -95,6 +95,10 @@ def test_workflows():
     publish = (WORKFLOWS / "publish-pypi.yml").read_text(encoding="utf-8")
     assert "secrets.TWINE" in publish
     assert "twine check" in publish
+    # Publishing is manual only: neither a tag nor a release triggers it.
+    assert "workflow_dispatch" in publish
+    for trigger in ("push:", "tags:", "release:"):
+        assert trigger not in publish
 
 
 def test_pyproject_build_system_and_test_extra():

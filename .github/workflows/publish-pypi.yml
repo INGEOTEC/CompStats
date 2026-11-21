@@ -1,9 +1,9 @@
 name: Publish to PyPI
 
+# Publishing is a manual step: run this workflow from the Actions tab (or with
+# `gh workflow run publish-pypi.yml --ref main`). Creating a tag or a GitHub
+# release does not publish anything.
 on:
-  push:
-    tags:
-      - "v*"
   workflow_dispatch:
 
 concurrency:
@@ -19,24 +19,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
-      - name: Install version-check dependencies
-        if: github.event_name != 'workflow_dispatch'
-        run: pip install packaging
-
-      # Tags are the release trigger, so a stale tag (forgot to bump
-      # __version__) must fail loudly instead of publishing the wrong
-      # version. `version` is declared `dynamic` in pyproject.toml, so it is
-      # read the same way scripts/check_package_versions.py reads it.
-      - name: Verify tag matches the package version
-        if: github.event_name != 'workflow_dispatch'
-        run: |
-          tag_version="${GITHUB_REF_NAME#v}"
-          pkg_version=$(python -c "import sys; sys.path.insert(0, 'scripts'); from check_package_versions import local_version; print(local_version())")
-          if [ "$tag_version" != "$pkg_version" ]; then
-            echo "Tag version $tag_version does not match CompStats.__version__ $pkg_version" >&2
-            exit 1
-          fi
 
       - name: Install build tooling
         run: pip install build twine

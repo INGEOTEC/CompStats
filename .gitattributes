@@ -1,0 +1,5 @@
+# Quarto stores the MD5 of each notebook's bytes in quarto/_freeze, and
+# CompStats/tests/test_docs.py::test_freeze_matches_notebooks compares against
+# it. Notebooks therefore keep LF line endings on every platform; otherwise a
+# Windows checkout (core.autocrlf) changes the bytes and the hash.
+*.ipynb text eol=lf

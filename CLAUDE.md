@@ -71,7 +71,8 @@ Build the Sphinx developer reference (strict: `-n` reports every unresolved cros
 python -m sphinx -n -W --keep-going -b html docs/source docs/build/html
 ```
 
-CI (`.github/workflows/test.yml`) runs `pytest CompStats` on Python 3.10-3.12, collects coverage for
+CI (`.github/workflows/test.yml`) runs `pytest CompStats` on Python 3.11 to 3.15 on Linux, macOS and
+Windows (the package requires Python 3.11 or later), collects coverage for
 Coveralls, and runs `scripts/check_package_versions.py` (the version gate described below).
 
 ## Releasing

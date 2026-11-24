@@ -1,4 +1,5 @@
 import importlib.util
+import re
 from pathlib import Path
 
 import pytest
@@ -109,3 +110,36 @@ def test_pyproject_build_system_and_test_extra():
     assert data["build-system"]["build-backend"] == "setuptools.build_meta"
     extra = data["project"]["optional-dependencies"]["test"]
     assert any(item.startswith("pytest") for item in extra)
+
+
+def _matrix_python_versions():
+    """Python versions of the matrix of the job test in test.yml"""
+    test = (WORKFLOWS / "test.yml").read_text(encoding="utf-8")
+    match = re.search(r"python-version:\s*\[([^\]]*)\]", test)
+    assert match is not None
+    return re.findall(r"[\"'](\d+\.\d+)[\"']", match.group(1))
+
+
+def test_ci_matrix():
+    """The test job runs on three systems and the supported Python versions"""
+    test = (WORKFLOWS / "test.yml").read_text(encoding="utf-8")
+    assert "${{ matrix.os }}" in test
+    for runner in ("ubuntu-latest", "macos-latest", "windows-latest"):
+        assert runner in test
+    assert _matrix_python_versions() == ["3.11", "3.12", "3.13", "3.14", "3.15"]
+    assert '"3.10"' not in test
+
+
+def test_supported_python_versions():
+    """requires-python and the classifiers agree with the CI matrix"""
+    import tomllib
+    with open(ROOT / "pyproject.toml", "rb") as fpt:
+        data = tomllib.load(fpt)
+    assert data["project"]["requires-python"] == ">=3.11"
+    versions = _matrix_python_versions()
+    prefix = "Programming Language :: Python :: "
+    classifiers = {item[len(prefix):] for item in data["project"]["classifiers"]
+                   if re.fullmatch(re.escape(prefix) + r"3\.\d+", item)}
+    assert classifiers == set(versions)
+    lowest = min(versions, key=lambda item: int(item.split(".")[1]))
+    assert data["project"]["requires-python"] == ">=" + lowest

@@ -106,6 +106,7 @@ Rules:
   (`CompStats.metrics.<measure>(y_true, y_pred, name=...)`, calling the instance to add a system,
   `.difference()`, `.p_value(correction=...)`, `.plot()`), never the DataFrame functions of
   `CompStats.performance`.
+- `README.md` mirrors `README.rst`, and `LICENSE.txt` is a copy of `LICENSE`. A change to one file of a pair is made to the other in the same commit. `README.rst` remains the file that PyPI shows, and `CompStats/tests/test_docs.py` checks that each pair agrees.
 - Preview the user site with live reload, or render it statically into `quarto/_site/`:
 
   ```bash

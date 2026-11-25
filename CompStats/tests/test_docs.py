@@ -186,9 +186,10 @@ def test_user_docs_use_the_perf_api():
         cells = json.loads(notebook.read_text(encoding="utf-8"))["cells"]
         texts += ["".join(c["source"]) for c in cells
                   if c["cell_type"] == "code"]
-    readme = ROOT / "README.rst"
-    if readme.is_file():
-        texts.append(readme.read_text(encoding="utf-8"))
+    for name in ["README.rst", "README.md"]:
+        readme = ROOT / name
+        if readme.is_file():
+            texts.append(readme.read_text(encoding="utf-8"))
     for text in texts:
         for item in forbidden:
             assert item not in text, item
@@ -240,6 +241,87 @@ def test_readme():
     core.publish_string(text, writer_name="html",
                         settings_overrides={"halt_level": 2,
                                             "report_level": 2})
+
+
+_URL_RE = re.compile(r"https?://[^\s<>()\]\[`\"']+")
+
+
+def _rst_titles(lines):
+    """Section titles of a reStructuredText text, in order"""
+    titles = []
+    for index, line in enumerate(lines[:-1]):
+        under = lines[index + 1]
+        if (line.strip() and not set(line.strip()) <= {"="}
+                and under.strip() and set(under.strip()) == {"="}
+                and len(under.strip()) >= len(line.strip())):
+            titles.append(line.strip())
+    return titles
+
+
+def _rst_code_blocks(lines):
+    """The (language, code) pairs of the ``.. code::`` blocks of a text"""
+    blocks = []
+    index = 0
+    while index < len(lines):
+        match = re.match(r"\.\. code:: (\S+)\s*$", lines[index])
+        index += 1
+        if match is None:
+            continue
+        body = []
+        while index < len(lines) and (not lines[index].strip()
+                                      or lines[index][0] in " \t"):
+            body.append(lines[index].rstrip())
+            index += 1
+        code = [line for line in body if line.strip()]
+        indent = min(len(line) - len(line.lstrip()) for line in code)
+        blocks.append((match.group(1),
+                       "\n".join(line[indent:] for line in body).strip("\n")))
+    return blocks
+
+
+def _md_headings_and_blocks(lines):
+    """Headings and fenced (language, code) pairs of a Markdown text"""
+    headings, blocks, current = [], [], None
+    for line in lines:
+        if line.startswith("```"):
+            if current is None:
+                current = (line[3:].strip(), [])
+            else:
+                blocks.append((current[0], "\n".join(current[1]).strip("\n")))
+                current = None
+        elif current is not None:
+            current[1].append(line.rstrip())
+        elif line.startswith("#"):
+            headings.append(line.lstrip("#").strip())
+    return headings, blocks
+
+
+def _urls(text):
+    """The set of URLs of a text, without trailing punctuation"""
+    return {url.rstrip(".,") for url in _URL_RE.findall(text)}
+
+
+def test_license_txt_is_a_copy():
+    """LICENSE.txt has the same text as LICENSE"""
+    original, copy = ROOT / "LICENSE", ROOT / "LICENSE.txt"
+    if not (original.is_file() and copy.is_file()):
+        pytest.skip("needs the repository checkout (LICENSE, LICENSE.txt)")
+    assert (copy.read_text(encoding="utf-8")
+            == original.read_text(encoding="utf-8"))
+
+
+def test_readme_md_mirrors_readme_rst():
+    """README.md has the titles, URLs and code blocks of README.rst"""
+    rst, md = ROOT / "README.rst", ROOT / "README.md"
+    if not (rst.is_file() and md.is_file()):
+        pytest.skip("needs the repository checkout (README.rst, README.md)")
+    rst_text = rst.read_text(encoding="utf-8")
+    md_text = md.read_text(encoding="utf-8")
+    headings, md_blocks = _md_headings_and_blocks(md_text.splitlines())
+    rst_lines = rst_text.splitlines()
+    assert headings == _rst_titles(rst_lines)
+    assert _urls(md_text) == _urls(rst_text)
+    assert md_blocks == _rst_code_blocks(rst_lines)
 
 
 def test_site_workflow():
